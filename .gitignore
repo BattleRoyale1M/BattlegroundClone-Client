@@ -10,3 +10,6 @@ Saved/
 # VS/Rider project files (regenerated from .uproject)
 *.sln
 *.slnx
+# Claude Code / local MCP wiring — lives in the private unreal-devenv repo
+.mcp.json
+.claude/
