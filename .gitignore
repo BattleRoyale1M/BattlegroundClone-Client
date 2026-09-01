@@ -1,0 +1,12 @@
+# Unreal generated
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+# IDE
+.vs/
+.idea/
+.vsconfig
+# VS/Rider project files (regenerated from .uproject)
+*.sln
+*.slnx
