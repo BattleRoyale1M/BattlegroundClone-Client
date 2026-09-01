@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
 #include "DropTypes.generated.h"
-UENUM(BlueprintType)
 
-enum class EDropType : uint8
+UENUM(BlueprintType)
+enum class EDropState : uint8
 {
 	Ground UMETA(DisplayName = "Ground"),
 	InPlane UMETA(DisplayName = "InPlane"),
