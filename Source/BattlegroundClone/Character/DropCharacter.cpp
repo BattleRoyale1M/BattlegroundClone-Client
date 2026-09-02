@@ -178,15 +178,17 @@ void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
 	
 	if (AController* C = GetController())
 	{
-		C->SetControlRotation(FRotator(-10.f, Plane->GetHeadingYaw(), 0.f));
+		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw(), 0.f));
 	}
 	
 	/*
-	비행기 뒤로 카메라 세팅 
+	비행기 전체가 보이도록 붐을 멀리 + 위로. 붐이 지형/메시에 튕겨 들어오지 않게 콜리전 테스트 끔.
 	*/
 	if (CameraBoom)
 	{
-		CameraBoom->TargetArmLength = 900.f;
+		CameraBoom->TargetArmLength = InPlaneArmLength;
+		CameraBoom->SocketOffset = InPlaneSocketOffset;
+		CameraBoom->bDoCollisionTest = false;
 	}
 	
 }

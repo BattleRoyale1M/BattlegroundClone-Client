@@ -47,6 +47,13 @@ protected:
 	/** Follow camera on the end of the boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
+	float InPlaneArmLength = 3000.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
+	FVector InPlaneSocketOffset = FVector(0.f, 0.f, 1000.f);
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
+	float InPlaneCameraPitch = -22.f;
 
 	// --- Input (assign these in BP_DropCharacter defaults) --------------
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
