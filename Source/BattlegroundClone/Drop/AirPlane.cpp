@@ -1,18 +1,25 @@
 #include "Drop/AirPlane.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 
 
 AAirPlane::AAirPlane()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+	RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
+	SetRootComponent(RootScene);
+
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	SetRootComponent(BodyMesh);
-	BodyMesh -> SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+	BodyMesh->SetupAttachment(RootScene);
+	BodyMesh->SetRelativeRotation(MeshRotationOffset);
+	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	Propeller = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Propeller"));
-	Propeller -> SetupAttachment(BodyMesh);
-	Propeller -> SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Propeller->SetupAttachment(BodyMesh);
+	Propeller->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 void AAirPlane::BeginPlay()
@@ -27,6 +34,11 @@ void AAirPlane::BeginPlay()
 	if(!StartPoint.Equals(EndPoint))
 	{
 		SetActorRotation((EndPoint - StartPoint).Rotation());
+	}
+	
+	if (BodyMesh)
+	{
+		BodyMesh->SetRelativeRotation(MeshRotationOffset);
 	}
 	
 }

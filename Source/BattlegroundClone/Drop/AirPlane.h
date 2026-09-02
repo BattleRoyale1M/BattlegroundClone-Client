@@ -7,6 +7,7 @@
 #include "AirPlane.generated.h"
 
 class UStaticMeshComponent;
+class USceneComponent;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API AAirPlane : public AActor
@@ -19,6 +20,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	
+	/*
+	 회전/이동의 기준 루트 (진행 방향)
+	*/
+	UPROPERTY(VisibleAnywhere, Category = "Plane")
+	TObjectPtr<USceneComponent> RootScene;
 	
 	/*
 	 동체 및 루트
@@ -37,6 +44,13 @@ protected:
 	*/
 	UPROPERTY(EditAnywhere, Category = "Flight")
 	FVector StartPoint = FVector::ZeroVector;
+
+	
+	/* 
+	 메시 기수 축 보정 (기수가 +X와 다를 때, 기본 Yaw 180) 
+	 */
+	UPROPERTY(EditAnywhere, Category = "Plane")
+	FRotator MeshRotationOffset = FRotator(0.f, 180.f, 0.f);
 	
 	/*
 	비행 종료 시점(월드)
@@ -61,7 +75,7 @@ protected:
 	*/
 	UPROPERTY(EditAnywhere, Category = "Flight")
 	bool bDestroyOnArrival = true;
-	
+
 private:
 	float Elapsed = 0.f;
 };
