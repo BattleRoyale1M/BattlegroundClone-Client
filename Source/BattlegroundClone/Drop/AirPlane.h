@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -17,7 +15,29 @@ class BATTLEGROUNDCLONE_API AAirPlane : public AActor
 public:	
 	AAirPlane();
 	virtual void Tick(float DeltaSeconds) override;
-
+	
+	/*
+	출발 & 도착 지점
+	*/
+	UFUNCTION(BlueprintPure, Category = "Flight")
+	FVector GetFlightStart() const { return StartPoint; }
+	
+	/*
+	현재 Yaw
+	*/
+	UFUNCTION(BlueprintPure, Category = "Flight")
+	FVector GetFlightEnd() const { return EndPoint; }
+	
+	/*
+	속도 조회
+	*/
+	UFUNCTION(BlueprintPure, Category = "Flight")
+	FVector GetPlaneVelocity() const
+	{
+		const FVector Delta = EndPoint - StartPoint;
+		return Delta.GetSafeNormal() * (Delta.Size() / FMath::Max(FlightDuration, 1.f));
+	}
+	
 protected:
 	virtual void BeginPlay() override;
 	
