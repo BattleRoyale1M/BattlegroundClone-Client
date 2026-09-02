@@ -18,8 +18,6 @@ AAirPlane::AAirPlane()
 	Propeller->SetupAttachment(BodyMesh);
 	Propeller->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 }
 
 void AAirPlane::BeginPlay()
