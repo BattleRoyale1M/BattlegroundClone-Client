@@ -2,6 +2,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 
+#include "Character/DropCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+
 
 AAirPlane::AAirPlane()
 {
@@ -17,6 +21,11 @@ AAirPlane::AAirPlane()
 	Propeller = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Propeller"));
 	Propeller->SetupAttachment(BodyMesh);
 	Propeller->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	SeatPoint = CreateDefaultSubobject<USceneComponent>(TEXT("SeatPoint"));
+	SeatPoint->SetupAttachment(RootScene);
+	SeatPoint->SetRelativeLocation(FVector(-200.f, 0.f, -60.f)); // 에디터에서 위치 조정
+
 
 }
 
@@ -38,6 +47,14 @@ void AAirPlane::BeginPlay()
 	{
 		BodyMesh->SetRelativeRotation(MeshRotationOffset);
 	}
+	
+	GetWorldTimerManager().SetTimerForNextTick([this]()
+	{
+		if (ADropCharacter* Player = Cast<ADropCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+		{
+			BoardPassenger(Player);
+		}
+	});
 	
 }
 
@@ -64,3 +81,10 @@ void AAirPlane::Tick(float DeltaSeconds)
 	}
 }
 
+void AAirPlane::BoardPassenger(ADropCharacter* Who)
+{
+	if (Who && SeatPoint)
+	{
+		Who->EnterPlane(this, SeatPoint);
+	}
+}

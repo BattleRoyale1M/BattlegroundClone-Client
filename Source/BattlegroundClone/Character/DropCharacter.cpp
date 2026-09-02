@@ -1,16 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Character/DropCharacter.h"
+#include "Drop/AirPlane.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/LocalPlayer.h"
+#include "Components/SkeletalMeshComponent.h"
 
 ADropCharacter::ADropCharacter()
 {
@@ -158,4 +159,34 @@ void ADropCharacter::SetDropState(EDropState NewState)
 		MoveComp->SetMovementMode(MOVE_Walking);
 		break;
 	}
+	
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp -> SetVisibility(NewState != EDropState::InPlane);
+	}
+}
+
+void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
+{
+	if (!Plane || !Seat)
+	{
+		return;
+	}
+	BoardedPlane = Plane;
+	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	SetDropState(EDropState::InPlane);
+	
+	if (AController* C = GetController())
+	{
+		C->SetControlRotation(FRotator(-10.f, Plane->GetHeadingYaw(), 0.f));
+	}
+	
+	/*
+	비행기 뒤로 카메라 세팅 
+	*/
+	if (CameraBoom)
+	{
+		CameraBoom->TargetArmLength = 900.f;
+	}
+	
 }

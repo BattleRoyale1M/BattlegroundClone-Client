@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,6 +10,8 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class AAirPlane;
+class USceneComponent;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -30,6 +30,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Drop")
 	void SetDropState(EDropState NewState);
+	
+	/*
+	비행기 좌석에 탑승
+	*/
+	void EnterPlane(AAirPlane* Plane, USceneComponent* Seat);
 
 protected:
 	virtual void BeginPlay() override;
@@ -58,6 +63,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> JumpAction;
+	
+	/*
+	현재 탑승 중인 비행기 
+	*/
+	UPROPERTY()
+	TObjectPtr<AAirPlane> BoardedPlane;
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);

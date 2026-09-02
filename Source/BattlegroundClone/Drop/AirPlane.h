@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "AirPlane.generated.h"
 
+class ADropCharacter;
+
 class UStaticMeshComponent;
 class USceneComponent;
 
@@ -28,6 +30,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Flight")
 	FVector GetFlightEnd() const { return EndPoint; }
 	
+	UFUNCTION(BlueprintPure, Category = "Flight")
+	float GetHeadingYaw() const { return GetActorRotation().Yaw; }
+	
 	/*
 	속도 조회
 	*/
@@ -37,6 +42,12 @@ public:
 		const FVector Delta = EndPoint - StartPoint;
 		return Delta.GetSafeNormal() * (Delta.Size() / FMath::Max(FlightDuration, 1.f));
 	}
+	
+	/*
+	이 캐릭터를 좌석(SeatPoint)에 태운다. 
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Flight")
+	void BoardPassenger(ADropCharacter* Who);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -95,6 +106,9 @@ protected:
 	*/
 	UPROPERTY(EditAnywhere, Category = "Flight")
 	bool bDestroyOnArrival = true;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Plane")
+	TObjectPtr<USceneComponent> SeatPoint;
 
 private:
 	float Elapsed = 0.f;
