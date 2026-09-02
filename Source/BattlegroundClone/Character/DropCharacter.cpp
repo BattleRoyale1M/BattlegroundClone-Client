@@ -112,3 +112,50 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	AddControllerYawInput(Axis.X);
 	AddControllerPitchInput(Axis.Y);
 }
+
+void ADropCharacter::SetDropState(EDropState NewState)
+{
+	if (DropState == NewState)
+	{
+		return;
+	}
+	
+	DropState = NewState;
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (!MoveComp)
+	{
+		return;
+	}
+	switch (NewState)
+	{
+	case EDropState::InPlane:
+		MoveComp -> DisableMovement();
+		break;
+		
+	case EDropState::Freefall:
+		MoveComp -> SetMovementMode(MOVE_Falling);
+		MoveComp -> GravityScale = 0.f;
+		MoveComp -> AirControl = 1.f;
+		MoveComp -> bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true; 
+		break;
+		
+	case EDropState::Parachuting:
+		MoveComp -> SetMovementMode(MOVE_Falling);
+		MoveComp -> GravityScale = 0.f;
+		MoveComp -> AirControl = 1.f;
+		MoveComp->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+		break;
+		
+	case EDropState::Ground:
+	default:
+		//  
+		MoveComp->GravityScale = 1.f;
+		MoveComp->AirControl = 0.35f;
+		MoveComp->bOrientRotationToMovement = true;
+		bUseControllerRotationYaw = false;
+		MoveComp->SetMovementMode(MOVE_Walking);
+		break;
+	}
+}

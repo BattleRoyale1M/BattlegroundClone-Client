@@ -27,6 +27,9 @@ public:
 	/** Current phase of the jump -> freefall -> parachute flow. Drives movement params + AnimBP. */
 	UPROPERTY(BlueprintReadOnly, Category = "Drop")
 	EDropState DropState = EDropState::Ground;
+	
+	UFUNCTION(BlueprintCallable, Category = "Drop")
+	void SetDropState(EDropState NewState);
 
 protected:
 	virtual void BeginPlay() override;
