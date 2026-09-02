@@ -1,4 +1,3 @@
-// LobbyGameMode.h
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
@@ -9,6 +8,7 @@ class BATTLEGROUNDCLONE_API ALobbyGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
+	ALobbyGameMode();
 	virtual void BeginPlay() override;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Match") float CountdownSeconds = 5.f;
