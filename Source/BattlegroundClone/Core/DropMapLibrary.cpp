@@ -21,10 +21,11 @@ FVector UDropMapLibrary::NormalizedToWorld(FVector2D Normalized, FVector2D World
 
 FVector2D UDropMapLibrary::NormalizedToWidget(FVector2D Normalized, FVector2D WidgetSize, bool bFlipY)
 {
+	const double Y = bFlipY ? (1.0 - Normalized.Y) : Normalized.Y;
 	return FVector2D
 	(
 		Normalized.X * WidgetSize.X,
-		(bFlipY ? (1.f - Normalized.Y) : Normalized.Y)
+		Y*WidgetSize.Y
 	);
 }
 
