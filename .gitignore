@@ -3,6 +3,9 @@ Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
+# Packaged / staged builds
+/Package/
+Packaged/
 # IDE
 .vs/
 .idea/
