@@ -29,7 +29,7 @@ void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels
 	OutMarkerPos = UDropMapLibrary::NormalizedToWidget(FVector2D(NormMarker.Y, NormMarker.X), MapSize, true);
 }
 
-void ADropPlayerController::GetWorldMapView(float MapPixels, FVector2D& OutSelfPos, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos)
+void ADropPlayerController::GetWorldMapView(float MapPixels, FVector2D& OutSelfPos, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos) const
 {
 	const FVector2D MapSize(MapPixels, MapPixels);
 	const FVector SelfLoc = GetSelfMapLocation();

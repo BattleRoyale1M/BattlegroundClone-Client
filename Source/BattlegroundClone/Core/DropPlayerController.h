@@ -50,7 +50,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void GetWorldMapView(float MapPixels, 
 		FVector2D& OutSelfPos, float& OutSelfAngle, 
-		bool& bMarkerValid, FVector2D& OutMarkerPos);
+		bool& bMarkerValid, FVector2D& OutMarkerPos) const;
 
 protected:
 	virtual void BeginPlay() override;
