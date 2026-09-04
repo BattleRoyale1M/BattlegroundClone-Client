@@ -28,3 +28,14 @@ void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels
 	const FVector2D NormMarker = GetMarkerNormalized(bMarkerValid);
 	OutMarkerPos = UDropMapLibrary::NormalizedToWidget(FVector2D(NormMarker.Y, NormMarker.X), MapSize, true);
 }
+
+void ADropPlayerController::GetWorldMapView(float MapPixels, FVector2D& OutSelfPos, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos)
+{
+	const FVector2D MapSize(MapPixels, MapPixels);
+	const FVector SelfLoc = GetSelfMapLocation();
+	const FVector2D NormSelf = UDropMapLibrary::WorldToNormalized(SelfLoc, WorldMin, WorldMax);
+	OutSelfPos = UDropMapLibrary::NormalizedToWidget(FVector2D(NormSelf.Y, NormSelf.X), MapSize, true);
+	OutSelfAngle = PlayerCameraManager ? PlayerCameraManager->GetCameraRotation().Yaw : 0.f;
+	const FVector2D NormMarker = GetMarkerNormalized(bMarkerValid);
+	OutMarkerPos = UDropMapLibrary::NormalizedToWidget(FVector2D(NormMarker.Y, NormMarker.X), MapSize, true);
+}

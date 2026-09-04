@@ -46,6 +46,11 @@ public:
 	void GetMinimapView(float MapPixels, float ViewportPixels,
 		FVector2D& OutPan, float& OutSelfAngle,
 		bool& bMarkerValid, FVector2D& OutMarkerPos) const;
+	
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void GetWorldMapView(float MapPixels, 
+		FVector2D& OutSelfPos, float& OutSelfAngle, 
+		bool& bMarkerValid, FVector2D& OutMarkerPos);
 
 protected:
 	virtual void BeginPlay() override;
