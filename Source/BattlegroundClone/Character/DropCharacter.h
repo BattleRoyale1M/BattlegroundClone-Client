@@ -35,6 +35,23 @@ public:
 	비행기 좌석에 탑승
 	*/
 	void EnterPlane(AAirPlane* Plane, USceneComponent* Seat);
+	
+	/*
+	낙하산
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Drop")
+	void BeginFreefall();
+	
+	UFUNCTION(BlueprintCallable, Category = "Drop")
+	void DeployParachute();
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Drop")
+	void OnDropStateChanged(EDropState NewState, EDropState OldState);
+	
+	float GroundDistance() const;
+	void  UpdateFreefall(float Dt);
+	void  UpdateParachute(float Dt);
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -76,6 +93,35 @@ protected:
 	*/
 	UPROPERTY()
 	TObjectPtr<AAirPlane> BoardedPlane;
+	
+	/*
+	낙하산
+	*/
+	void OnJumpPressed();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
+	float FreefallMinSpeed = 3600.f; // 슈가글라이더 자세
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
+	float FreefallMaxSpeed = 6400.f; // 수직자세
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
+	float FreefallAccel = 2.5f; // 속도
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
+	float AutoDeployHeight = 12000.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteDescentSpeed = 600.f; // 하강
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteForwardSpeed = 1800.f; // 전진
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float LandHeight = 80.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float DefaultArmLength = 400.f;
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);
