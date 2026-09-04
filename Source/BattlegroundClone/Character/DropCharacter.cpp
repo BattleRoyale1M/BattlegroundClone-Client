@@ -238,3 +238,22 @@ void ADropCharacter::DeployParachute()
 	SetDropState(EDropState::Parachuting);
 	// TODO: (메시 준비되면)
 }
+
+void ADropCharacter::UpdateFreefall(float Dt)
+{
+	UCharacterMovementComponent* M = GetCharacterMovement();
+	if (!M) return;
+	
+	/*
+	자유낙하(Freefall) 속도를 가변적으로 조절
+	*/
+	const FRotator Ctrl = GetControlRotation(); // pawn 내장 함수
+	const FVector Aim = Ctrl.Vector();
+	const float PitchDeg = FRotator::NormalizeAxis(Ctrl.Pitch);
+	const float DiveFrac = FMath::GetMappedRangeValueUnclamped(FVector2D(-10.f, -70.f), FVector2D(0.f, 1.f), PitchDeg);
+	const float Speed = FMath::Lerp(FreefallMinSpeed, FreefallMaxSpeed, DiveFrac);
+	
+	FVector Desired = Aim * Speed;
+	Desired.Z = FMath::Min(Desired.Z, -FreefallMinSpeed);
+	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel);
+}
