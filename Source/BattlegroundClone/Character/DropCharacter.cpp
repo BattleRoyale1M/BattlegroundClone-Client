@@ -11,7 +11,9 @@
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 
 ADropCharacter::ADropCharacter()
 {
@@ -256,4 +258,43 @@ void ADropCharacter::UpdateFreefall(float Dt)
 	FVector Desired = Aim * Speed; // camera가 바라보는 방향 벡터 * 구현 낙하 속도
 	Desired.Z = FMath::Min(Desired.Z, -FreefallMinSpeed); // UE에서 Z축은 위가 (+), 아래가 (-)
 	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel);
+}
+
+void ADropCharacter::UpdateParachute(float Dt)
+{
+	UCharacterMovementComponent* M = GetCharacterMovement();
+	if (!M) return;
+
+	/*
+	낙하산 전개 상태: 일정한 하강 속도 + 바라보는 방향으로 전진
+	*/
+	const FRotator YawRot(0.f, GetControlRotation().Yaw, 0.f);
+	const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+
+	FVector Desired = Forward * ParachuteForwardSpeed;
+	Desired.Z = -ParachuteDescentSpeed;
+
+	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, 2.f);
+}
+
+float ADropCharacter::GroundDistance() const
+{
+	const UWorld* World = GetWorld();
+	if (!World) return TNumericLimits<float>::Max();
+
+	const FVector Start = GetActorLocation();
+	const FVector End = Start - FVector(0.f, 0.f, 1000000.f);
+
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GroundDistance), /*bTraceComplex=*/false, this);
+
+	if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		// 캡슐 하단(발끝) 기준 거리로 보정
+		const float HalfHeight = GetCapsuleComponent()
+			? GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
+			: 0.f;
+		return FMath::Max(0.f, Hit.Distance - HalfHeight);
+	}
+	return TNumericLimits<float>::Max();
 }
