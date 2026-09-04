@@ -57,9 +57,50 @@ void ADropCharacter::BeginPlay()
 	}
 }
 
+/*
+낙하산
+*/
+void ADropCharacter::BeginFreefall()
+{
+	if (DropState != EDropState::InPlane) return;
+
+	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	BoardedPlane = nullptr;
+
+	if (CameraBoom)
+	{
+		CameraBoom->TargetArmLength = DefaultArmLength;
+		CameraBoom->SocketOffset    = FVector::ZeroVector;
+		CameraBoom->bDoCollisionTest = true;
+	}
+
+	SetDropState(EDropState::Freefall);
+
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
+	{
+		FVector Dir = GetControlRotation().Vector();
+		Dir.Z = FMath::Min(Dir.Z, -0.4f);
+		M->Velocity = Dir.GetSafeNormal() * FreefallMinSpeed;
+	}
+}
+
 void ADropCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	switch (DropState)
+	{
+	case EDropState::Freefall:
+		UpdateFreefall(DeltaTime);
+		if (GroundDistance() <= AutoDeployHeight) DeployParachute();
+		break;
+	case EDropState::Parachuting:
+		 UpdateParachute(DeltaTime);
+		if (GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
+		break;
+	default:
+		break;
+	}
 }
 
 void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -114,6 +155,9 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(Axis.Y);
 }
 
+/*
+낙하산
+*/
 void ADropCharacter::SetDropState(EDropState NewState)
 {
 	if (DropState == NewState)
@@ -121,43 +165,35 @@ void ADropCharacter::SetDropState(EDropState NewState)
 		return;
 	}
 	
+	const EDropState Old = DropState;
 	DropState = NewState;
-	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
-	if (!MoveComp)
+	
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
-		return;
-	}
-	switch (NewState)
-	{
-	case EDropState::InPlane:
-		MoveComp -> DisableMovement();
-		break;
-		
-	case EDropState::Freefall:
-		MoveComp -> SetMovementMode(MOVE_Falling);
-		MoveComp -> GravityScale = 0.f;
-		MoveComp -> AirControl = 1.f;
-		MoveComp -> bOrientRotationToMovement = false;
-		bUseControllerRotationYaw = true; 
-		break;
-		
-	case EDropState::Parachuting:
-		MoveComp -> SetMovementMode(MOVE_Falling);
-		MoveComp -> GravityScale = 0.f;
-		MoveComp -> AirControl = 1.f;
-		MoveComp->bOrientRotationToMovement = false;
-		bUseControllerRotationYaw = true;
-		break;
-		
-	case EDropState::Ground:
-	default:
-		//  
-		MoveComp->GravityScale = 1.f;
-		MoveComp->AirControl = 0.35f;
-		MoveComp->bOrientRotationToMovement = true;
-		bUseControllerRotationYaw = false;
-		MoveComp->SetMovementMode(MOVE_Walking);
-		break;
+		switch (NewState)
+		{
+		case EDropState::InPlane:
+			M->DisableMovement();
+			break;
+
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
+			M->GravityScale = 0.f;
+			M->AirControl = 1.f;
+			M->bOrientRotationToMovement = false;
+			bUseControllerRotationYaw = true;
+			break;
+
+		case EDropState::Ground:
+		default:
+			M->GravityScale = 1.f;
+			M->AirControl = 0.35f;
+			M->bOrientRotationToMovement = true;
+			bUseControllerRotationYaw = false;
+			M->SetMovementMode(MOVE_Walking);
+			break;
+		}
 	}
 	
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
@@ -191,4 +227,14 @@ void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
 		CameraBoom->bDoCollisionTest = false;
 	}
 	
+}
+
+/*
+낙하산
+*/
+void ADropCharacter::DeployParachute()
+{
+	if (DropState != EDropState::Freefall) return;
+	SetDropState(EDropState::Parachuting);
+	// TODO: (메시 준비되면)
 }
