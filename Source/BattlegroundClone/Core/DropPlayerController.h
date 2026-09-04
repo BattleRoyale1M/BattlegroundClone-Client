@@ -51,6 +51,10 @@ public:
 	void GetWorldMapView(float MapPixels, 
 		FVector2D& OutSelfPos, float& OutSelfAngle, 
 		bool& bMarkerValid, FVector2D& OutMarkerPos) const;
+	
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void GetFlightPathLine(float MapPixels, FVector2D& OutMid, float& OutLength,
+						   float& OutAngle, bool& bHasPath) const;
 
 protected:
 	virtual void BeginPlay() override;
