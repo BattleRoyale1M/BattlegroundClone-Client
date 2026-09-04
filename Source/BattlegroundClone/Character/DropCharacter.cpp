@@ -253,7 +253,7 @@ void ADropCharacter::UpdateFreefall(float Dt)
 	const float DiveFrac = FMath::GetMappedRangeValueUnclamped(FVector2D(-10.f, -70.f), FVector2D(0.f, 1.f), PitchDeg);
 	const float Speed = FMath::Lerp(FreefallMinSpeed, FreefallMaxSpeed, DiveFrac);
 	
-	FVector Desired = Aim * Speed;
-	Desired.Z = FMath::Min(Desired.Z, -FreefallMinSpeed);
+	FVector Desired = Aim * Speed; // camera가 바라보는 방향 벡터 * 구현 낙하 속도
+	Desired.Z = FMath::Min(Desired.Z, -FreefallMinSpeed); // UE에서 Z축은 위가 (+), 아래가 (-)
 	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel);
 }
