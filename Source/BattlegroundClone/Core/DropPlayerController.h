@@ -41,6 +41,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void ToggleWorldMap();
+	
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void GetMinimapView(float MapPixels, float ViewportPixels,
+		FVector2D& OutPan, float& OutSelfAngle,
+		bool& bMarkerValid, FVector2D& OutMarkerPos) const;
 
 protected:
 	virtual void BeginPlay() override;
