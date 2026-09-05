@@ -2,6 +2,8 @@
 #include "Drop/AirPlane.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
@@ -130,6 +132,10 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(JumpAction, ETriggerEvent::Started,   this, &ADropCharacter::OnJumpPressed);
 		EIC->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	}
+	if (ParachuteAction)
+	{
+		EIC->BindAction(ParachuteAction, ETriggerEvent::Started, this, &ADropCharacter::OnParachutePressed);
+	}
 }
 
 void ADropCharacter::OnJumpPressed()
@@ -142,6 +148,14 @@ void ADropCharacter::OnJumpPressed()
 	else
 	{
 		Jump();
+	}
+}
+
+void ADropCharacter::OnParachutePressed()
+{
+	if (DropState == EDropState::Freefall)
+	{
+		DeployParachute();
 	}
 }
 
@@ -213,6 +227,14 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	{
 		MeshComp -> SetVisibility(NewState != EDropState::InPlane);
 	}
+	if (NewState == EDropState::Freefall)
+	{
+		ShowParachutePrompt();
+	}
+	else
+	{
+		HideParachutePrompt();
+	}
 
 	OnDropStateChanged(NewState, Old);
 }
@@ -252,6 +274,26 @@ void ADropCharacter::DeployParachute()
 	if (DropState != EDropState::Freefall) return;
 	SetDropState(EDropState::Parachuting);
 	// TODO: (메시 준비되면)
+}
+
+void ADropCharacter::ShowParachutePrompt()
+{
+	if (!ParachutePromptWidgetClass || ParachutePromptWidget) return;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		ParachutePromptWidget = CreateWidget<UUserWidget>(PC, ParachutePromptWidgetClass);
+		if (ParachutePromptWidget)
+		{
+			ParachutePromptWidget->AddToViewport();
+		}
+	}
+}
+
+void ADropCharacter::HideParachutePrompt()
+{
+	if (!ParachutePromptWidget) return;
+	ParachutePromptWidget->RemoveFromParent();
+	ParachutePromptWidget = nullptr;
 }
 
 void ADropCharacter::UpdateFreefall(float Dt)

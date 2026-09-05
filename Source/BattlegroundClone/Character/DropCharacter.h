@@ -116,7 +116,7 @@ protected:
 	float FreefallAccel = 2.5f; // 속도
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
-	float AutoDeployHeight = 12000.f;
+	float AutoDeployHeight = 1000.f; // 자유낙하 중에 플레이어가 F를 안 눌러도 자동으로 낙하산이 펴지는 고도
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float ParachuteDescentSpeed = 600.f; // 하강
@@ -139,7 +139,7 @@ protected:
 	
 	// --- Parachute prompt widget ----------------------------------------
 	UPROPERTY(Transient)
-	TObjectPtr<UUserWidget> ParachutePromptWIdget;
+	TObjectPtr<UUserWidget> ParachutePromptWidget;
 	void ShowParachutePrompt();
 	void HideParachutePrompt();
 	
