@@ -66,11 +66,13 @@ protected:
 	TObjectPtr<UCameraComponent> FollowCamera;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
-	float InPlaneArmLength = 3000.f;
+	float InPlaneArmLength = 3500.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
-	FVector InPlaneSocketOffset = FVector(0.f, 0.f, 1000.f);
+	FVector InPlaneSocketOffset = FVector(0.f, 500.f, 350.f);
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
 	float InPlaneCameraPitch = -22.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
+	float InPlaneYawOffset = -30.f;
 
 	// --- Input (assign these in BP_DropCharacter defaults) --------------
 	UPROPERTY(EditDefaultsOnly, Category = "Input")

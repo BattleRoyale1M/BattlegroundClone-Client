@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Character/DropCharacter.h"
 #include "Drop/AirPlane.h"
 
@@ -216,7 +214,7 @@ void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
 	
 	if (AController* C = GetController())
 	{
-		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw(), 0.f));
+		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw() + InPlaneYawOffset, 0.f));
 	}
 	
 	/*
