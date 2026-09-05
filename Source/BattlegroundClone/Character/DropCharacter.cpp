@@ -127,8 +127,21 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	}
 	if (JumpAction)
 	{
-		EIC->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EIC->BindAction(JumpAction, ETriggerEvent::Started,   this, &ADropCharacter::OnJumpPressed);
 		EIC->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+	}
+}
+
+void ADropCharacter::OnJumpPressed()
+{
+	
+	if (DropState == EDropState::InPlane)
+	{
+		BeginFreefall();
+	}
+	else
+	{
+		Jump();
 	}
 }
 
@@ -200,6 +213,8 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	{
 		MeshComp -> SetVisibility(NewState != EDropState::InPlane);
 	}
+
+	OnDropStateChanged(NewState, Old);
 }
 
 void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
@@ -281,17 +296,16 @@ float ADropCharacter::GroundDistance() const
 	if (!World) return TNumericLimits<float>::Max();
 
 	const FVector Start = GetActorLocation();
-	const FVector End = Start - FVector(0.f, 0.f, 1000000.f);
+	const FVector End = Start - FVector(0.f, 0.f, 200000.f);
 
 	FHitResult Hit;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(GroundDistance), /*bTraceComplex=*/false, this);
+	FCollisionQueryParams P(SCENE_QUERY_STAT(DropGround), /*bTraceComplex=*/false, this);
 
-	if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, P))
 	{
-		// 캡슐 하단(발끝) 기준 거리로 보정
 		const float HalfHeight = GetCapsuleComponent()
 			? GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
-			: 0.f;
+			: 88.f;
 		return FMath::Max(0.f, Hit.Distance - HalfHeight);
 	}
 	return TNumericLimits<float>::Max();
