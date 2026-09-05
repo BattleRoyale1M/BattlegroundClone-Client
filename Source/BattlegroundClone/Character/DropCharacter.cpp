@@ -279,6 +279,7 @@ void ADropCharacter::DeployParachute()
 void ADropCharacter::ShowParachutePrompt()
 {
 	if (!ParachutePromptWidgetClass || ParachutePromptWidget) return;
+	if (!IsLocallyControlled()) return; // network
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		ParachutePromptWidget = CreateWidget<UUserWidget>(PC, ParachutePromptWidgetClass);

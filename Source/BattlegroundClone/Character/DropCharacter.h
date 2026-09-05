@@ -12,7 +12,7 @@ class UInputAction;
 struct FInputActionValue;
 class AAirPlane;
 class USceneComponent;
-class UserWidger;
+class UserWidget;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
