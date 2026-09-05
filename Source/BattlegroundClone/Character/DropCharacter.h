@@ -12,6 +12,7 @@ class UInputAction;
 struct FInputActionValue;
 class AAirPlane;
 class USceneComponent;
+class UserWidger;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -90,6 +91,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> JumpAction;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> ParachuteAction;
+	
 	/*
 	현재 탑승 중인 비행기 
 	*/
@@ -100,6 +104,7 @@ protected:
 	낙하산
 	*/
 	void OnJumpPressed();
+	void OnParachutePressed();
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
 	float FreefallMinSpeed = 3600.f; // 슈가글라이더 자세
@@ -122,10 +127,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float LandHeight = 80.f;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	TSubclassOf<UUserWidget> ParachutePromptWidgetClass;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	float DefaultArmLength = 400.f;
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	
+	// --- Parachute prompt widget ----------------------------------------
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> ParachutePromptWIdget;
+	void ShowParachutePrompt();
+	void HideParachutePrompt();
+	
 };
