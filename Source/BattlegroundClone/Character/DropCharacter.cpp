@@ -14,6 +14,9 @@
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/ConstructorHelpers.h"
 
 ADropCharacter::ADropCharacter()
 {
@@ -40,6 +43,23 @@ ADropCharacter::ADropCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; // camera is fixed on the boom
+
+	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParachuteMesh"));
+	ParachuteMesh->SetupAttachment(GetMesh(), ParachuteAttachSocket);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ParachuteMeshAsset(
+		TEXT("/Script/Engine.StaticMesh'/Game/Fab/Parachute/Parachute.Parachute'"));
+	if (ParachuteMeshAsset.Succeeded())
+	{
+		ParachuteMesh->SetStaticMesh(ParachuteMeshAsset.Object);
+	}
+	ParachuteMesh->SetRelativeLocation(ParachuteRelativeLocation);
+	ParachuteMesh->SetRelativeRotation(ParachuteRelativeRotation);
+	ParachuteMesh->SetRelativeScale3D(FVector(0.01f));           // 접힘
+	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ParachuteMesh->SetCollisionProfileName(TEXT("NoCollision"));
+	ParachuteMesh->SetGenerateOverlapEvents(false);
+	ParachuteMesh->SetVisibility(false);
+	ParachuteMesh->SetHiddenInGame(true);
 }
 
 void ADropCharacter::BeginPlay()
@@ -102,6 +122,10 @@ void ADropCharacter::Tick(float DeltaTime)
 		break;
 	default:
 		break;
+	}
+	if (ParachuteDeployElapsed >= 0.f)
+	{
+		UpdateParachuteVisual(DeltaTime);
 	}
 }
 
@@ -235,6 +259,15 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	{
 		HideParachutePrompt();
 	}
+	// 낙하산 생김새 분기
+	if (NewState == EDropState::Parachuting)
+	{
+		ShowParachute();
+	}
+	else if (Old == EDropState::Parachuting)
+	{
+		HideParachute();
+	}
 
 	OnDropStateChanged(NewState, Old);
 }
@@ -273,7 +306,6 @@ void ADropCharacter::DeployParachute()
 {
 	if (DropState != EDropState::Freefall) return;
 	SetDropState(EDropState::Parachuting);
-	// TODO: (메시 준비되면)
 }
 
 void ADropCharacter::ShowParachutePrompt()
@@ -352,4 +384,72 @@ float ADropCharacter::GroundDistance() const
 		return FMath::Max(0.f, Hit.Distance - HalfHeight);
 	}
 	return TNumericLimits<float>::Max();
+}
+
+void ADropCharacter::ShowParachute()
+{
+	if (!ParachuteMesh) return;
+	ParachuteDeployElapsed = 0.f;
+	LastYawForLean = GetActorRotation().Yaw;
+	ParachuteMesh->SetRelativeLocation(ParachuteRelativeLocation);
+	ParachuteMesh->SetRelativeRotation(ParachuteRelativeRotation);
+	ParachuteMesh->SetRelativeScale3D(FVector(0.01f));
+	ParachuteMesh->SetHiddenInGame(false, true);
+	ParachuteMesh->SetVisibility(true, true);
+}
+
+void ADropCharacter::HideParachute()
+{
+	if (!ParachuteMesh) return;
+	ParachuteDeployElapsed = -1.f;
+	ParachuteMesh->SetVisibility(false, true);
+	ParachuteMesh->SetHiddenInGame(true, true);
+}
+
+void ADropCharacter::UpdateParachuteVisual(float Dt)
+{
+	if (!ParachuteMesh) return;
+	
+	/*
+	펼침 : 0 -> ParachuteOpenScale 로 ParachuteDeployTime 동안 ease-out
+	*/
+	ParachuteDeployElapsed += Dt;
+	const float OpenAlpha = (ParachuteDeployTime > 0.f)
+		? FMath::Clamp(ParachuteDeployElapsed / ParachuteDeployTime, 0.f, 1.f)
+		:1.f;
+	const float Eased = 1.f -FMath::Square(1.f - OpenAlpha);
+	const float Scale = FMath::Max(ParachuteOpenScale*Eased, 0.01f);
+	ParachuteMesh -> SetRelativeScale3D(FVector(Scale));
+	
+	// 단위 시간당 회전하는 각도의 크기
+	const float Yaw = GetActorRotation().Yaw;
+	const float YawRate = FMath::FindDeltaAngleDegrees(LastYawForLean, Yaw) // -180°~180° 경계 영역에서의 회전각 오차방지
+		/ FMath::Max(Dt, KINDA_SMALL_NUMBER);
+	LastYawForLean = Yaw;
+	
+	FRotator Rot = ParachuteRelativeRotation;
+	const float SwayBlend = FMath::Clamp((OpenAlpha - 0.5f) * 2.f, 0.f, 1.f);
+	if (SwayBlend > 0.f)
+	{
+		const float T = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+		// FMath::Sin(...) * ParachuteSwayAngle : 바람 흔들림
+		Rot.Pitch += FMath::Sin(T*ParachuteSwaySpeed)*ParachuteSwayAngle*SwayBlend;
+		Rot.Roll += FMath::Sin(T * ParachuteSwaySpeed * 0.73f + 1.3f)
+			* ParachuteSwayAngle * 0.6f * SwayBlend;
+		if (const UCharacterMovementComponent* M = GetCharacterMovement())
+		{
+			const FVector LocalVel =
+				GetActorTransform().InverseTransformVectorNoScale(M->Velocity);
+			const float Denom = FMath::Max(ParachuteForwardSpeed, 1.f);
+			const float LeanPitch = FMath::Clamp(
+				-LocalVel.X / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
+			const float LeanRoll = FMath::Clamp(
+				 LocalVel.Y / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
+			Rot.Pitch += LeanPitch * SwayBlend;
+			Rot.Roll  += LeanRoll  * SwayBlend;
+		}
+		Rot.Roll += FMath::Clamp(
+			YawRate * ParachuteTurnLeanScale, -ParachuteMaxLean, ParachuteMaxLean) * SwayBlend;
+	}
+	ParachuteMesh->SetRelativeRotation(Rot);
 }

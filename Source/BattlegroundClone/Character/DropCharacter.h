@@ -7,6 +7,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UStaticMeshComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
@@ -61,6 +62,8 @@ protected:
 	/** Third person camera boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Drop|Parachute", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> ParachuteMesh;
 
 	/** Follow camera on the end of the boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -130,6 +133,35 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	TSubclassOf<UUserWidget> ParachutePromptWidgetClass;
 	
+	// --- 낙하산 캐노피 연출 --------------------------------------------
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	FName ParachuteAttachSocket = TEXT("spine_05");
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	FVector ParachuteRelativeLocation = FVector(-20.f, 0.f, 40.f);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, -90.f);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteOpenScale = 60.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteDeployTime = 1.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteSwayAngle = 4.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteSwaySpeed = 1.5f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteLeanScale = 12.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteMaxLean = 18.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
+	float ParachuteTurnLeanScale = 0.05f;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	float DefaultArmLength = 400.f;
 
@@ -142,5 +174,12 @@ protected:
 	TObjectPtr<UUserWidget> ParachutePromptWidget;
 	void ShowParachutePrompt();
 	void HideParachutePrompt();
+	
+	// --- 낙하산 캐노피 상태 ------------------------------------------
+	float ParachuteDeployElapsed = -1.f;
+	float LastYawForLean = 0.f;
+	void ShowParachute();
+	void HideParachute();
+	void UpdateParachuteVisual(float Dt);
 	
 };
