@@ -17,7 +17,7 @@ public class BattlegroundClone : ModuleRules
 			"UMG"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"BattlegroundClone"
