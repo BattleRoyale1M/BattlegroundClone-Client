@@ -251,6 +251,28 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	{
 		MeshComp -> SetVisibility(NewState != EDropState::InPlane);
 	}
+
+	// 낙하/낙하산 중엔 카메라를 뒤로 빼서 캐노피까지 보이게, 착지 시 원상복귀
+	if (CameraBoom)
+	{
+		switch (NewState)
+		{
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			CameraBoom->TargetArmLength   = DescentArmLength;
+			CameraBoom->SocketOffset      = DescentSocketOffset;
+			CameraBoom->bDoCollisionTest  = false;
+			break;
+		case EDropState::Ground:
+			CameraBoom->TargetArmLength   = DefaultArmLength;
+			CameraBoom->SocketOffset      = FVector::ZeroVector;
+			CameraBoom->bDoCollisionTest  = true;
+			break;
+		default:
+			break;
+		}
+	}
+
 	if (NewState == EDropState::Freefall)
 	{
 		ShowParachutePrompt();

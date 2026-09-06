@@ -119,7 +119,7 @@ protected:
 	float FreefallAccel = 2.5f; // 속도
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
-	float AutoDeployHeight = 1000.f; // 자유낙하 중에 플레이어가 F를 안 눌러도 자동으로 낙하산이 펴지는 고도
+	float AutoDeployHeight = 8000.f; // 자유낙하 중에 플레이어가 F를 안 눌러도 자동으로 낙하산이 펴지는 고도
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float ParachuteDescentSpeed = 600.f; // 하강
@@ -139,12 +139,14 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	FVector ParachuteRelativeLocation = FVector(0.f, 0.f, 50.f);
-	
+
+	// Blender에서 정렬하면 추가로 건드리기x
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, 90.f);
-	
+	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, 0.f);
+
+	// SM_Parachute는 Blender에서 실측(~9m) 크기로 맞춰둠 → 1 기준. 크면 0.8, 작으면 1.3
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	float ParachuteOpenScale = 50.f;
+	float ParachuteOpenScale = 1.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float ParachuteDeployTime = 1.0f;
@@ -164,6 +166,12 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	float DefaultArmLength = 400.f;
+
+	// 자유낙하 / 낙하산 중 카메라를 뒤로 빼서 캐노피까지 화면에 담기게
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float DescentArmLength = 1100.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	FVector DescentSocketOffset = FVector(0.f, 0.f, 120.f);
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);
