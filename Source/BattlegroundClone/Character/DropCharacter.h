@@ -142,7 +142,7 @@ protected:
 
 	// Blender에서 정렬하면 추가로 건드리기x
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, 0.f);
+	FRotator ParachuteRelativeRotation = FRotator(0.f, 90.f, 0.f);
 
 	// SM_Parachute는 Blender에서 실측(~9m) 크기로 맞춰둠 → 1 기준. 크면 0.8, 작으면 1.3
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
