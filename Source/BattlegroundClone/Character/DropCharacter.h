@@ -110,10 +110,10 @@ protected:
 	void OnParachutePressed();
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
-	float FreefallMinSpeed = 3600.f; // 슈가글라이더 자세
+	float FreefallMinSpeed = 6000.f; // 슈가글라이더 자세
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
-	float FreefallMaxSpeed = 6400.f; // 수직자세
+	float FreefallMaxSpeed = 8000.f; // 수직자세
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Freefall")
 	float FreefallAccel = 2.5f; // 속도
@@ -138,13 +138,13 @@ protected:
 	FName ParachuteAttachSocket = TEXT("spine_05");
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	FVector ParachuteRelativeLocation = FVector(-20.f, 0.f, 40.f);
+	FVector ParachuteRelativeLocation = FVector(0.f, 0.f, 50.f);
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, -90.f);
+	FRotator ParachuteRelativeRotation = FRotator(0.f, 0.f, 90.f);
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
-	float ParachuteOpenScale = 60.f;
+	float ParachuteOpenScale = 50.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float ParachuteDeployTime = 1.0f;

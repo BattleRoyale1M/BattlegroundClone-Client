@@ -45,7 +45,7 @@ ADropCharacter::ADropCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // camera is fixed on the boom
 
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParachuteMesh"));
-	ParachuteMesh->SetupAttachment(GetMesh(), ParachuteAttachSocket);
+	ParachuteMesh->SetupAttachment(GetCapsuleComponent());
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ParachuteMeshAsset(
 		TEXT("/Script/Engine.StaticMesh'/Game/Fab/Parachute/SM_Parachute.SM_Parachute'"));
 	if (ParachuteMeshAsset.Succeeded())
@@ -329,23 +329,17 @@ void ADropCharacter::HideParachutePrompt()
 	ParachutePromptWidget = nullptr;
 }
 
+/*
+활강속도 
+*/
 void ADropCharacter::UpdateFreefall(float Dt)
 {
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	if (!M) return;
-	
-	/*
-	자유낙하(Freefall) 속도를 가변적으로 조절
-	*/
-	const FRotator Ctrl = GetControlRotation(); // pawn 내장 함수
-	const FVector Aim = Ctrl.Vector();
-	const float PitchDeg = FRotator::NormalizeAxis(Ctrl.Pitch);
-	const float DiveFrac = FMath::GetMappedRangeValueUnclamped(FVector2D(-10.f, -70.f), FVector2D(0.f, 1.f), PitchDeg);
-	const float Speed = FMath::Lerp(FreefallMinSpeed, FreefallMaxSpeed, DiveFrac);
-	
-	FVector Desired = Aim * Speed; // camera가 바라보는 방향 벡터 * 구현 낙하 속도
-	Desired.Z = FMath::Min(Desired.Z, -FreefallMinSpeed); // UE에서 Z축은 위가 (+), 아래가 (-)
-	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel);
+
+	FVector Desired = GetControlRotation().Vector() * 800.f; // 조작감용 약간의 활강
+	Desired.Z = -FreefallMaxSpeed;                            // 항상 빠르게 수직 낙하
+	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel); // 바람저항
 }
 
 void ADropCharacter::UpdateParachute(float Dt)
