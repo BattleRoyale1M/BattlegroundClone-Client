@@ -12,6 +12,7 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class AAirPlane;
+class AWeaponBase;
 class USceneComponent;
 class UserWidget;
 
@@ -105,36 +106,19 @@ protected:
 	
 	void StartFire();
 	void StopFire();
-	void Fire();
 	void OnReloadPressed();
-	void Reload();
-	void FinishReload();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<AWeaponBase> DefaultWeaponClass;
 	
 	/*
-	무기 기본 데이터 설정
+	무기 붙일 캐릭터 스켈레탈 메시 소켓. 
 	*/
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	int32 MagSize = 30; // 탄창 용량
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float RoundsPerMinute = 600.f; // 연사속도(기본 600RPM = 초당 10발 / 발사 간격 0.1초)
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float ReloadTime = 2.2f; // 재장전 시간
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float WeaponRange = 15000.f; // LineTrace가 도달하는 최대거리
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float WeaponDamage = 25.f; // 데미지
-	
-	int32 CurrentAmmo = 30; // 장전된 탄약 수
-	int32 ReserveAmmo = 90; // 소지한 탄약 수(재장전 시 차감)
-	bool  bReloading  = false; // true일 때 사격 불가
-	bool  bFireHeld   = false; // 연사 시 발사버튼 여부
-	
-	FTimerHandle FireTimerHandle;
-	FTimerHandle ReloadTimerHandle;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FName WeaponAttachSocket = TEXT("hand_r");
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	TObjectPtr<AWeaponBase> EquippedWeapon;
+	void EquipDefaultWeapon();
 	
 	/*
 	현재 탑승 중인 비행기 
