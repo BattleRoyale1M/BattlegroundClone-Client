@@ -16,7 +16,6 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/ConstructorHelpers.h"
