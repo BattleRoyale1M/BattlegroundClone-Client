@@ -12,8 +12,11 @@ AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh")); // .h/TObjectPtr
-	SetRootComponent(WeaponMesh);
+	RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
+	SetRootComponent(RootScene);
+	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	WeaponMesh->SetupAttachment(RootScene);
+	
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	WeaponMesh->SetGenerateOverlapEvents(false);
