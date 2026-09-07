@@ -104,6 +104,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> ReloadAction;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> AimAction;
+	
+	UPROPERTY(BlueprintReadOnly, Category="Combat")
+	bool bIsAiming = false;
+	void StartAim();
+	void StopAim();
+	
 	void StartFire();
 	void StopFire();
 	void OnReloadPressed();

@@ -173,6 +173,11 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EIC->BindAction(ReloadAction, ETriggerEvent::Started, this, &ADropCharacter::OnReloadPressed);
 	}
+	if (AimAction)
+	{
+		EIC->BindAction(AimAction, ETriggerEvent::Started, this, &ADropCharacter::StartAim);
+		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::StopAim);
+	}
 }
 
 void ADropCharacter::OnJumpPressed()
@@ -435,6 +440,20 @@ void ADropCharacter::HideParachute()
 	ParachuteMesh->SetHiddenInGame(true, true);
 }
 
+/*
+Aim
+*/
+void ADropCharacter::StartAim()
+{
+	bIsAiming = true;
+}
+
+void ADropCharacter::StopAim()
+{
+	bIsAiming = false;
+	StopFire();
+}
+
 void ADropCharacter::UpdateParachuteVisual(float Dt)
 {
 	if (!ParachuteMesh) return;
@@ -485,7 +504,7 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
-	if (DropState != EDropState::Ground || !EquippedWeapon)
+	if (DropState != EDropState::Ground || !bIsAiming || !EquippedWeapon)
 	{
 		return;
 	}
@@ -530,5 +549,7 @@ void ADropCharacter::EquipDefaultWeapon()
 			WeaponAttachSocket);
 	}
 }
+
+
 
 
