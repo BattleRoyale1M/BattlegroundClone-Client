@@ -160,6 +160,15 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EIC->BindAction(ParachuteAction, ETriggerEvent::Started, this, &ADropCharacter::OnParachutePressed);
 	}
+	if (FireAction)
+	{
+		EIC->BindAction(FireAction, ETriggerEvent::Started, this, &ADropCharacter::StartFire);
+		EIC->BindAction(FireAction, ETriggerEvent::Completed, this, &ADropCharacter::StopFire);
+	}
+	if (ReloadAction)
+	{
+		EIC->BindAction(ReloadAction, ETriggerEvent::Started, this, &ADropCharacter::OnReloadPressed);
+	}
 }
 
 void ADropCharacter::OnJumpPressed()

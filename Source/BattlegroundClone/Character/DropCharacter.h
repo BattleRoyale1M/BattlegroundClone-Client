@@ -97,6 +97,45 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> ParachuteAction;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> FireAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> ReloadAction;
+	
+	void StartFire();
+	void StopFire();
+	void Fire();
+	void OnReloadPressed();
+	void Reload();
+	void FinishReload();
+	
+	/*
+	무기 기본 데이터 설정
+	*/
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	int32 MagSize = 30; // 탄창 용량
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float RoundsPerMinute = 600.f; // 연사속도(기본 600RPM = 초당 10발 / 발사 간격 0.1초)
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float ReloadTime = 2.2f; // 재장전 시간
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float WeaponRange = 15000.f; // LineTrace가 도달하는 최대거리
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float WeaponDamage = 25.f; // 데미지
+	
+	int32 CurrentAmmo = 30; // 장전된 탄약 수
+	int32 ReserveAmmo = 90; // 소지한 탄약 수(재장전 시 차감)
+	bool  bReloading  = false;
+	bool  bFireHeld   = false; // 연사 시 발사버튼 여부
+	
+	FTimerHandle FireTimerHandle;
+	FTimerHandle ReloadTimerHandle;
+	
 	/*
 	현재 탑승 중인 비행기 
 	*/
@@ -189,5 +228,4 @@ protected:
 	void ShowParachute();
 	void HideParachute();
 	void UpdateParachuteVisual(float Dt);
-	
 };
