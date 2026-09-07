@@ -1,3 +1,6 @@
+#include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/Controller.h"
 #include "Character/DropCharacter.h"
 #include "Drop/AirPlane.h"
 
@@ -477,4 +480,121 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 			YawRate * ParachuteTurnLeanScale, -ParachuteMaxLean, ParachuteMaxLean) * SwayBlend;
 	}
 	ParachuteMesh->SetRelativeRotation(Rot);
+}
+
+void ADropCharacter::StartFire()
+{
+	if (DropState != EDropState::Ground || bReloading)
+	{
+		return;
+	}
+	bFireHeld = true;
+	Fire();
+	const float Interval = 60.f / FMath::Max(RoundsPerMinute, 1.f);
+	
+	// 사격 간격(Interval)마다 ADropCharacter 클래스의 Fire 함수를 계속(반복) 실행하도록 타이머를 ON
+	GetWorldTimerManager().SetTimer(
+		FireTimerHandle, this, &ADropCharacter::Fire, Interval, true);
+}
+
+void ADropCharacter::StopFire()
+{
+	bFireHeld = false;
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+}
+
+void ADropCharacter::Fire()
+{
+	// 발동 조건
+	if (bReloading)
+	{
+		return;
+	}
+	if (CurrentAmmo <= 0)
+	{
+		StopFire();
+		if (ReserveAmmo > 0)
+		{
+			Reload();
+		}
+		else if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("*click*"));
+		}
+		return;
+	}
+	AController* C = GetController();
+	if (!C)
+	{
+		return;
+	}
+	// 맞은 플레이어 처리
+	FVector ViewLoc;
+	FRotator ViewRot;
+	C->GetPlayerViewPoint(ViewLoc, ViewRot);
+	
+	/*
+	[시작점: Start] ---------------------------------------------> [끝점: End]
+	(카메라 위치)                  (방향 * 15,000cm)               (최대 사거리 지점)
+	*/
+	const FVector Start = ViewLoc;
+	const FVector End   = Start + ViewRot.Vector() * WeaponRange; // ★ ViewRot.Vector()는 무조건 1
+	
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponFire), true, this);
+	const bool bHit = GetWorld()->LineTraceSingleByChannel( // ★ 충돌 검사
+		Hit, Start, End, ECC_Visibility, Params);
+	const FVector ImpactPoint = bHit ? Hit.ImpactPoint : End;
+	
+	if (bHit && Hit.GetActor())
+	{
+		UGameplayStatics::ApplyPointDamage(
+			Hit.GetActor(), WeaponDamage, ViewRot.Vector(), Hit, C, this, nullptr);
+	}
+	DrawDebugLine(GetWorld(), Start, ImpactPoint, FColor::Yellow, false, 0.5f, 0, 1.f);
+	if (bHit)
+	{
+		DrawDebugPoint(GetWorld(), ImpactPoint, 10.f, FColor::Red, false, 0.5f);
+	}
+	--CurrentAmmo;
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			1, 1.f, FColor::Green,
+			FString::Printf(TEXT("Ammo %d / %d"), CurrentAmmo, ReserveAmmo));
+	}
+	// TODO : 몽타주 재생
+}
+
+void ADropCharacter::OnReloadPressed()
+{
+	Reload();
+}
+
+void ADropCharacter::Reload()
+{
+	if (bReloading || CurrentAmmo >= MagSize || ReserveAmmo <= 0) // 장전이 안되는 경우의 수
+	{
+		return;
+	}
+	bReloading= true;
+	StopFire();
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, ReloadTime, FColor::Cyan, TEXT("Reloading..."));
+	}
+	GetWorldTimerManager().SetTimer(
+		ReloadTimerHandle, this, &ADropCharacter::FinishReload, ReloadTime, false);
+}
+
+void ADropCharacter::FinishReload()
+{
+	const int32 Move = FMath::Min(MagSize, ReserveAmmo);
+	CurrentAmmo += Move;
+	ReserveAmmo -= Move;
+	bReloading = false;
+	if (bFireHeld)
+	{
+		StartFire();
+	}
 }

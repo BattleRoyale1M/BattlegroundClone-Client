@@ -130,7 +130,7 @@ protected:
 	
 	int32 CurrentAmmo = 30; // 장전된 탄약 수
 	int32 ReserveAmmo = 90; // 소지한 탄약 수(재장전 시 차감)
-	bool  bReloading  = false;
+	bool  bReloading  = false; // true일 때 사격 불가
 	bool  bFireHeld   = false; // 연사 시 발사버튼 여부
 	
 	FTimerHandle FireTimerHandle;
