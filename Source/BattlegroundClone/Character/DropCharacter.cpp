@@ -588,7 +588,7 @@ void ADropCharacter::Reload()
 
 void ADropCharacter::FinishReload()
 {
-	const int32 Move = FMath::Min(MagSize, ReserveAmmo);
+	const int32 Move = FMath::Min(MagSize - CurrentAmmo, ReserveAmmo);
 	CurrentAmmo += Move;
 	ReserveAmmo -= Move;
 	bReloading = false;
