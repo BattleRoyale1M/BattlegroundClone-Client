@@ -149,6 +149,8 @@ protected:
 	FName WeaponAttachSocket = TEXT("hand_r");
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	TObjectPtr<AWeaponBase> EquippedWeapon;
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	AWeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
 	void EquipDefaultWeapon();
 	
 	/*
