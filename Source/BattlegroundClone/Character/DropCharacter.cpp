@@ -551,6 +551,13 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm,    Dt, AimInterpSpeed);
 	CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset,    TargetOffset, Dt, AimInterpSpeed);
 	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,    TargetFOV,    Dt, AimInterpSpeed));
+	
+	if (AimMode == EDropAimMode::Scoped && EquippedWeapon &&
+		EquippedWeapon->GetRootComponent() && EquippedWeapon->GetRootComponent()->GetAttachParent() == FollowCamera)
+	{
+		EquippedWeapon->SetActorRelativeLocation(ScopedWeaponOffset);
+		EquippedWeapon->SetActorRelativeRotation(ScopedWeaponRotation);
+	}
 }
 
 void ADropCharacter::UpdateParachuteVisual(float Dt)
