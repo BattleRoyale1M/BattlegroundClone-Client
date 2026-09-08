@@ -5,6 +5,8 @@
 #include "WeaponBase.generated.h"
 class UStaticMeshComponent;
 class USceneComponent;
+class UNiagaraSystem;
+class USoundBase;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API AWeaponBase : public AActor
@@ -50,6 +52,24 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName = TEXT("Muzzle");
+
+	// --- FX : 무기별로 지정 --------------------------------
+	// 총구 소켓(MuzzleSocketName)에 붙여 원샷 재생. NS_MuzzleFlash 지정.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
+	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
+	TObjectPtr<USoundBase> FireSound;
+
+	// 총구 섬광 라이트(0이면 스폰 안 함)
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
+	float MuzzleLightIntensity = 1500.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
+	FLinearColor MuzzleLightColor = FLinearColor(1.f, 0.72f, 0.36f);
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
+	float MuzzleLightRadius = 300.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
+	float MuzzleLightFadeTime = 0.05f;
 	
 	//  --- Runtime state -------------------------------------
 	int32 CurrentAmmo = 0;
@@ -60,6 +80,7 @@ protected:
 	
 	void Fire();
 	void FinishReload();
+	void PlayFireFX();
 	AController* GetOwningController() const;
 	bool GetAimTrace(FVector& OutStart, FVector& OutEnd, FRotator& OutViewRot) const;
 };

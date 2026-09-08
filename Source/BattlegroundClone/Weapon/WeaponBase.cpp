@@ -7,6 +7,9 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+#include "Components/PointLightComponent.h"
 
 AWeaponBase::AWeaponBase()
 {
@@ -103,7 +106,67 @@ void AWeaponBase::Fire()
 			FString::Printf(TEXT("Ammo %d / %d"), CurrentAmmo, ReserveAmmo));
 	}
 
-	// TODO: 머즐플래시 파티클 / 사격 사운드 / 발사 몽타주
+	PlayFireFX();
+
+	// TODO: 발사 몽타주
+}
+
+void AWeaponBase::PlayFireFX()
+{
+	if (!WeaponMesh)
+	{
+		return;
+	}
+
+	// 소켓이 없으면 컴포넌트 원점에 붙임 (GetMuzzleLocation 폴백과 동일 정책)
+	const bool bHasSocket = WeaponMesh->DoesSocketExist(MuzzleSocketName);
+	const FName AttachPoint = bHasSocket ? MuzzleSocketName : NAME_None;
+
+	if (MuzzleFlashFX)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(
+			MuzzleFlashFX, WeaponMesh, AttachPoint,
+			FVector::ZeroVector, FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget,
+			/*bAutoDestroy=*/true, /*bAutoActivate=*/true);
+	}
+
+	if (FireSound)
+	{
+		UGameplayStatics::SpawnSoundAttached(
+			FireSound, WeaponMesh, AttachPoint,
+			FVector::ZeroVector, FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget, /*bStopWhenAttachedToDestroyed=*/false);
+	}
+
+	if (MuzzleLightIntensity > 0.f)
+	{
+		const FVector LightLoc = bHasSocket
+			? WeaponMesh->GetSocketLocation(MuzzleSocketName)
+			: WeaponMesh->GetComponentLocation();
+
+		UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
+		Light->SetMobility(EComponentMobility::Movable);
+		Light->SetIntensity(MuzzleLightIntensity);
+		Light->SetLightColor(MuzzleLightColor);
+		Light->SetAttenuationRadius(MuzzleLightRadius);
+		Light->SetCastShadows(false);
+		Light->RegisterComponent();
+		Light->AttachToComponent(
+			WeaponMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachPoint);
+		Light->SetWorldLocation(LightLoc);
+
+		// 짧게 번쩍이고 스스로 정리
+		FTimerHandle LightTimer;
+		TWeakObjectPtr<UPointLightComponent> WeakLight(Light);
+		GetWorldTimerManager().SetTimer(LightTimer, [WeakLight]()
+		{
+			if (WeakLight.IsValid())
+			{
+				WeakLight->DestroyComponent();
+			}
+		}, FMath::Max(MuzzleLightFadeTime, 0.01f), false);
+	}
 }
 
 void AWeaponBase::StopFire()
