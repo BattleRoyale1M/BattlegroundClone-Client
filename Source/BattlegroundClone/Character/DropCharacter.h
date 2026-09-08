@@ -239,15 +239,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ShoulderFOV = 72.f;
 	
-	// Scoped = 타이트한 3인칭 줌 (진짜 1인칭 FP는 별도 작업)
+	// Scoped
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ScopedArmLength = 60.f;
+	float ScopedArmLength = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	FVector ScopedSocketOffset = FVector(0.f, 40.f, 55.f);
+	FVector ScopedSocketOffset = FVector(10.f, 0.f, 50.f);   // 붐 피벗(캡슐중심) 기준 눈 위치
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ScopedFOV = 50.f;
+	float ScopedFOV = 55.f;
+
+	// BP 디폴트에서 PIE 보며 튜닝
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FVector ScopedWeaponOffset = FVector(30.f, 7.f, -6.f);   // 카메라 기준 (앞, 오른쪽, 아래)
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FRotator ScopedWeaponRotation = FRotator(0.f, -90.f, 0.f); // 총열을 시야 방향으로 (WeaponMesh Yaw90 상쇄)
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float AimInterpSpeed = 12.f;

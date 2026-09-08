@@ -481,27 +481,29 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 	bIsAiming = (AimMode != EDropAimMode::Hip);
 
 	// 1인칭 스코프
-	if (FollowCamera)
+	if (EquippedWeapon)
 	{
-		if (NewMode == EDropAimMode::Scoped && EquippedWeapon && EquippedWeapon->GetWeaponMesh())
+		if (NewMode == EDropAimMode::Scoped)
 		{
-			FollowCamera->AttachToComponent(
-				EquippedWeapon->GetWeaponMesh(),
-				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				TEXT("Aim"));
-			FollowCamera->bUsePawnControlRotation = true;
+			EquippedWeapon->AttachToComponent(
+				CameraBoom,
+				FAttachmentTransformRules::KeepRelativeTransform,
+				USpringArmComponent::SocketName);
+			EquippedWeapon->SetActorRelativeLocation(ScopedWeaponOffset);
+			EquippedWeapon->SetActorRelativeRotation(ScopedWeaponRotation);
 			if (GetMesh())
 			{
-				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
+				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);   // 1인칭에서 자기 머리 클리핑 방지
 			}
 		}
 		else if (OldMode == EDropAimMode::Scoped)
 		{
-			FollowCamera->AttachToComponent(
-				CameraBoom,
+			EquippedWeapon->AttachToComponent(
+				GetMesh(),
 				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				USpringArmComponent::SocketName);
-			FollowCamera->bUsePawnControlRotation = false;
+				WeaponAttachSocket);
+			EquippedWeapon->SetActorRelativeLocation(FVector::ZeroVector);
+			EquippedWeapon->SetActorRelativeRotation(FRotator::ZeroRotator);
 			if (GetMesh())
 			{
 				GetMesh()->UnHideBoneByName(TEXT("head"));
