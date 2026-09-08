@@ -486,18 +486,23 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 		if (NewMode == EDropAimMode::Scoped)
 		{
 			EquippedWeapon->AttachToComponent(
-				/*
-				CameraBoom,
-				FAttachmentTransformRules::KeepRelativeTransform,
-				USpringArmComponent::SocketName);
-				*/
 				FollowCamera,
 				FAttachmentTransformRules::SnapToTargetIncludingScale);
-			EquippedWeapon->SetActorRelativeLocation(ScopedWeaponOffset);
-			EquippedWeapon->SetActorRelativeRotation(ScopedWeaponRotation);
+
+			if (UStaticMeshComponent* WM = EquippedWeapon->GetWeaponMesh())
+			{
+				if (WM->DoesSocketExist(TEXT("Aim")))
+				{
+					// 'Aim' 소켓(무기 액터 기준)의 역변환 → 소켓이 카메라 원점에 오도록 무기 배치
+					const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
+					EquippedWeapon->SetActorRelativeLocation(Inv.GetLocation());
+					EquippedWeapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+				}
+			}
+
 			if (GetMesh())
 			{
-				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);   // 1인칭에서 자기 머리 클리핑 방지
+				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
 			}
 		}
 		else if (OldMode == EDropAimMode::Scoped)
@@ -552,12 +557,20 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset,    TargetOffset, Dt, AimInterpSpeed);
 	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,    TargetFOV,    Dt, AimInterpSpeed));
 	
-	if (AimMode == EDropAimMode::Scoped && EquippedWeapon &&
-		EquippedWeapon->GetRootComponent() && EquippedWeapon->GetRootComponent()->GetAttachParent() == FollowCamera)
+	if (AimMode == EDropAimMode::Scoped && EquippedWeapon && EquippedWeapon->GetRootComponent()
+	&& EquippedWeapon->GetRootComponent()->GetAttachParent() == FollowCamera)
 	{
-		EquippedWeapon->SetActorRelativeLocation(ScopedWeaponOffset);
-		EquippedWeapon->SetActorRelativeRotation(ScopedWeaponRotation);
+		if (UStaticMeshComponent* WM = EquippedWeapon->GetWeaponMesh())
+		{
+			if (WM->DoesSocketExist(TEXT("Aim")))
+			{
+				const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
+				EquippedWeapon->SetActorRelativeLocation(Inv.GetLocation());
+				EquippedWeapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+			}
+		}
 	}
+
 }
 
 void ADropCharacter::UpdateParachuteVisual(float Dt)
