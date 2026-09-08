@@ -12,7 +12,7 @@ enum class EDropState : uint8
 };
 
 UENUM(BlueprintType)
-enum class EAimMode : uint8
+enum class EDropAimMode : uint8
 {
 	
 	Hip      UMETA(DisplayName = "Hip"),        // 비조준 (3인칭 기본)

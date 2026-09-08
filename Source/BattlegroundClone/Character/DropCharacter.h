@@ -109,7 +109,7 @@ protected:
 	
 	// --
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
-	EAimMode AimMode = EAimMode::Hip;
+	EDropAimMode AimMode = EDropAimMode::Hip;
 	
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bIsAiming = false;
@@ -124,7 +124,7 @@ protected:
 	
 	void OnAimPressed();
 	void OnAimReleased();
-	void SetAimMode(EAimMode NewMode);
+	void SetAimMode(EDropAimMode NewMode);
 	void UpdateAimCamera(float Dt);
 	// --
 	

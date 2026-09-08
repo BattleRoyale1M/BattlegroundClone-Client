@@ -239,9 +239,9 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	
 	const EDropState Old = DropState;
 	DropState = NewState;
-	if (NewState != EDropState::Ground && AimMode != EAimMode::Hip)
+	if (NewState != EDropState::Ground && AimMode != EDropAimMode::Hip)
 	{
-		SetAimMode(EAimMode::Hip);
+		SetAimMode(EDropAimMode::Hip);
 	}
 	
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
@@ -454,8 +454,8 @@ void ADropCharacter::OnAimPressed()
 {
 	if (DropState != EDropState::Ground) return;
 	AimPressTime = GetWorld()->GetTimeSeconds();
-	if (AimMode == EAimMode::Scoped) return; // 스코프 중 다시 누름
-	SetAimMode(EAimMode::Shoulder); 
+	if (AimMode == EDropAimMode::Scoped) return; // 스코프 중 다시 누름
+	SetAimMode(EDropAimMode::Shoulder); 
 }
 
 // scope 해제
@@ -464,20 +464,20 @@ void ADropCharacter::OnAimReleased()
 	const float Held = GetWorld()->GetTimeSeconds() - AimPressTime;
 	if (Held <= AimTapThreshold) // 누르고 있던 시간 < AimTapThreshold : 살짝 누르고 뗀 경우
 	{
-		SetAimMode(AimMode == EAimMode::Scoped ? EAimMode::Hip : EAimMode::Scoped);
+		SetAimMode(AimMode == EDropAimMode::Scoped ? EDropAimMode::Hip : EDropAimMode::Scoped);
 	}
-	else if (AimMode == EAimMode::Shoulder)
+	else if (AimMode == EDropAimMode::Shoulder)
 	{
-		SetAimMode(EAimMode::Hip);
+		SetAimMode(EDropAimMode::Hip);
 	}
 }
 
-void ADropCharacter::SetAimMode(EAimMode NewMode)
+void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 {
 	// ★ 스코프 상태일때는 카메라의 YAW에 따라 캐릭터도 움직여야함 ★
 	if (AimMode == NewMode) return;
 	AimMode = NewMode;
-	bIsAiming = (AimMode != EAimMode::Hip);
+	bIsAiming = (AimMode != EDropAimMode::Hip);
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
 		M->bOrientRotationToMovement = !bIsAiming;
@@ -499,10 +499,10 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 
 	switch (AimMode)
 	{
-	case EAimMode::Shoulder:
+	case EDropAimMode::Shoulder:
 		TargetArm = ShoulderArmLength; TargetOffset = ShoulderSocketOffset; TargetFOV = ShoulderFOV;
 		break;
-	case EAimMode::Scoped:
+	case EDropAimMode::Scoped:
 		TargetArm = ScopedArmLength;   TargetOffset = ScopedSocketOffset;   TargetFOV = ScopedFOV;
 		break;
 	default:
