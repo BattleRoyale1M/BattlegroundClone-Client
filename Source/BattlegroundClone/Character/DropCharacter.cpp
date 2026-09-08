@@ -486,9 +486,13 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 		if (NewMode == EDropAimMode::Scoped)
 		{
 			EquippedWeapon->AttachToComponent(
+				/*
 				CameraBoom,
 				FAttachmentTransformRules::KeepRelativeTransform,
 				USpringArmComponent::SocketName);
+				*/
+				FollowCamera,
+				FAttachmentTransformRules::SnapToTargetIncludingScale);
 			EquippedWeapon->SetActorRelativeLocation(ScopedWeaponOffset);
 			EquippedWeapon->SetActorRelativeRotation(ScopedWeaponRotation);
 			if (GetMesh())
