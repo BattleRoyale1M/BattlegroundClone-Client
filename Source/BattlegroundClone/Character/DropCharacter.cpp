@@ -493,7 +493,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 			{
 				if (WM->DoesSocketExist(TEXT("Aim")))
 				{
-					// 'Aim' 소켓(무기 액터 기준)의 역변환 → 소켓이 카메라 원점에 오도록 무기 배치
+					// 역변환
 					const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
 					EquippedWeapon->SetActorRelativeLocation(Inv.GetLocation());
 					EquippedWeapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
