@@ -26,6 +26,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override; /* RPC Server */
 
 	/** Current phase of the jump -> freefall -> parachute flow. Drives movement params + AnimBP. */
 	UPROPERTY(BlueprintReadOnly, Category = "Drop")
@@ -147,10 +148,19 @@ protected:
 	*/
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponAttachSocket = TEXT("hand_r");
-	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	
+	/*
+	RPC Server
+	*/
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
+	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_EquippedWeapon, Category = "Weapon")
 	TObjectPtr<AWeaponBase> EquippedWeapon;
+	
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	AWeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
+	
 	void EquipDefaultWeapon();
 	
 	/*

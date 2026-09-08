@@ -7,6 +7,8 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 
+#include "Net/UnrealNetwork.h"
+
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -648,6 +650,16 @@ void ADropCharacter::OnReloadPressed()
 	}
 }
 
+void ADropCharacter::OnRep_EquippedWeapon()
+{
+	if (!EquippedWeapon)
+	{
+		return;
+	}
+	EquippedWeapon->AttachToComponent(
+		GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
+}
+
 void ADropCharacter::EquipDefaultWeapon()
 {
 	if (!DefaultWeaponClass || EquippedWeapon)
@@ -684,5 +696,12 @@ void ADropCharacter::HandleReloadStarted(float Duration)
 }
 
 
-
+/*
+RPC Server
+*/
+void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ADropCharacter, EquippedWeapon);
+}
 

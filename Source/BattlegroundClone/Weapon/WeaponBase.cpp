@@ -27,6 +27,9 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	WeaponMesh->SetGenerateOverlapEvents(false);
+	
+	bReplicates = true;
+	SetReplicatingMovement(true);
 }
 
 void AWeaponBase::BeginPlay()
