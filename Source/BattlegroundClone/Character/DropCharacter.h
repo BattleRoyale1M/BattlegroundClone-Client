@@ -107,9 +107,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> AimAction;
 	
-	// --
+	// Reload Sequence
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
+	
+	UFUNCTION()
+	void HandleReloadStarted(float Duration);
 	
 	// --
 	UPROPERTY(BlueprintReadOnly, Category="Combat")

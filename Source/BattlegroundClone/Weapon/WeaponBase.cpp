@@ -186,6 +186,7 @@ void AWeaponBase::StartReload()
 		return;
 	}
 	bReloading = true;
+	OnReloadStarted.Broadcast(ReloadTime); // .h 10
 	StopFire();
 	if (GEngine)
 	{

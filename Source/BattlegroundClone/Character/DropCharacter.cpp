@@ -4,6 +4,8 @@
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -662,11 +664,23 @@ void ADropCharacter::EquipDefaultWeapon()
 	EquippedWeapon = GetWorld()->SpawnActor<AWeaponBase>(DefaultWeaponClass, SpawnParams);
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			WeaponAttachSocket);
+		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
+		EquippedWeapon->OnReloadStarted.AddDynamic(this, &ADropCharacter::HandleReloadStarted);
 	}
+}
+
+/*
+무기 재장전(Reload) 애니메이션 몽타주를 재장전 소요 시간(Duration)에 맞춰 재생 속도(Rate)를 동적으로 조절하여 실행
+*/
+void ADropCharacter::HandleReloadStarted(float Duration)
+{
+	if (!ReloadAnimMontage) return;
+	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr; //몽타주가 등록되지 않았다면 조기 종료
+	
+	if (!Anim) return;
+	const float MontageLen = ReloadAnimMontage->GetPlayLength();
+	const float Rate = (Duration > 0.f && MontageLen > 0.f) ? (MontageLen / Duration) : 1.f;
+	Anim->Montage_Play(ReloadAnimMontage, Rate);
 }
 
 
