@@ -18,7 +18,14 @@ class BATTLEGROUNDCLONE_API AWeaponBase : public AActor
 
 public:
 	AWeaponBase();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(Server, Reliable)
+	void ServerStartFire();
+	UFUNCTION(Server, Reliable)
+	void ServerStopFire();
+	
 	void StartFire();
 	void StopFire();
 	void StartReload();
@@ -67,7 +74,7 @@ protected:
 	float Range = 15000.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	float Damage = 25.f;
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
+	UPROPERTY(EditDefaultsOnly, Replicated)
 	int32 ReserveAmmo = 90;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
@@ -92,9 +99,13 @@ protected:
 	float MuzzleLightFadeTime = 0.05f;
 
 	// --- Runtime state ---------------------------------------
+	UPROPERTY(Replicated)
 	int32 CurrentAmmo = 0;
+	
+	UPROPERTY(Replicated)
 	bool bReloading = false;
-	bool bTriggerHeld = false;
+	bool bTriggerHeld = false; // only Server
+
 	FTimerHandle FireTimerHandle;
 	FTimerHandle ReloadTimerHandle;
 

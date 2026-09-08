@@ -1,5 +1,7 @@
 #include "Weapon/WeaponBase.h"
 
+#include "Net/UnrealNetwork.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
@@ -32,6 +34,24 @@ AWeaponBase::AWeaponBase()
 	SetReplicatingMovement(true);
 }
 
+void AWeaponBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeaponBase, CurrentAmmo);
+	DOREPLIFETIME(AWeaponBase, ReserveAmmo);
+	DOREPLIFETIME(AWeaponBase, bReloading);
+}
+
+void AWeaponBase::ServerStartFire_Implementation()
+{
+	StartFire();
+}
+
+void AWeaponBase::ServerStopFire_Implementation()
+{
+	StopFire();
+}
+
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -40,6 +60,11 @@ void AWeaponBase::BeginPlay()
 
 void AWeaponBase::StartFire()
 {
+	if (!HasAuthority())
+	{
+		ServerStartFire();
+		return;
+	}
 	if (bReloading)
 	{
 		return;
@@ -172,6 +197,11 @@ void AWeaponBase::PlayFireFX()
 
 void AWeaponBase::StopFire()
 {
+	if (!HasAuthority())
+	{
+		ServerStopFire();
+		return;
+	}
 	bTriggerHeld = false;
 	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 }
