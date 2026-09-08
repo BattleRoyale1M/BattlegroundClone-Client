@@ -33,7 +33,6 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 	CurrentAmmo = MagSize;
-	OnAmmoChanged.Broadcast(CurrentAmmo, ReserveAmmo);
 }
 
 void AWeaponBase::StartFire()
@@ -104,7 +103,6 @@ void AWeaponBase::Fire()
 	}
 
 	--CurrentAmmo;
-	OnAmmoChanged.Broadcast(CurrentAmmo, ReserveAmmo);
 
 	PlayFireFX();
 
@@ -198,7 +196,6 @@ void AWeaponBase::FinishReload()
 	CurrentAmmo += Moved;
 	ReserveAmmo -= Moved;
 	bReloading = false;
-	OnAmmoChanged.Broadcast(CurrentAmmo, ReserveAmmo);
 
 	if (bTriggerHeld)
 	{

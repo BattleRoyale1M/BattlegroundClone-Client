@@ -10,7 +10,6 @@ class UNiagaraSystem;
 class USoundBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStarted, float, Duration);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int32, CurrentAmmo, int32, ReserveAmmo);
 
 UCLASS()
 class BATTLEGROUNDCLONE_API AWeaponBase : public AActor
@@ -43,9 +42,6 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FOnReloadStarted OnReloadStarted;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Weapon")
-	FOnAmmoChanged OnAmmoChanged;
 
 protected:
 	virtual void BeginPlay() override;
