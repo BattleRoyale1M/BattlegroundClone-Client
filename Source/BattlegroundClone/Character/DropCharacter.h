@@ -107,10 +107,26 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> AimAction;
 	
+	// --
+	UPROPERTY(BlueprintReadOnly, Category="Combat")
+	EAimMode AimMode = EAimMode::Hip;
+	
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bIsAiming = false;
-	void StartAim();
-	void StopAim();
+	
+	// Aim: 조준
+	// Tap: 살짝/짧게 누르기 (탭)
+	// Threshold: 임계값 / 기준치
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float AimTapThreshold = 0.18f;
+	
+	float AimPressTime = 0.f;
+	
+	void OnAimPressed();
+	void OnAimReleased();
+	void SetAimMode(EAimMode NewMode);
+	void UpdateAimCamera(float Dt);
+	// --
 	
 	void StartFire();
 	void StopFire();
@@ -203,6 +219,37 @@ protected:
 	float DescentArmLength = 1100.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	FVector DescentSocketOffset = FVector(0.f, 0.f, 120.f);
+	
+	// Aim
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float HipArmLength = 400.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	FVector HipSocketOffset = FVector::ZeroVector;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float HipFOV = 90.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ShoulderArmLength = 140.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	FVector ShoulderSocketOffset = FVector(0.f, 50.f, 60.f);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ShoulderFOV = 72.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ScopedArmLength = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	FVector ScopedSocketOffset = FVector(0.f, 0.f, 62.f);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ScopedFOV = 55.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float AimInterpSpeed = 12.f;
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);

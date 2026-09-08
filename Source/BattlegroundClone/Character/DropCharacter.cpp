@@ -124,6 +124,9 @@ void ADropCharacter::Tick(float DeltaTime)
 		 UpdateParachute(DeltaTime);
 		if (GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
 		break;
+	case EDropState::Ground:
+		UpdateAimCamera(DeltaTime);
+		break;
 	default:
 		break;
 	}
@@ -175,8 +178,8 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	}
 	if (AimAction)
 	{
-		EIC->BindAction(AimAction, ETriggerEvent::Started, this, &ADropCharacter::StartAim);
-		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::StopAim);
+		EIC->BindAction(AimAction, ETriggerEvent::Started,   this, &ADropCharacter::OnAimPressed);
+		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::OnAimReleased);
 	}
 }
 
@@ -236,6 +239,10 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	
 	const EDropState Old = DropState;
 	DropState = NewState;
+	if (NewState != EDropState::Ground && AimMode != EAimMode::Hip)
+	{
+		SetAimMode(EAimMode::Hip);
+	}
 	
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
@@ -443,15 +450,43 @@ void ADropCharacter::HideParachute()
 /*
 Aim
 */
-void ADropCharacter::StartAim()
+void ADropCharacter::OnAimPressed()
 {
-	bIsAiming = true;
+	if (DropState != EDropState::Ground) return;
+	AimPressTime = GetWorld()->GetTimeSeconds();
+	if (AimMode == EAimMode::Scoped) return; // 스코프 중 다시 누름
+	SetAimMode(EAimMode::Shoulder); 
 }
 
-void ADropCharacter::StopAim()
+// scope 해제
+void ADropCharacter::OnAimReleased()
 {
-	bIsAiming = false;
-	StopFire();
+	const float Held = GetWorld()->GetTimeSeconds() - AimPressTime;
+	if (Held <= AimTapThreshold) // 누르고 있던 시간 < AimTapThreshold : 살짝 누르고 뗀 경우
+	{
+		SetAimMode(AimMode == EAimMode::Scoped ? EAimMode::Hip : EAimMode::Scoped);
+	}
+	else if (AimMode == EAimMode::Shoulder)
+	{
+		SetAimMode(EAimMode::Hip);
+	}
+}
+
+void ADropCharacter::SetAimMode(EAimMode NewMode)
+{
+	// ★ 스코프 상태일때는 카메라의 YAW에 따라 캐릭터도 움직여야함 ★
+	if (AimMode == NewMode) return;
+	AimMode = NewMode;
+	bIsAiming = (AimMode != EAimMode::Hip);
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
+	{
+		M->bOrientRotationToMovement = !bIsAiming;
+	}
+	bUseControllerRotationYaw = bIsAiming;
+	if (! bIsAiming)
+	{
+		StopFire();
+	}
 }
 
 void ADropCharacter::UpdateParachuteVisual(float Dt)
