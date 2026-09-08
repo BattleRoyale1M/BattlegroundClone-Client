@@ -2,6 +2,7 @@
 
 #include "Net/UnrealNetwork.h"
 
+#include "Character/DropCharacter.h" 
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
@@ -42,6 +43,17 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& Ou
 	DOREPLIFETIME(AWeaponBase, bReloading);
 }
 
+void AWeaponBase::OnRep_Reloading()
+{
+	if (bReloading)
+	{
+		if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+		{
+			C->HandleReloadStarted(ReloadTime);
+		}
+	}
+}
+
 void AWeaponBase::ServerStartFire_Implementation()
 {
 	StartFire();
@@ -50,6 +62,11 @@ void AWeaponBase::ServerStartFire_Implementation()
 void AWeaponBase::ServerStopFire_Implementation()
 {
 	StopFire();
+}
+
+void AWeaponBase::ServerStartReload_Implementation()
+{
+	StartReload();
 }
 
 void AWeaponBase::BeginPlay()
@@ -211,6 +228,11 @@ void AWeaponBase::StopFire()
 
 void AWeaponBase::StartReload()
 {
+	if (!HasAuthority())
+	{
+		ServerStartReload();
+		return;
+	}
 	if (bReloading || CurrentAmmo >= MagSize || ReserveAmmo <= 0)
 	{
 		return;

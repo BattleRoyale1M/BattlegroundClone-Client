@@ -55,6 +55,9 @@ public:
 	float GroundDistance() const;
 	void  UpdateFreefall(float Dt);
 	void  UpdateParachute(float Dt);
+	
+	UFUNCTION()
+	void HandleReloadStarted(float Duration);
 
 
 protected:
@@ -111,9 +114,6 @@ protected:
 	// Reload Sequence
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
-	
-	UFUNCTION()
-	void HandleReloadStarted(float Duration);
 	
 	// --
 	UPROPERTY(BlueprintReadOnly, Category="Combat")

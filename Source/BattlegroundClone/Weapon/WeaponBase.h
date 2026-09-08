@@ -47,8 +47,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	int32 GetReserveAmmo() const { return ReserveAmmo; }
 
-	// 장전 상태 조회 / 장전 시작 이벤트
-	bool IsReloading() const { return bReloading; }
+	/*
+	RPC Server
+	*/
+	UFUNCTION()
+	void OnRep_Reloading();
+	UFUNCTION(Server, Reliable)
+	void ServerStartReload();
+	
+	// 장전 상태 조회 / 장전 시작 이벤트 -> 0908 : RPC로 전환하면서 UPROPERTY지정자 추가
+	UPROPERTY(ReplicatedUsing = OnRep_Reloading)
+	bool bIsReloading = false;
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FOnReloadStarted OnReloadStarted;
