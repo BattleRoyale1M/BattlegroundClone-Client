@@ -489,6 +489,33 @@ void ADropCharacter::SetAimMode(EAimMode NewMode)
 	}
 }
 
+void ADropCharacter::UpdateAimCamera(float Dt)
+{
+	if (!CameraBoom || !FollowCamera) return;
+	
+	float   TargetArm;
+	FVector TargetOffset;
+	float   TargetFOV;
+
+	switch (AimMode)
+	{
+	case EAimMode::Shoulder:
+		TargetArm = ShoulderArmLength; TargetOffset = ShoulderSocketOffset; TargetFOV = ShoulderFOV;
+		break;
+	case EAimMode::Scoped:
+		TargetArm = ScopedArmLength;   TargetOffset = ScopedSocketOffset;   TargetFOV = ScopedFOV;
+		break;
+	default:
+		TargetArm = HipArmLength;      TargetOffset = HipSocketOffset;      TargetFOV = HipFOV;
+		break;
+	}
+
+	// FMath::FInterpTo(현재값, 목표값, 시간, 보간된 속도) : 누적해서 점차 목표값에 가까워지게 하는 선형보간함수 중 하나
+	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm,    Dt, AimInterpSpeed);
+	CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset,    TargetOffset, Dt, AimInterpSpeed);
+	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,    TargetFOV,    Dt, AimInterpSpeed));
+}
+
 void ADropCharacter::UpdateParachuteVisual(float Dt)
 {
 	if (!ParachuteMesh) return;
