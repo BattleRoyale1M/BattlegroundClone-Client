@@ -58,6 +58,16 @@ void AWeaponBase::BeginPlay()
 	CurrentAmmo = MagSize;
 }
 
+void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
+{
+	DrawDebugLine(GetWorld(), GetMuzzleLocation(), TracerEnd, FColor::Yellow, false, 0.5f, 0, 1.f);
+	if (bHit)
+	{
+		DrawDebugPoint(GetWorld(), TracerEnd, 10.f, FColor::Red, false, 0.5f);
+	}
+	PlayFireFX();
+}
+
 void AWeaponBase::StartFire()
 {
 	if (!HasAuthority())
@@ -122,17 +132,10 @@ void AWeaponBase::Fire()
 			Hit.GetActor(), Damage, ViewRot.Vector(), Hit,
 			GetOwningController(), this, nullptr);
 	}
-	
-	const FVector MuzzleLoc = GetMuzzleLocation();
-	DrawDebugLine(GetWorld(), MuzzleLoc, ImpactPoint, FColor::Yellow, false, 0.5f, 0, 1.f);
-	if (bHit)
-	{
-		DrawDebugPoint(GetWorld(), ImpactPoint, 10.f, FColor::Red, false, 0.5f);
-	}
 
 	--CurrentAmmo;
 
-	PlayFireFX();
+	MulticastFireFX(ImpactPoint, bHit);
 
 	// TODO: 발사 몽타주
 }

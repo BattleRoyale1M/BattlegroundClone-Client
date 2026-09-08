@@ -26,6 +26,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerStopFire();
 	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastFireFX(FVector TracerEnd, bool bHit);
+	
 	void StartFire();
 	void StopFire();
 	void StartReload();
