@@ -108,6 +108,10 @@ protected:
 	TObjectPtr<UInputAction> AimAction;
 	
 	// --
+	UPROPERTY(EditDefaultsOnly, Category = "reload")
+	TObjectPtr<UAnimMontage> ReloadAnimMontage;
+	
+	// --
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	EDropAimMode AimMode = EDropAimMode::Hip;
 	
