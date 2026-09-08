@@ -239,15 +239,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ShoulderFOV = 72.f;
 	
+	// Scoped = 타이트한 3인칭 줌 (진짜 1인칭 FP는 별도 작업)
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ScopedArmLength = 0.f;
-	
+	float ScopedArmLength = 60.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	FVector ScopedSocketOffset = FVector(0.f, 0.f, 62.f);
-	
+	FVector ScopedSocketOffset = FVector(0.f, 40.f, 55.f);
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ScopedFOV = 55.f;
-	
+	float ScopedFOV = 50.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float AimInterpSpeed = 12.f;
 

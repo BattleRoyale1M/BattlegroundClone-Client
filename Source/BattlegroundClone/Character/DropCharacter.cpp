@@ -476,8 +476,39 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 {
 	// ★ 스코프 상태일때는 카메라의 YAW에 따라 캐릭터도 움직여야함 ★
 	if (AimMode == NewMode) return;
+	const EDropAimMode OldMode = AimMode;
 	AimMode = NewMode;
 	bIsAiming = (AimMode != EDropAimMode::Hip);
+
+	// 1인칭 스코프
+	if (FollowCamera)
+	{
+		if (NewMode == EDropAimMode::Scoped && EquippedWeapon && EquippedWeapon->GetWeaponMesh())
+		{
+			FollowCamera->AttachToComponent(
+				EquippedWeapon->GetWeaponMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				TEXT("Aim"));
+			FollowCamera->bUsePawnControlRotation = true;
+			if (GetMesh())
+			{
+				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
+			}
+		}
+		else if (OldMode == EDropAimMode::Scoped)
+		{
+			FollowCamera->AttachToComponent(
+				CameraBoom,
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				USpringArmComponent::SocketName);
+			FollowCamera->bUsePawnControlRotation = false;
+			if (GetMesh())
+			{
+				GetMesh()->UnHideBoneByName(TEXT("head"));
+			}
+		}
+	}
+
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
 		M->bOrientRotationToMovement = !bIsAiming;

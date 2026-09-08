@@ -19,7 +19,11 @@ AWeaponBase::AWeaponBase()
 	SetRootComponent(RootScene);
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(RootScene);
-	
+
+	// 1인칭 스코프 카메라가 붙는 지점. 위치는 BP_WeaponBase 뷰포트에서 잡음.
+	AimPoint = CreateDefaultSubobject<USceneComponent>(TEXT("AimPoint"));
+	AimPoint->SetupAttachment(WeaponMesh);
+
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	WeaponMesh->SetGenerateOverlapEvents(false);

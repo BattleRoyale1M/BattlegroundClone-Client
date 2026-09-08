@@ -22,6 +22,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	FVector GetMuzzleLocation() const;
+
+	UStaticMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+
+	/** 1인칭 스코프에서 카메라를 붙일 조준점. BP_WeaponBase 뷰포트에서 가늠자 뒤로 위치시킴. */
+	USceneComponent* GetAimPoint() const { return AimPoint; }
+
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	int32 GetCurrentAmmo() const { return CurrentAmmo; }
 	UFUNCTION(BlueprintPure, Category = "Weapon")
@@ -35,6 +41,10 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon")
 	TObjectPtr<UStaticMeshComponent> WeaponMesh;
+
+	// 1인칭 스코프 카메라 부착점. BP_WeaponBase 에서 가늠자 뒤 조준선 위로 옮길 것.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon")
+	TObjectPtr<USceneComponent> AimPoint;
 	
 	// --- Stats : 무기별로 지정 ------------------------------
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
