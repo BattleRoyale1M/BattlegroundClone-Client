@@ -28,6 +28,8 @@ public:
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastFireFX(FVector TracerEnd, bool bHit);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastReloadFX(float Duration);
 	
 	void StartFire();
 	void StopFire();
@@ -50,15 +52,10 @@ public:
 	/*
 	RPC Server
 	*/
-	UFUNCTION()
-	void OnRep_Reloading();
 	UFUNCTION(Server, Reliable)
 	void ServerStartReload();
-	
-	// 장전 상태 조회 / 장전 시작 이벤트 -> 0908 : RPC로 전환하면서 UPROPERTY지정자 추가
-	UPROPERTY(ReplicatedUsing = OnRep_Reloading)
-	bool bIsReloading = false;
 
+	// 장전 시작 이벤트 (BP/UI용). 몽타주 재생은 MulticastReloadFX가 담당.
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FOnReloadStarted OnReloadStarted;
 

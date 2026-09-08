@@ -55,9 +55,12 @@ public:
 	float GroundDistance() const;
 	void  UpdateFreefall(float Dt);
 	void  UpdateParachute(float Dt);
-	
-	UFUNCTION()
+
+	// MulticastReloadFX에서 모든 머신에 호출됨. 재장전 시작 시 몽타주 재생.
 	void HandleReloadStarted(float Duration);
+
+	// 발사 시 1회성 상체 반동 몽타주. MulticastFireFX에서 모든 머신에 호출됨.
+	void PlayFireMontage();
 
 
 protected:
@@ -114,6 +117,10 @@ protected:
 	// Reload Sequence
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
+
+	// 발사 몽타주 (BP_DropCharacter 디폴트에서 지정). 없으면 재생 스킵.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
 	// --
 	UPROPERTY(BlueprintReadOnly, Category="Combat")

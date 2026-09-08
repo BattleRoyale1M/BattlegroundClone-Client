@@ -43,17 +43,6 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& Ou
 	DOREPLIFETIME(AWeaponBase, bReloading);
 }
 
-void AWeaponBase::OnRep_Reloading()
-{
-	if (bReloading)
-	{
-		if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
-		{
-			C->HandleReloadStarted(ReloadTime);
-		}
-	}
-}
-
 void AWeaponBase::ServerStartFire_Implementation()
 {
 	StartFire();
@@ -83,6 +72,19 @@ void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 		DrawDebugPoint(GetWorld(), TracerEnd, 10.f, FColor::Red, false, 0.5f);
 	}
 	PlayFireFX();
+
+	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	{
+		C->PlayFireMontage();
+	}
+}
+
+void AWeaponBase::MulticastReloadFX_Implementation(float Duration)
+{
+	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	{
+		C->HandleReloadStarted(Duration);
+	}
 }
 
 void AWeaponBase::StartFire()
@@ -238,7 +240,8 @@ void AWeaponBase::StartReload()
 		return;
 	}
 	bReloading = true;
-	OnReloadStarted.Broadcast(ReloadTime); // .h 10
+	MulticastReloadFX(ReloadTime); // 서버 <-> 클라 동기화용
+	OnReloadStarted.Broadcast(ReloadTime); // BP/UI용 이벤트
 	StopFire();
 	if (GEngine)
 	{

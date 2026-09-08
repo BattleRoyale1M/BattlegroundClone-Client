@@ -677,7 +677,6 @@ void ADropCharacter::EquipDefaultWeapon()
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
-		EquippedWeapon->OnReloadStarted.AddDynamic(this, &ADropCharacter::HandleReloadStarted);
 	}
 }
 
@@ -693,6 +692,14 @@ void ADropCharacter::HandleReloadStarted(float Duration)
 	const float MontageLen = ReloadAnimMontage->GetPlayLength();
 	const float Rate = (Duration > 0.f && MontageLen > 0.f) ? (MontageLen / Duration) : 1.f;
 	Anim->Montage_Play(ReloadAnimMontage, Rate);
+}
+
+void ADropCharacter::PlayFireMontage()
+{
+	if (!FireAnimMontage) return;
+	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (!Anim) return;
+	Anim->Montage_Play(FireAnimMontage);
 }
 
 
