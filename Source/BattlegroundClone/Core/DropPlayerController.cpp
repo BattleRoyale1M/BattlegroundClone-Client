@@ -8,6 +8,14 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Blueprint/UserWidget.h"
+
+#include "Core/DropPlayerState.h"
+#include "Core/DropMapLibrary.h"
+#include "GameFramework/GameStateBase.h"
+
 ADropPlayerController::ADropPlayerController()
 {
 }
@@ -135,4 +143,70 @@ void ADropPlayerController::ToggleWorldMap()
 AAirPlane* ADropPlayerController::FindPlane() const
 {
 	return Cast<AAirPlane>(UGameplayStatics::GetActorOfClass(GetWorld(), AAirPlane::StaticClass()));
+}
+
+void ADropPlayerController::GetPlayerMarkers(float MapPixels, bool bIncludeSelf,
+	TArray<FVector2D>& OutPositions, TArray<FLinearColor>& OutColors) const
+{
+	OutPositions.Reset();
+	OutColors.Reset();
+
+	const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+	if (!GS)
+	{
+		return;
+	}
+
+	const FVector2D MapSize(MapPixels, MapPixels);
+
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		const ADropPlayerState* DPS = Cast<ADropPlayerState>(PS);
+		if (!DPS)
+		{
+			continue;
+		}
+		if (!bIncludeSelf && PS == PlayerState)
+		{
+			continue;
+		}
+
+		const APawn* Pawning = PS->GetPawn();
+		if (!Pawning)
+		{
+			continue;
+		}
+		
+		const FVector2D N = UDropMapLibrary::WorldToNormalized(Pawning->GetActorLocation(), WorldMin, WorldMax);
+		OutPositions.Add(UDropMapLibrary::NormalizedToWidget(FVector2D(N.Y, N.X), MapSize, true));
+		OutColors.Add(DPS->MarkerColor);
+	}
+}
+
+void ADropPlayerController::RefreshPlayerMarkers(class UCanvasPanel* MarkerCanvas, TSubclassOf<UUserWidget> MarkerClass,
+	float MapPixels, bool bIncludeSelf)
+{
+	if (!MarkerCanvas || !MarkerClass)
+	{
+		return;
+	}
+	MarkerCanvas -> ClearChildren();
+	TArray<FVector2D> Positions;
+	TArray<FLinearColor> Colors;
+	GetPlayerMarkers(MapPixels, bIncludeSelf, Positions, Colors);
+	for (int32 i = 0; i<Positions.Num(); ++i)
+	{
+		UUserWidget* Marker = CreateWidget<UUserWidget>(this, MarkerClass);
+		if (!Marker)
+		{
+			continue;
+		}
+		Marker->SetColorAndOpacity(Colors[i]);
+		if (UCanvasPanelSlot* Slot = MarkerCanvas -> AddChildToCanvas(Marker)) // 생성한 마커를 지도 캔버스 자식으로 붙인다.
+		{
+			Slot->SetAutoSize(true);
+			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+			Slot->SetPosition(Positions[i]); // 지도 캔버스 내의 해당 X, Y 좌표 위치로 마커를 이동
+		}
+	}
 }

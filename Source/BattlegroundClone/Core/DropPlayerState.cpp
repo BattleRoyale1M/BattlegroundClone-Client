@@ -1,2 +1,8 @@
-﻿#include "C:\Users\user\Documents\Unreal Projects\BattlegroundClone\Intermediate\Build\Win64\x64\BattlegroundCloneEditor\Development\UnrealEd\SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h"
-#include "DropPlayerState.h"
+﻿#include "Core/DropPlayerState.h"
+#include "Net/UnrealNetwork.h"
+
+void ADropPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ADropPlayerState, MarkerColor);
+}

@@ -3,11 +3,13 @@
 #include "DropMapLibrary.h"
 #include "Character/DropCharacter.h"
 #include "Core/DropPlayerController.h"
+#include "Core/DropPlayerState.h"
 
 ADropGameMode::ADropGameMode()
 {
 	DefaultPawnClass = ADropCharacter::StaticClass();
 	PlayerControllerClass = ADropPlayerController::StaticClass();
+	PlayerStateClass = ADropPlayerState::StaticClass();
 
 }
 
@@ -15,6 +17,22 @@ void ADropGameMode::GetMapBounds(FVector2D& OutWorldMin, FVector2D& OutWorldMax)
 {
 	OutWorldMin = WorldMin;
 	OutWorldMax = WorldMax;
+}
+
+/*
+Player 마커 컬러 배정
+*/
+void ADropGameMode::OnPostLogin(AController* NewPlayer)
+{
+	Super::OnPostLogin(NewPlayer);
+	
+	if (ADropPlayerState* PS = NewPlayer -> GetPlayerState<ADropPlayerState>())
+	{
+		if (MarkerPalette.Num() > 0)
+		{
+			PS->MarkerColor = MarkerPalette[NextMarkerIndex++ % MarkerPalette.Num()];
+		}
+	}
 }
 
 void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels, FVector2D& OutPan, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos) const

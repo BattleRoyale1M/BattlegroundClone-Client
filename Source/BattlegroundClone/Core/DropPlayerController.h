@@ -55,6 +55,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void GetFlightPathLine(float MapPixels, FVector2D& OutMid, float& OutLength,
 						   float& OutAngle, bool& bHasPath) const;
+	
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void GetPlayerMarkers(float MapPixels, bool bIncludeSelf,
+		TArray<FVector2D>& OutPositions, TArray<FLinearColor>& OutColors) const;
+
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void RefreshPlayerMarkers(class UCanvasPanel* MarkerCanvas,
+		TSubclassOf<UUserWidget> MarkerClass, float MapPixels, bool bIncludeSelf = false);
 
 protected:
 	virtual void BeginPlay() override;
