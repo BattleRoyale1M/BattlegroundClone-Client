@@ -123,8 +123,19 @@ protected:
 	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
 	// --
-	UPROPERTY(BlueprintReadOnly, Category="Combat")
+
+	UPROPERTY(ReplicatedUsing = OnRep_AimMode, BlueprintReadOnly, Category="Combat")
 	EDropAimMode AimMode = EDropAimMode::Hip;
+	EDropAimMode PrevAimMode = EDropAimMode::Hip;
+	
+	void ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode);
+	
+	UFUNCTION() 
+	void OnRep_AimMode();
+	
+	UFUNCTION(Server, Reliable) 
+	void ServerSetAimMode(EDropAimMode NewMode);
+	
 	
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bIsAiming = false;

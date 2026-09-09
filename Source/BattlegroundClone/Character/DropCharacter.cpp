@@ -451,6 +451,23 @@ void ADropCharacter::HideParachute()
 	ParachuteMesh->SetHiddenInGame(true, true);
 }
 
+void ADropCharacter::OnRep_AimMode()
+{
+	const EDropAimMode OldMode = PrevAimMode;
+	bIsAiming = (AimMode != EDropAimMode::Hip);
+	ApplyAimVisuals(OldMode, AimMode);
+	PrevAimMode = AimMode;
+}
+
+void ADropCharacter::ServerSetAimMode_Implementation(EDropAimMode NewMode)
+{
+	if (AimMode == NewMode) return;
+	const EDropAimMode OldMode = AimMode;
+	AimMode   = NewMode;
+	bIsAiming = (AimMode != EDropAimMode::Hip);
+	ApplyAimVisuals(OldMode, NewMode);
+}
+
 /*
 Aim
 */
@@ -483,9 +500,18 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 	const EDropAimMode OldMode = AimMode;
 	AimMode = NewMode;
 	bIsAiming = (AimMode != EDropAimMode::Hip);
+	
+	ApplyAimVisuals(OldMode, NewMode);
+	if (!HasAuthority())
+	{
+		ServerSetAimMode(NewMode);
+	}
+}
 
+void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
+{
 	// 1인칭 스코프
-	if (EquippedWeapon)
+	if (IsLocallyControlled() && EquippedWeapon)
 	{
 		if (NewMode == EDropAimMode::Scoped)
 		{
@@ -529,7 +555,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 		M->bOrientRotationToMovement = !bIsAiming;
 	}
 	bUseControllerRotationYaw = bIsAiming;
-	if (! bIsAiming)
+	if (!bIsAiming && (HasAuthority() || IsLocallyControlled()))
 	{
 		StopFire();
 	}
@@ -710,5 +736,6 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ADropCharacter, EquippedWeapon);
+	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
 }
 
