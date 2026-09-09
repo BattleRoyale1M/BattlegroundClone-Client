@@ -16,9 +16,10 @@ class BATTLEGROUNDCLONE_API AAirPlane : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	AAirPlane();
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	/*
 	출발 & 도착 지점
@@ -113,8 +114,13 @@ protected:
 	TObjectPtr<USceneComponent> SeatPoint;
 
 private:
-	float Elapsed = 0.f;
-	
+	// 서버가 기록하는 비행 시작 시각(서버 월드 시간). 클라는 이걸로 같은 lerp 를 돌린다.
+	UPROPERTY(Replicated)
+	float FlightStartServerTime = -1.f;
+
+	// 모든 머신에서 동일한 비행 진행률(0~1). 복제된 시작 시각 기준.
+	float GetFlightAlpha() const;
+
 	FTimerHandle BoardTimerHandle;
 	void TryBoardAll();
 };
