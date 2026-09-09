@@ -688,6 +688,10 @@ void ADropCharacter::OnRep_EquippedWeapon()
 
 void ADropCharacter::EquipDefaultWeapon()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
 	if (!DefaultWeaponClass || EquippedWeapon)
 	{
 		return;
