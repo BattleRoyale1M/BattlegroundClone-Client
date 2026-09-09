@@ -29,8 +29,16 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override; /* RPC Server */
 
 	/** Current phase of the jump -> freefall -> parachute flow. Drives movement params + AnimBP. */
-	UPROPERTY(BlueprintReadOnly, Category = "Drop")
+	UPROPERTY(ReplicatedUsing = OnRep_DropState, BlueprintReadOnly, Category = "Drop")
 	EDropState DropState = EDropState::Ground;
+	EDropState PrevDropState = EDropState::Ground;
+
+	void ApplyDropState(EDropState OldState, EDropState NewState);
+	UFUNCTION() void OnRep_DropState();
+
+	UFUNCTION(Server, Reliable) void ServerBeginFreefall();
+	UFUNCTION(Server, Reliable) void ServerDeployParachute();
+
 	
 	UFUNCTION(BlueprintCallable, Category = "Drop")
 	void SetDropState(EDropState NewState);

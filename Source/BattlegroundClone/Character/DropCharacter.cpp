@@ -92,17 +92,14 @@ void ADropCharacter::BeginPlay()
 */
 void ADropCharacter::BeginFreefall()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
 	if (DropState != EDropState::InPlane) return;
 
 	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 	BoardedPlane = nullptr;
-
-	if (CameraBoom)
-	{
-		CameraBoom->TargetArmLength = DefaultArmLength;
-		CameraBoom->SocketOffset    = FVector::ZeroVector;
-		CameraBoom->bDoCollisionTest = true;
-	}
 
 	SetDropState(EDropState::Freefall);
 
@@ -121,15 +118,15 @@ void ADropCharacter::Tick(float DeltaTime)
 	switch (DropState)
 	{
 	case EDropState::Freefall:
-		UpdateFreefall(DeltaTime);
-		if (GroundDistance() <= AutoDeployHeight) DeployParachute();
+		if (HasAuthority() || IsLocallyControlled()) UpdateFreefall(DeltaTime);
+		if (HasAuthority() && GroundDistance() <= AutoDeployHeight) DeployParachute();
 		break;
 	case EDropState::Parachuting:
-		 UpdateParachute(DeltaTime);
-		if (GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
+		if (HasAuthority() || IsLocallyControlled()) UpdateParachute(DeltaTime);
+		if (HasAuthority() && GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
 		break;
 	case EDropState::Ground:
-		UpdateAimCamera(DeltaTime);
+		if (IsLocallyControlled()) UpdateAimCamera(DeltaTime);
 		break;
 	default:
 		break;
@@ -192,7 +189,7 @@ void ADropCharacter::OnJumpPressed()
 	
 	if (DropState == EDropState::InPlane)
 	{
-		BeginFreefall();
+		ServerBeginFreefall();
 	}
 	else
 	{
@@ -204,7 +201,7 @@ void ADropCharacter::OnParachutePressed()
 {
 	if (DropState == EDropState::Freefall)
 	{
-		DeployParachute();
+		ServerDeployParachute();
 	}
 }
 
@@ -240,123 +237,15 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	{
 		return;
 	}
-	
 	const EDropState Old = DropState;
-	DropState = NewState;
+	DropState = NewState; // ★ 서버에서만 호출됨 → 복제 → 클라 OnRep_DropState
+	
 	if (NewState != EDropState::Ground && AimMode != EDropAimMode::Hip)
 	{
 		SetAimMode(EDropAimMode::Hip);
 	}
-	
-	if (UCharacterMovementComponent* M = GetCharacterMovement())
-	{
-		switch (NewState)
-		{
-		case EDropState::InPlane:
-			M->DisableMovement();
-			break;
-
-		case EDropState::Freefall:
-		case EDropState::Parachuting:
-			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
-			M->GravityScale = 0.f;
-			M->AirControl = 1.f;
-			M->bOrientRotationToMovement = false;
-			bUseControllerRotationYaw = true;
-			break;
-
-		case EDropState::Ground:
-		default:
-			M->GravityScale = 1.f;
-			M->AirControl = 0.35f;
-			M->bOrientRotationToMovement = true;
-			bUseControllerRotationYaw = false;
-			M->SetMovementMode(MOVE_Walking);
-			break;
-		}
-	}
-	
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
-	{
-		MeshComp -> SetVisibility(NewState != EDropState::InPlane);
-	}
-
-	// 낙하/낙하산 중엔 카메라를 뒤로 빼서 캐노피까지 보이게, 착지 시 원상복귀
-	if (CameraBoom)
-	{
-		switch (NewState)
-		{
-		case EDropState::Freefall:
-		case EDropState::Parachuting:
-			CameraBoom->TargetArmLength   = DescentArmLength;
-			CameraBoom->SocketOffset      = DescentSocketOffset;
-			CameraBoom->bDoCollisionTest  = false;
-			break;
-		case EDropState::Ground:
-			CameraBoom->TargetArmLength   = DefaultArmLength;
-			CameraBoom->SocketOffset      = FVector::ZeroVector;
-			CameraBoom->bDoCollisionTest  = true;
-			break;
-		default:
-			break;
-		}
-	}
-
-	if (NewState == EDropState::Freefall)
-	{
-		ShowParachutePrompt();
-	}
-	else
-	{
-		HideParachutePrompt();
-	}
-	// 낙하산 생김새 분기
-	if (NewState == EDropState::Parachuting)
-	{
-		ShowParachute();
-	}
-	else if (Old == EDropState::Parachuting)
-	{
-		HideParachute();
-	}
-
-	OnDropStateChanged(NewState, Old);
-}
-
-void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
-{
-	if (!Plane || !Seat)
-	{
-		return;
-	}
-	BoardedPlane = Plane;
-	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	SetDropState(EDropState::InPlane);
-	
-	if (AController* C = GetController())
-	{
-		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw() + InPlaneYawOffset, 0.f));
-	}
-	
-	/*
-	비행기 전체가 보이도록 붐을 멀리 + 위로. 붐이 지형/메시에 튕겨 들어오지 않게 콜리전 테스트 끔.
-	*/
-	if (CameraBoom)
-	{
-		CameraBoom->TargetArmLength = InPlaneArmLength;
-		CameraBoom->SocketOffset = InPlaneSocketOffset;
-		CameraBoom->bDoCollisionTest = false;
-	}
-	
-}
-
-/*
-낙하산
-*/
-void ADropCharacter::DeployParachute()
-{
-	if (DropState != EDropState::Freefall) return;
-	SetDropState(EDropState::Parachuting);
+	ApplyDropState(Old, NewState);
+	PrevDropState = NewState;
 }
 
 void ADropCharacter::ShowParachutePrompt()
@@ -741,5 +630,137 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ADropCharacter, EquippedWeapon);
 	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
+	DOREPLIFETIME(ADropCharacter, DropState);
+}
+
+void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
+{
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
+	{
+		switch (NewState)
+		{
+		case EDropState::InPlane:
+			M->DisableMovement();
+			break;
+
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
+			M->GravityScale = 0.f;
+			M->AirControl = 1.f;
+			M->bOrientRotationToMovement = false;
+			bUseControllerRotationYaw = true;
+			break;
+
+		case EDropState::Ground:
+		default:
+			M->GravityScale = 1.f;
+			M->AirControl = 0.35f;
+			M->bOrientRotationToMovement = true;
+			bUseControllerRotationYaw = false;
+			M->SetMovementMode(MOVE_Walking);
+			break;
+		}
+	}
+	
+	// 메시 가시성 (전원)
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetVisibility(NewState != EDropState::InPlane);
+	}
+	// 카메라 (내 화면 전용)
+	if (IsLocallyControlled() && CameraBoom)
+	{
+		switch (NewState)
+		{
+		case EDropState::InPlane:
+			CameraBoom->TargetArmLength  = InPlaneArmLength;
+			CameraBoom->SocketOffset     = InPlaneSocketOffset;
+			CameraBoom->bDoCollisionTest = false;
+			break;
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			CameraBoom->TargetArmLength  = DescentArmLength;
+			CameraBoom->SocketOffset     = DescentSocketOffset;
+			CameraBoom->bDoCollisionTest = false;
+			break;
+		case EDropState::Ground:
+			CameraBoom->TargetArmLength  = DefaultArmLength;
+			CameraBoom->SocketOffset     = FVector::ZeroVector;
+			CameraBoom->bDoCollisionTest = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	// 낙하산 프롬프트 (내부에서 이미 IsLocallyControlled 체크)
+	if (NewState == EDropState::Freefall)
+	{
+		ShowParachutePrompt();
+	}
+	else
+	{
+		HideParachutePrompt();
+	}
+	// 낙하산 생김새 분기
+	if (NewState == EDropState::Parachuting)
+	{
+		ShowParachute();
+	}
+	else if (OldState == EDropState::Parachuting)
+	{
+		HideParachute();
+	}
+
+	OnDropStateChanged(NewState, OldState);
+}
+
+void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
+{
+	if (!HasAuthority()) return;
+	if (!Plane || !Seat) return;
+
+	BoardedPlane = Plane;
+	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale); // 서버 부착 → 복제됨
+	SetDropState(EDropState::InPlane);
+
+	if (AController* C = GetController())
+	{
+		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw() + InPlaneYawOffset, 0.f));
+	}
+}
+
+
+/*
+낙하산
+*/
+void ADropCharacter::DeployParachute()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	if (DropState != EDropState::Freefall)
+	{
+		return;
+	}
+	SetDropState(EDropState::Parachuting);
+}
+
+void ADropCharacter::OnRep_DropState()
+{
+	ApplyDropState(PrevDropState, DropState);
+	PrevDropState = DropState;
+}
+
+void ADropCharacter::ServerBeginFreefall_Implementation()
+{
+	BeginFreefall();
+}
+
+void ADropCharacter::ServerDeployParachute_Implementation()
+{
+	DeployParachute();
 }
 

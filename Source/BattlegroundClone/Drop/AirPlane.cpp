@@ -9,6 +9,10 @@
 
 AAirPlane::AAirPlane()
 {
+	bReplicates = true;
+	SetReplicateMovement(true);
+	bAlwaysRelevant = true;   // 클라가 폰 부착정보보다 비행기를 먼저 받도록 (부착 복제 레이스 방지)
+
 	PrimaryActorTick.bCanEverTick = true;
 	RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
 	SetRootComponent(RootScene);
@@ -47,25 +51,28 @@ void AAirPlane::BeginPlay()
 	{
 		BodyMesh->SetRelativeRotation(MeshRotationOffset);
 	}
-	
+	if (!HasAuthority())
+	{
+		return;
+	}
 	GetWorldTimerManager().SetTimerForNextTick([this]()
 	{
-		if (ADropCharacter* Player = Cast<ADropCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0)))
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		{
-			BoardPassenger(Player);
+			if (APlayerController* PC = It->Get())
+			{
+				if (ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn()))
+				{
+					BoardPassenger(Player);
+				}
+			}
 		}
 	});
-	
 }
 
 void AAirPlane::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	
-	Elapsed += DeltaSeconds;
-	const float Alpha = FMath::Clamp(Elapsed / FlightDuration, 0.f, 1.f);
-	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
-	
 	TArray<UStaticMeshComponent*> MeshComps;
 	GetComponents<UStaticMeshComponent>(MeshComps);
 	for (UStaticMeshComponent* Comp : MeshComps)
@@ -75,6 +82,11 @@ void AAirPlane::Tick(float DeltaSeconds)
 			Comp -> AddLocalRotation(FRotator(0.f, 0.f,  PropellerDegPerSec * DeltaSeconds));
 		}
 	}
+	if (!HasAuthority()) return;
+	Elapsed += DeltaSeconds;
+	const float Alpha = FMath::Clamp(Elapsed / FlightDuration, 0.f, 1.f);
+	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
+	
 	if (Alpha >= 1.f && bDestroyOnArrival)
 	{
 		Destroy();
@@ -83,6 +95,7 @@ void AAirPlane::Tick(float DeltaSeconds)
 
 void AAirPlane::BoardPassenger(ADropCharacter* Who)
 {
+	if (!HasAuthority()) return;
 	if (Who && SeatPoint)
 	{
 		Who->EnterPlane(this, SeatPoint);
