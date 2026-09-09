@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Engine/TimerHandle.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "AirPlane.generated.h"
@@ -112,4 +114,7 @@ protected:
 
 private:
 	float Elapsed = 0.f;
+	
+	FTimerHandle BoardTimerHandle;
+	void TryBoardAll();
 };

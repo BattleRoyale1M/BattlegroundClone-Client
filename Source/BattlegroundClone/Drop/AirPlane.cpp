@@ -55,19 +55,31 @@ void AAirPlane::BeginPlay()
 	{
 		return;
 	}
-	GetWorldTimerManager().SetTimerForNextTick([this]()
+	GetWorldTimerManager().SetTimer(
+		BoardTimerHandle, this, &AAirPlane::TryBoardAll, 0.25f, true, 0.f);
+}
+
+void AAirPlane::TryBoardAll()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		APlayerController* PC = It->Get();
+		if (!PC) continue;
+
+		ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn());
+		if (!Player) continue;   // 아직 possess 안 됨 → 다음 틱에 다시
+
+		if (Player->DropState != EDropState::InPlane)
 		{
-			if (APlayerController* PC = It->Get())
-			{
-				if (ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn()))
-				{
-					BoardPassenger(Player);
-				}
-			}
+			BoardPassenger(Player);
 		}
-	});
+	}
+
+	// 비행 절반 지나면 탑승 마감 → 재시도 중단
+	if (Elapsed > FlightDuration * 0.5f)
+	{
+		GetWorldTimerManager().ClearTimer(BoardTimerHandle);
+	}
 }
 
 void AAirPlane::Tick(float DeltaSeconds)

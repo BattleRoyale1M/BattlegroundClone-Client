@@ -722,7 +722,7 @@ void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
 	if (!Plane || !Seat) return;
 
 	BoardedPlane = Plane;
-	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale); // 서버 부착 → 복제됨
+	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	SetDropState(EDropState::InPlane);
 
 	if (AController* C = GetController())
