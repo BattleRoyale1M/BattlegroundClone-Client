@@ -4,7 +4,8 @@
 
 ALobbyGameMode::ALobbyGameMode()
 {
-	bUseSeamlessTravel = true;
+	// [진단] 클라 비행기 안 보이는 원인이 seamless travel 인지 확인용. 확인 후 원복.
+	bUseSeamlessTravel = false;
 }
 
 void ALobbyGameMode::BeginPlay()
