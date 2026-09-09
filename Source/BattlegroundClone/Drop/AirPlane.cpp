@@ -69,7 +69,7 @@ void AAirPlane::TryBoardAll()
 		ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn());
 		if (!Player) continue;   // 아직 possess 안 됨 → 다음 틱에 다시
 
-		if (Player->DropState != EDropState::InPlane)
+		if (Player->DropState == EDropState::Ground)   // 갓 스폰(지상 대기)인 사람만 태움. 뛰어내린 사람은 재탑승 X
 		{
 			BoardPassenger(Player);
 		}
