@@ -6,8 +6,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
-#include "GameFramework/GameStateBase.h"
-#include "Engine/Engine.h"
 
 
 AAirPlane::AAirPlane()
@@ -138,16 +136,6 @@ void AAirPlane::Tick(float DeltaSeconds)
 	}
 
 	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, SmoothAlpha));
-
-	if (GEngine)
-	{
-		const int32 Key = HasAuthority() ? 8801 : 8802;
-		const FColor Col = HasAuthority() ? FColor::Yellow : FColor::Cyan;
-		GEngine->AddOnScreenDebugMessage(Key, 2.f, Col, FString::Printf(
-			TEXT("[Plane] %s  loc=%s  repA=%.2f  smoothA=%.2f  dur=%.0f"),
-			HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
-			*GetActorLocation().ToCompactString(), FlightAlpha, SmoothAlpha, FlightDuration));
-	}
 
 	if (HasAuthority() && FlightAlpha >= 1.f && bDestroyOnArrival)
 	{
