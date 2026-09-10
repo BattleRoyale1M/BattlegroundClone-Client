@@ -21,7 +21,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::ApplyDamage(float Amount)
 {
-	if (bDead || Amount <= 0.f || GetOwner() || !GetOwner()->HasAuthority())
+	if (bDead || Amount <= 0.f || !GetOwner() || !GetOwner()->HasAuthority())
 	{
 		return;
 	}
