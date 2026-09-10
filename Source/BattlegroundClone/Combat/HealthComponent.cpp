@@ -22,7 +22,8 @@ void UHealthComponent::BeginPlay()
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UHealthComponent, Health);
+	
+	DOREPLIFETIME_CONDITION_NOTIFY(UHealthComponent, Health, COND_None, REPNOTIFY_Always);
 }
 
 void UHealthComponent::ApplyDamage(float Amount)
