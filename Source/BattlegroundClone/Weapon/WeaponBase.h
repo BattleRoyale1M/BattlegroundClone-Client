@@ -107,6 +107,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
 	float MuzzleLightFadeTime = 0.05f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
+	TSubclassOf<class AProjectileBullet> ProjectileClass;
+	
 	// --- Runtime state ---------------------------------------
 	UPROPERTY(Replicated)
 	int32 CurrentAmmo = 0;
