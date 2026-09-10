@@ -86,6 +86,9 @@ public:
 	*/
 	UFUNCTION(Exec)
 	void DbgHurt(float Amt = 20.f);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_DbgHurt(float Amt);
 
 
 protected:

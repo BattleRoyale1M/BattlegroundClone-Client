@@ -785,6 +785,18 @@ float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 */
 void ADropCharacter::DbgHurt(float Amt)
 {
-	if (HasAuthority() && HealthComp) HealthComp->ApplyDamage(Amt);
+	if (HasAuthority())
+	{
+		if (HealthComp) HealthComp->ApplyDamage(Amt);
+	}
+	else
+	{
+		Server_DbgHurt(Amt);
+	}
+}
+
+void ADropCharacter::Server_DbgHurt_Implementation(float Amt)
+{
+	if (HealthComp) HealthComp->ApplyDamage(Amt);
 }
 
