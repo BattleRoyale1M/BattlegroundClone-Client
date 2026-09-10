@@ -1,5 +1,6 @@
 #include "Character/DropCharacter.h"
 
+#include "Combat/HealthComponent.h"
 #include "Weapon/WeaponBase.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
@@ -67,6 +68,8 @@ ADropCharacter::ADropCharacter()
 	ParachuteMesh->SetGenerateOverlapEvents(false);
 	ParachuteMesh->SetVisibility(false);
 	ParachuteMesh->SetHiddenInGame(true);
+	
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 }
 
 void ADropCharacter::BeginPlay()
@@ -762,5 +765,18 @@ void ADropCharacter::ServerBeginFreefall_Implementation()
 void ADropCharacter::ServerDeployParachute_Implementation()
 {
 	DeployParachute();
+}
+
+/*
+HP
+*/
+float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	if (HealthComp)
+	{
+		HealthComp -> ApplyDamage(DamageAmount);
+	}
+	return Applied;
 }
 

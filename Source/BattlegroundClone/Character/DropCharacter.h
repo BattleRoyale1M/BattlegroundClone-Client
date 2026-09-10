@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Combat/HealthComponent.h"
 #include "Core/Enums/DropTypes.h"
+
 #include "DropCharacter.generated.h"
 
 class USpringArmComponent;
@@ -15,6 +17,7 @@ class AAirPlane;
 class AWeaponBase;
 class USceneComponent;
 class UserWidget;
+class UHealthComponent;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -27,7 +30,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override; /* RPC Server */
-
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+		AController* EventInstigator, AActor* DamageCauser) override;
+	
 	/** Current phase of the jump -> freefall -> parachute flow. Drives movement params + AnimBP. */
 	UPROPERTY(ReplicatedUsing = OnRep_DropState, BlueprintReadOnly, Category = "Drop")
 	EDropState DropState = EDropState::Ground;
@@ -69,6 +74,12 @@ public:
 
 	// 발사 시 1회성 상체 반동 몽타주. MulticastFireFX에서 모든 머신에 호출됨.
 	void PlayFireMontage();
+	
+	UFUNCTION(BlueprintPure, Category="Combat")
+	UHealthComponent* GetHealthComp() const
+	{
+		return HealthComp;
+	}
 
 
 protected:
@@ -144,6 +155,9 @@ protected:
 	UFUNCTION(Server, Reliable) 
 	void ServerSetAimMode(EDropAimMode NewMode);
 	
+	// HP
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<class UHealthComponent> HealthComp;
 	
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bIsAiming = false;
