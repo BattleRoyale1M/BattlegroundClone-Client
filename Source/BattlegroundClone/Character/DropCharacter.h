@@ -80,6 +80,12 @@ public:
 	{
 		return HealthComp;
 	}
+	
+	/*
+	 DEBUG
+	*/
+	UFUNCTION(Exec)
+	void DbgHurt(float Amt = 20.f);
 
 
 protected:

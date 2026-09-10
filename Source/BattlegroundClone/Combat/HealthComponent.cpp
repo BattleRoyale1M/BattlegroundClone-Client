@@ -10,7 +10,13 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Health = MaxHealth;
+	
+	// 서버에서 초기 체력 설정
+	if (GetOwner() && GetOwner() -> HasAuthority())
+	{
+		Health = MaxHealth;
+	}
+	OnHealthChanged.Broadcast(Health, MaxHealth);
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
