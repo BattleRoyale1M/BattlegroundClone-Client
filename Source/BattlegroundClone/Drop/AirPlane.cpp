@@ -13,9 +13,9 @@
 AAirPlane::AAirPlane()
 {
 	bReplicates = true;
-	SetReplicateMovement(false); // 이동은 결정론적 lerp 로 각 머신이 계산 (AActor 이동 복제 안 씀)
-	bAlwaysRelevant = true;      // 넷 릴러번시: 항상 복제 대상
-	bNetLoadOnClient = false;    // 레벨(WP 셀)에서 로드하지 말고 서버가 클라로 동적 복제 → 큰 맵에서도 클라에 항상 존재
+	SetReplicateMovement(false);
+	bAlwaysRelevant = true;
+	bNetLoadOnClient = false;
 
 	PrimaryActorTick.bCanEverTick = true;
 	RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
@@ -56,7 +56,6 @@ void AAirPlane::BeginPlay()
 		return;
 	}
 
-	// 이륙은 첫 탑승 시점에 TryBoardAll 에서 시작 (여기선 탑승 재시도 타이머만 건다)
 	GetWorldTimerManager().SetTimer(
 		BoardTimerHandle, this, &AAirPlane::TryBoardAll, 0.25f, true, 0.f);
 }
@@ -65,7 +64,7 @@ void AAirPlane::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AAirPlane, FlightAlpha);
-	DOREPLIFETIME_CONDITION(AAirPlane, StartPoint, COND_InitialOnly);   // 스폰 시 1회만
+	DOREPLIFETIME_CONDITION(AAirPlane, StartPoint, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AAirPlane, EndPoint,   COND_InitialOnly);
 }
 
@@ -86,7 +85,7 @@ void AAirPlane::TryBoardAll()
 		ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn());
 		if (!Player) continue;
 
-		if (Player->DropState == EDropState::Ground)   // 갓 스폰(지상 대기)인 사람만 태움. 뛰어내린 사람은 재탑승 X
+		if (Player->DropState == EDropState::Ground)
 		{
 			BoardPassenger(Player);
 			bBoardedSomeone = true;
@@ -94,7 +93,7 @@ void AAirPlane::TryBoardAll()
 	}
 	if (bBoardedSomeone && FlightStartTime < 0.f)
 	{
-		FlightStartTime = GetWorld()->GetTimeSeconds();   // 서버 로컬 시각 → 이륙
+		FlightStartTime = GetWorld()->GetTimeSeconds();
 	}
 	if (FlightAlpha > 0.5f)
 	{
@@ -117,7 +116,6 @@ void AAirPlane::Tick(float DeltaSeconds)
 	
 	if (HasAuthority())
 	{
-		// 서버: 로컬 시각으로 진행률 계산 (이륙 전이면 FlightStartTime < 0 → 0 유지)
 		if (FlightStartTime >= 0.f)
 		{
 			FlightAlpha = FMath::Clamp(
@@ -128,10 +126,9 @@ void AAirPlane::Tick(float DeltaSeconds)
 	}
 	else
 	{
-		// 클라: 매 프레임 전진 + 복제된 FlightAlpha 로 수렴 (시계 동기화 불필요)
 		if (FlightAlpha <= 0.f)
 		{
-			SmoothAlpha = 0.f;   // 아직 이륙 전 → StartPoint 고정
+			SmoothAlpha = 0.f;
 		}
 		else
 		{

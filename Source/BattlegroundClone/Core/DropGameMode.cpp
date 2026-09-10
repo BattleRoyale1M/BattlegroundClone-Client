@@ -2,6 +2,8 @@
 
 #include "Drop/AirPlane.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Pawn.h"
 
 #include "DropMapLibrary.h"
 #include "Character/DropCharacter.h"
@@ -60,6 +62,17 @@ void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels
 {
 	const FVector2D MapSize(MapPixels, MapPixels);
 	const FVector SelfLoc = GetSelfMapLocation();
+
+	if (GEngine)
+	{
+		const APawn* P = GetPawn();
+		GEngine->AddOnScreenDebugMessage(HasAuthority() ? 8811 : 8812, 2.f,
+			HasAuthority() ? FColor::Orange : FColor::Green, FString::Printf(
+			TEXT("[Map] %s  selfLoc=%s  pawn=%s  attachTo=%s"),
+			HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
+			*SelfLoc.ToCompactString(), *GetNameSafe(P),
+			P ? *GetNameSafe(P->GetAttachParentActor()) : TEXT("-")));
+	}
 	const FVector2D NormSelf = UDropMapLibrary::WorldToNormalized(SelfLoc, WorldMin, WorldMax);
 	const FVector2D SelfPx = UDropMapLibrary::NormalizedToWidget(FVector2D(NormSelf.Y, NormSelf.X), MapSize, true);
 	OutPan = FVector2D(ViewportPixels * 0.5f, ViewportPixels * 0.5f) - SelfPx;
