@@ -79,6 +79,8 @@ protected:
 
 private:
 	AAirPlane* FindPlane() const;
+	
+	void EnsureBounds() const;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> HUDWidget;
@@ -86,8 +88,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> WorldMapWidget;
 
-	FVector2D WorldMin = FVector2D(-100000.0, -100000.0);
-	FVector2D WorldMax = FVector2D(100000.0, 100000.0);
+	mutable FVector2D WorldMin = FVector2D(-100000.0, -100000.0);
+	mutable FVector2D WorldMax = FVector2D(100000.0, 100000.0);
+	mutable bool bBoundsResolved = false; // 경계값 구했는지 여부
 
 	FVector2D MarkerNormalized = FVector2D::ZeroVector;
 	bool bHasMarker = false;

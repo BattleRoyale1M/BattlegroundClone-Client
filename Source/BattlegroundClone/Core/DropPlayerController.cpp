@@ -20,14 +20,36 @@ ADropPlayerController::ADropPlayerController()
 {
 }
 
+void ADropPlayerController::EnsureBounds() const
+{
+	if (bBoundsResolved || !GetWorld())
+	{
+		return;
+	}
+
+	const ADropGameMode* GM = GetWorld()->GetAuthGameMode<ADropGameMode>(); 
+	if (!GM)
+	{
+		if (const AGameStateBase* GS = GetWorld()->GetGameState())
+		{
+			if (UClass* GMClass = GS->GameModeClass)
+			{
+				GM = GMClass->GetDefaultObject<ADropGameMode>();
+			}
+		}
+	}
+	if (GM)
+	{
+		GM->GetMapBounds(WorldMin, WorldMax);
+		bBoundsResolved = true;
+	}
+}
+
 void ADropPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (const ADropGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<ADropGameMode>() : nullptr)
-	{
-		GM->GetMapBounds(WorldMin, WorldMax);
-	}
+	EnsureBounds();
 
 	if (!IsLocalController())
 	{
@@ -69,6 +91,7 @@ void ADropPlayerController::SetupInputComponent()
 
 void ADropPlayerController::GetMapBounds(FVector2D& OutWorldMin, FVector2D& OutWorldMax) const
 {
+	EnsureBounds();
 	OutWorldMin = WorldMin;
 	OutWorldMax = WorldMax;
 }

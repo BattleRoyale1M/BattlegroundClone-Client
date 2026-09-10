@@ -58,6 +58,7 @@ void ADropGameMode::BeginPlay()
 
 void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels, FVector2D& OutPan, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos) const
 {
+	EnsureBounds();
 	const FVector2D MapSize(MapPixels, MapPixels);
 	const FVector SelfLoc = GetSelfMapLocation();
 	const FVector2D NormSelf = UDropMapLibrary::WorldToNormalized(SelfLoc, WorldMin, WorldMax);
@@ -70,6 +71,7 @@ void ADropPlayerController::GetMinimapView(float MapPixels, float ViewportPixels
 
 void ADropPlayerController::GetWorldMapView(float MapPixels, FVector2D& OutSelfPos, float& OutSelfAngle, bool& bMarkerValid, FVector2D& OutMarkerPos) const
 {
+	EnsureBounds();
 	const FVector2D MapSize(MapPixels, MapPixels);
 	const FVector SelfLoc = GetSelfMapLocation();
 	const FVector2D NormSelf = UDropMapLibrary::WorldToNormalized(SelfLoc, WorldMin, WorldMax);
@@ -82,6 +84,7 @@ void ADropPlayerController::GetWorldMapView(float MapPixels, FVector2D& OutSelfP
 void ADropPlayerController::GetFlightPathLine(float MapPixels, FVector2D& OutMid,
 	float& OutLength, float& OutAngle, bool& bHasPath) const
 {
+	EnsureBounds();
 	const FVector2D MapSize(MapPixels, MapPixels);
 	FVector FS, FE;
 	bHasPath = GetFlightPath(FS, FE);
