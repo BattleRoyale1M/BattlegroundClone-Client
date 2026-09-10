@@ -17,6 +17,14 @@ public:
 	
 protected:
 	virtual void OnPostLogin(AController* NewPlayer) override;
+	virtual void BeginPlay() override;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Plane")
+	TSubclassOf<class AAirPlane> PlaneClass;
+	UPROPERTY(EditAnywhere, Category = "Drop|Plane")
+	FVector PlaneRouteStart = FVector(-100000.f, 0.f, 20000.f);
+	UPROPERTY(EditAnywhere, Category = "Drop|Plane")
+	FVector PlaneRouteEnd = FVector(100000.f, 0.f, 20000.f);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DropMap")
 	FVector2D WorldMin = FVector2D(-100000.0, -100000.0);

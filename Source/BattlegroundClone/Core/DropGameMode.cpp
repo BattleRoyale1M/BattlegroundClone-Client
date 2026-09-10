@@ -1,5 +1,8 @@
 #include "Core/DropGameMode.h"
 
+#include "Drop/AirPlane.h"
+#include "Kismet/GameplayStatics.h"
+
 #include "DropMapLibrary.h"
 #include "Character/DropCharacter.h"
 #include "Core/DropPlayerController.h"
@@ -32,6 +35,24 @@ void ADropGameMode::OnPostLogin(AController* NewPlayer)
 		{
 			PS->MarkerColor = MarkerPalette[NextMarkerIndex++ % MarkerPalette.Num()];
 		}
+	}
+}
+
+void ADropGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!PlaneClass)
+	{
+		return;
+	}
+	
+	const FTransform Xform(FRotator::ZeroRotator, PlaneRouteStart);
+	if (AAirPlane* Plane = GetWorld()->SpawnActorDeferred<AAirPlane>(
+			PlaneClass, Xform, nullptr, nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn))
+	{
+		Plane->SetRoute(PlaneRouteStart, PlaneRouteEnd);
+		UGameplayStatics::FinishSpawningActor(Plane, Xform);
 	}
 }
 

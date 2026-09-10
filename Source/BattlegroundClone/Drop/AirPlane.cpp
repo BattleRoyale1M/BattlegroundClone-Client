@@ -55,12 +55,7 @@ void AAirPlane::BeginPlay()
 		return;
 	}
 
-	// 서버: 비행 시작 시각 기록 (복제되어 클라도 같은 타임라인 사용)
-	if (const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr)
-	{
-		FlightStartServerTime = GS->GetServerWorldTimeSeconds();
-	}
-
+	// 이륙은 첫 탑승 시점에 TryBoardAll 에서 시작 (여기선 탑승 재시도 타이머만 건다)
 	GetWorldTimerManager().SetTimer(
 		BoardTimerHandle, this, &AAirPlane::TryBoardAll, 0.25f, true, 0.f);
 }
@@ -71,34 +66,46 @@ void AAirPlane::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AAirPlane, FlightStartServerTime);
 }
 
+void AAirPlane::SetRoute(FVector InStart, FVector InEnd)
+{
+	StartPoint = InStart;
+	EndPoint = InEnd;
+}
+
 float AAirPlane::GetFlightAlpha() const
 {
+	if (FlightStartServerTime < 0.f) return 0.f;
 	const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
-	if (!GS || FlightStartServerTime < 0.f)
-	{
-		return 0.f;
-	}
-	const float FlightElapsed = GS->GetServerWorldTimeSeconds() - FlightStartServerTime;
-	return FMath::Clamp(FlightElapsed / FMath::Max(FlightDuration, 0.01f), 0.f, 1.f);
+	if (!GS) return 0.f;
+	return FMath::Clamp(
+		(GS->GetServerWorldTimeSeconds() - FlightStartServerTime) / FMath::Max(FlightDuration, 0.01f),
+		0.f, 1.f);
 }
 
 void AAirPlane::TryBoardAll()
 {
+	bool bBoardedSomeone = false;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		APlayerController* PC = It->Get();
 		if (!PC) continue;
 
 		ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn());
-		if (!Player) continue;   // 아직 possess 안 됨 → 다음 틱에 다시
+		if (!Player) continue;
 
 		if (Player->DropState == EDropState::Ground)   // 갓 스폰(지상 대기)인 사람만 태움. 뛰어내린 사람은 재탑승 X
 		{
 			BoardPassenger(Player);
+			bBoardedSomeone = true;
 		}
 	}
-
-	// 비행 절반 지나면 탑승 마감 → 재시도 중단
+	if (bBoardedSomeone && FlightStartServerTime < 0.f)
+	{
+		if (const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr)
+		{
+			FlightStartServerTime = GS->GetServerWorldTimeSeconds();
+		}
+	}
 	if (GetFlightAlpha() > 0.5f)
 	{
 		GetWorldTimerManager().ClearTimer(BoardTimerHandle);
@@ -117,11 +124,10 @@ void AAirPlane::Tick(float DeltaSeconds)
 			Comp -> AddLocalRotation(FRotator(0.f, 0.f,  PropellerDegPerSec * DeltaSeconds));
 		}
 	}
-	// 이동: 전 머신이 복제된 시작 시각 기준으로 동일하게 계산
+	
 	const float Alpha = GetFlightAlpha();
 	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
 
-	// 도착 처리는 서버만
 	if (HasAuthority() && Alpha >= 1.f && bDestroyOnArrival)
 	{
 		Destroy();
