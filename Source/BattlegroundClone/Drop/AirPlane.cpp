@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/GameStateBase.h"
+#include "Engine/Engine.h"
 
 
 AAirPlane::AAirPlane()
@@ -127,6 +128,16 @@ void AAirPlane::Tick(float DeltaSeconds)
 	
 	const float Alpha = GetFlightAlpha();
 	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
+
+	if (GEngine)
+	{
+		const int32 Key = HasAuthority() ? 8801 : 8802;
+		const FColor Col = HasAuthority() ? FColor::Yellow : FColor::Cyan;
+		GEngine->AddOnScreenDebugMessage(Key, 2.f, Col, FString::Printf(
+			TEXT("[Plane] %s  loc=%s  a=%.2f  startT=%.1f  dur=%.0f"),
+			HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
+			*GetActorLocation().ToCompactString(), Alpha, FlightStartServerTime, FlightDuration));
+	}
 
 	if (HasAuthority() && Alpha >= 1.f && bDestroyOnArrival)
 	{
