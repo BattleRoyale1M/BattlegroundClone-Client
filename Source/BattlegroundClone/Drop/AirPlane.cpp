@@ -64,23 +64,15 @@ void AAirPlane::BeginPlay()
 void AAirPlane::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AAirPlane, FlightStartServerTime);
+	DOREPLIFETIME(AAirPlane, FlightAlpha);
+	DOREPLIFETIME_CONDITION(AAirPlane, StartPoint, COND_InitialOnly);   // 스폰 시 1회만
+	DOREPLIFETIME_CONDITION(AAirPlane, EndPoint,   COND_InitialOnly);
 }
 
 void AAirPlane::SetRoute(FVector InStart, FVector InEnd)
 {
 	StartPoint = InStart;
 	EndPoint = InEnd;
-}
-
-float AAirPlane::GetFlightAlpha() const
-{
-	if (FlightStartServerTime < 0.f) return 0.f;
-	const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
-	if (!GS) return 0.f;
-	return FMath::Clamp(
-		(GS->GetServerWorldTimeSeconds() - FlightStartServerTime) / FMath::Max(FlightDuration, 0.01f),
-		0.f, 1.f);
 }
 
 void AAirPlane::TryBoardAll()
@@ -100,14 +92,11 @@ void AAirPlane::TryBoardAll()
 			bBoardedSomeone = true;
 		}
 	}
-	if (bBoardedSomeone && FlightStartServerTime < 0.f)
+	if (bBoardedSomeone && FlightStartTime < 0.f)
 	{
-		if (const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr)
-		{
-			FlightStartServerTime = GS->GetServerWorldTimeSeconds();
-		}
+		FlightStartTime = GetWorld()->GetTimeSeconds();   // 서버 로컬 시각 → 이륙
 	}
-	if (GetFlightAlpha() > 0.5f)
+	if (FlightAlpha > 0.5f)
 	{
 		GetWorldTimerManager().ClearTimer(BoardTimerHandle);
 	}
@@ -126,20 +115,44 @@ void AAirPlane::Tick(float DeltaSeconds)
 		}
 	}
 	
-	const float Alpha = GetFlightAlpha();
-	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
+	if (HasAuthority())
+	{
+		// 서버: 로컬 시각으로 진행률 계산 (이륙 전이면 FlightStartTime < 0 → 0 유지)
+		if (FlightStartTime >= 0.f)
+		{
+			FlightAlpha = FMath::Clamp(
+				(GetWorld()->GetTimeSeconds() - FlightStartTime) / FMath::Max(FlightDuration, 0.01f),
+				0.f, 1.f);
+		}
+		SmoothAlpha = FlightAlpha;
+	}
+	else
+	{
+		// 클라: 매 프레임 전진 + 복제된 FlightAlpha 로 수렴 (시계 동기화 불필요)
+		if (FlightAlpha <= 0.f)
+		{
+			SmoothAlpha = 0.f;   // 아직 이륙 전 → StartPoint 고정
+		}
+		else
+		{
+			SmoothAlpha = FMath::Clamp(SmoothAlpha + DeltaSeconds / FMath::Max(FlightDuration, 0.01f), 0.f, 1.f);
+			SmoothAlpha = FMath::FInterpTo(SmoothAlpha, FlightAlpha, DeltaSeconds, 8.f);
+		}
+	}
+
+	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, SmoothAlpha));
 
 	if (GEngine)
 	{
 		const int32 Key = HasAuthority() ? 8801 : 8802;
 		const FColor Col = HasAuthority() ? FColor::Yellow : FColor::Cyan;
 		GEngine->AddOnScreenDebugMessage(Key, 2.f, Col, FString::Printf(
-			TEXT("[Plane] %s  loc=%s  a=%.2f  startT=%.1f  dur=%.0f"),
+			TEXT("[Plane] %s  loc=%s  repA=%.2f  smoothA=%.2f  dur=%.0f"),
 			HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
-			*GetActorLocation().ToCompactString(), Alpha, FlightStartServerTime, FlightDuration));
+			*GetActorLocation().ToCompactString(), FlightAlpha, SmoothAlpha, FlightDuration));
 	}
 
-	if (HasAuthority() && Alpha >= 1.f && bDestroyOnArrival)
+	if (HasAuthority() && FlightAlpha >= 1.f && bDestroyOnArrival)
 	{
 		Destroy();
 	}

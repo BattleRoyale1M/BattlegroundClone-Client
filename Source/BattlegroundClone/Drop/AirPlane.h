@@ -79,7 +79,7 @@ protected:
 	/*
 	비행 시작 시점(월드)
 	*/
-	UPROPERTY(EditAnywhere, Category = "Flight")
+	UPROPERTY(EditAnywhere, Replicated, Category = "Flight")
 	FVector StartPoint = FVector::ZeroVector;
 
 	
@@ -92,7 +92,7 @@ protected:
 	/*
 	비행 종료 시점(월드)
 	*/
-	UPROPERTY(EditAnywhere, Category = "Flight")
+	UPROPERTY(EditAnywhere, Replicated, Category = "Flight")
 	FVector EndPoint = FVector(50000.f, 0.f, 0.f);
 	
 	/*
@@ -117,10 +117,13 @@ protected:
 	TObjectPtr<USceneComponent> SeatPoint;
 
 private:
+	// 서버 권위 진행률(0~1). 값 자체를 복제하고 클라는 보간 → 시계 동기화 불필요.
 	UPROPERTY(Replicated)
-	float FlightStartServerTime = -1.f;
-	float GetFlightAlpha() const;
-	
+	float FlightAlpha = 0.f;
+
+	float FlightStartTime = -1.f;   // 서버 로컬 (-1 = 아직 이륙 전)
+	float SmoothAlpha = 0.f;        // 클라 표시용 보간값 (복제 안 함)
+
 	FTimerHandle BoardTimerHandle;
 	void TryBoardAll();
 };
