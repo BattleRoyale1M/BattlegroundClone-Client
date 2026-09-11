@@ -864,7 +864,7 @@ void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 	const FText Line2 = FText::FromString(FString::Printf(TEXT("%d 킬"), NewKillCount));
 
 	// 7. 킬러의 PlayerController를 통해 화면 중앙에 주황색(FLinearColor) 알림 텍스트를 띄움!
-	KillerPC->ShowCenterNotification(Line1, Line2, FLinearColor(1.f, 0.55f, 0.1f));
+	KillerPC->ClientShowCenterNotification(Line1, Line2, FLinearColor(1.f, 0.55f, 0.1f));
 }
 
 /*

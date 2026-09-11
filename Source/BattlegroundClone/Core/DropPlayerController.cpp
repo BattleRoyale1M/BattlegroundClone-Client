@@ -243,3 +243,9 @@ void ADropPlayerController::ShowCenterNotification(const FText& Line1, const FTe
 		HUD->ShowCenterNotification(Line1, Line2, Line2Color);
 	}
 }
+
+void ADropPlayerController::ClientShowCenterNotification_Implementation(const FText& Line1, const FText& Line2,
+	FLinearColor Line2Color)
+{
+	ShowCenterNotification(Line1, Line2, Line2Color);
+}

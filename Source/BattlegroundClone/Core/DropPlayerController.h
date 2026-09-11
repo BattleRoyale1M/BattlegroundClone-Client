@@ -66,7 +66,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void ShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
-
+	// RPC 방향 문제대응
+	UFUNCTION(Client, Reliable, Category = "HUD")
+	void ClientShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
