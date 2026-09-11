@@ -272,6 +272,10 @@ void ADropCharacter::HideParachutePrompt()
 	ParachutePromptWidget = nullptr;
 }
 
+/*
+스코프
+*/
+
 void ADropCharacter::ShowScopeOverlay()
 {
 	if (!IsLocallyControlled())
@@ -301,6 +305,10 @@ void ADropCharacter::ShowScopeOverlay()
 
 void ADropCharacter::HideScopeOverlay()
 {
+	if (ScopeOverlayWidget)
+	{
+		ScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 /*
@@ -402,7 +410,7 @@ void ADropCharacter::OnAimPressed()
 	SetAimMode(EDropAimMode::Shoulder); 
 }
 
-// scope 해제
+// aim 해제
 void ADropCharacter::OnAimReleased()
 {
 	const float Held = GetWorld()->GetTimeSeconds() - AimPressTime;
@@ -434,6 +442,15 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 {
 	// 1인칭 스코프
+	if (NewMode == EDropAimMode::Shoulder)
+	{
+		ShowScopeOverlay();
+	}
+	else if (OldMode == EDropAimMode::Shoulder)
+	{
+		HideScopeOverlay();
+	}
+	
 	if (IsLocallyControlled() && EquippedWeapon)
 	{
 		if (NewMode == EDropAimMode::Scoped)
