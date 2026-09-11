@@ -2,6 +2,8 @@
 
 #include "Net/UnrealNetwork.h"
 
+#include "Combat/ProjectilePoolSubsystem.h"
+
 #include "Character/DropCharacter.h" 
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
@@ -144,12 +146,27 @@ void AWeaponBase::Fire()
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(
 		Hit, Start, End, ECC_Visibility, Params);
 	const FVector ImpactPoint = bHit ? Hit.ImpactPoint : End;
-
-	if (bHit && Hit.GetActor())
+	
+	const FVector MuzzleLocation = WeaponMesh ? WeaponMesh->GetSocketLocation(MuzzleSocketName) : GetActorLocation();
+	const FRotator LaunchRotation = (ImpactPoint - MuzzleLocation).Rotation();
+	
+	/*
+	서버 권한에서 오브젝트 풀을 통해 총알 발사
+	*/
+	if (HasAuthority() && ProjectileClass)
 	{
-		UGameplayStatics::ApplyPointDamage(
-			Hit.GetActor(), Damage, ViewRot.Vector(), Hit,
-			GetOwningController(), this, nullptr);
+		if (UProjectilePoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UProjectilePoolSubsystem>())
+		{
+			PoolSubsystem->GetProjectile(
+				ProjectileClass,
+				MuzzleLocation,
+				LaunchRotation,
+				Damage,
+				Range,
+				GetOwner(),
+				Cast<APawn>(GetOwner())
+			);
+		}
 	}
 
 	--CurrentAmmo;
