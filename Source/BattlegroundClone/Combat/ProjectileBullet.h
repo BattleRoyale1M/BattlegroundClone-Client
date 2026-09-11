@@ -27,6 +27,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionComp;
 
+	// 시각적 메시(3배 스케일)보다 판정이 너무 박하지 않도록 BP 디폴트에서 조정
+	UPROPERTY(EditDefaultsOnly, Category = "Components", meta = (ClampMin = "0.0"))
+	float CollisionRadius = 15.f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> BulletMesh; // 총알 실체
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 

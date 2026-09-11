@@ -326,6 +326,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float AimInterpSpeed = 12.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	TSubclassOf<UUserWidget> ScopeOverlayClass;
 
 	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);
@@ -336,6 +339,12 @@ protected:
 	TObjectPtr<UUserWidget> ParachutePromptWidget;
 	void ShowParachutePrompt();
 	void HideParachutePrompt();
+	
+	// --- Scope ----------------------------------------
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> ScopeOverlayWidget;
+	void ShowScopeOverlay();
+	void HideScopeOverlay();
 	
 	// --- 낙하산 캐노피 상태 ------------------------------------------
 	float ParachuteDeployElapsed = -1.f;

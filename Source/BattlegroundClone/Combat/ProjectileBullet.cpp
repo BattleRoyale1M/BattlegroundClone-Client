@@ -26,6 +26,11 @@ AProjectileBullet::AProjectileBullet()
 	ProjectileMovement -> bShouldBounce  = false;
 	ProjectileMovement -> ProjectileGravityScale = 0.5f;
 	
+	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
+	BulletMesh->SetupAttachment(CollisionComp);
+	BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BulletMesh->SetGenerateOverlapEvents(false);
+	
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
 	SetActorTickEnabled(false);

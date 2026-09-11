@@ -272,6 +272,37 @@ void ADropCharacter::HideParachutePrompt()
 	ParachutePromptWidget = nullptr;
 }
 
+void ADropCharacter::ShowScopeOverlay()
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (!ScopeOverlayClass) // 클래스가 지정되어있지 않았을때
+		{
+			return;
+		}
+		if (!ScopeOverlayWidget) // 위젯이 없을때
+		{
+			ScopeOverlayWidget = CreateWidget<UUserWidget>(PC, ScopeOverlayClass);
+			if (ScopeOverlayWidget)
+			{
+				ScopeOverlayWidget ->AddToViewport();
+			}
+		}
+		if (ScopeOverlayWidget) // 위젯이 있을때
+		{
+			ScopeOverlayWidget -> SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+	}
+}
+
+void ADropCharacter::HideScopeOverlay()
+{
+}
+
 /*
 활강속도 
 */

@@ -68,11 +68,13 @@ void AWeaponBase::BeginPlay()
 
 void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 {
+	/*
 	DrawDebugLine(GetWorld(), GetMuzzleLocation(), TracerEnd, FColor::Yellow, false, 0.5f, 0, 1.f);
 	if (bHit)
 	{
 		DrawDebugPoint(GetWorld(), TracerEnd, 10.f, FColor::Red, false, 0.5f);
 	}
+	*/
 	PlayFireFX();
 
 	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
