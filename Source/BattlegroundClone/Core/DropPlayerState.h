@@ -13,4 +13,7 @@ public:
 	
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Map")
 	FLinearColor MarkerColor = FLinearColor::White;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Combat")
+	int32 KillCount = 0;
 };

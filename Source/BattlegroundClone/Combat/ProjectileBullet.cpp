@@ -47,11 +47,12 @@ void AProjectileBullet::BeginPlay()
 }
 
 // ★
-void AProjectileBullet::ActivateBullet(const FVector& InSpawnLocation, const FRotator& InSpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator)
+void AProjectileBullet::ActivateBullet(const FVector& InSpawnLocation, const FRotator& InSpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator, const FText& InWeaponName)
 {
 	bInUse = true;
 	Damage = InDamage;
 	Range = InRange; // range 넘어서면 비활성화
+	WeaponDisplayName = InWeaponName;
 	SpawnLocation = InSpawnLocation;
 	
 	SetOwner(InOwner);

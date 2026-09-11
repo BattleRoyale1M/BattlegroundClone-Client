@@ -74,6 +74,15 @@ protected:
 
 	// --- Stats : 무기별로 지정 ---------------------------------
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
+	FText WeaponDisplayName = FText::FromString(TEXT("Weapon"));
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FText GetWeaponDisplayName() const
+	{
+		return WeaponDisplayName;
+	}
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	int32 MagSize = 30;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	float RoundsPerMinute = 600.f;

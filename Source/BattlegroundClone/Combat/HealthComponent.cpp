@@ -26,7 +26,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION_NOTIFY(UHealthComponent, Health, COND_None, REPNOTIFY_Always);
 }
 
-void UHealthComponent::ApplyDamage(float Amount)
+void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser)
 {
 	if (bDead || Amount <= 0.f || !GetOwner() || !GetOwner()->HasAuthority())
 	{
@@ -42,7 +42,7 @@ void UHealthComponent::ApplyDamage(float Amount)
 	if (Health <= 0.f)
 	{
 		bDead = true;
-		OnDeath.Broadcast(); // [서버] 이벤트 발생
+		OnDeath.Broadcast(Instigator, DamageCauser); // [서버] 이벤트 발생
 	}
 }
 
@@ -52,7 +52,7 @@ void UHealthComponent::OnRep_Health()
 	if (Health <= 0.f && !bDead)
 	{
 		bDead = true;
-		OnDeath.Broadcast(); // [클라이언트] 이벤트 발생
+		OnDeath.Broadcast(nullptr, nullptr); // [클라이언트] 이벤트 발생
 	}
 }
 

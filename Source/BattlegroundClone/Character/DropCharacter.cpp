@@ -8,6 +8,10 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 
+#include "Combat/ProjectileBullet.h"
+#include "Core/DropPlayerController.h"
+#include "Core/DropPlayerState.h"
+
 #include "Net/UnrealNetwork.h"
 
 #include "Camera/CameraComponent.h"
@@ -70,6 +74,7 @@ ADropCharacter::ADropCharacter()
 	ParachuteMesh->SetHiddenInGame(true);
 	
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
+	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
 }
 
 void ADropCharacter::BeginPlay()
@@ -823,9 +828,43 @@ float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	if (HealthComp)
 	{
-		HealthComp -> ApplyDamage(DamageAmount);
+		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser);
 	}
 	return Applied;
+}
+
+void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
+{
+	if (!HasAuthority() || !Killer)
+	{
+		return;
+	}
+	ADropPlayerController* KillerPC = Cast<ADropPlayerController>(Killer);
+	if (!KillerPC)
+	{
+		return;
+	}
+	// 1. 공격자의 PlayerState(점수/킬수 정보 저장소)를 가져옴
+	ADropPlayerState* KillerPS = Killer->GetPlayerState<ADropPlayerState>();
+
+	// 2. 킬 카운트를 1 증가시킴 (PlayerState가 있으면 기존 킬수+1)
+	const int32 NewKillCount = KillerPS ? ++KillerPS->KillCount : 1;
+
+	// 3. 나를 죽인 원인(DamageCauser)이 총알(AProjectileBullet)인지 확인
+	const AProjectileBullet* Bullet = Cast<AProjectileBullet>(DamageCauser);
+
+	// 4. 총알 정보가 있으면 해당 총기 이름을 가져오고, 없으면 기본값 사용
+	const FText WeaponName = Bullet ? Bullet->GetWeaponDisplayName() : FText::FromString(TEXT("무기"));
+
+	// 5. 당신의 [GetWeaponDisplayName]로 인해 상대플레이어가 사망했습니다
+	const FText Line1 = FText::Format(
+		NSLOCTEXT("Combat", "KillFeed", "당신의 {0}로 인해 상대플레이어가 사망했습니다"), WeaponName);
+
+	// 6. "1 킬" (또는 "2 킬", "3 킬" 등)
+	const FText Line2 = FText::FromString(FString::Printf(TEXT("%d 킬"), NewKillCount));
+
+	// 7. 킬러의 PlayerController를 통해 화면 중앙에 주황색(FLinearColor) 알림 텍스트를 띄움!
+	KillerPC->ShowCenterNotification(Line1, Line2, FLinearColor(1.f, 0.55f, 0.1f));
 }
 
 /*
@@ -835,7 +874,7 @@ void ADropCharacter::DbgHurt(float Amt)
 {
 	if (HasAuthority())
 	{
-		if (HealthComp) HealthComp->ApplyDamage(Amt);
+		if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr);
 	}
 	else
 	{
@@ -845,6 +884,6 @@ void ADropCharacter::DbgHurt(float Amt)
 
 void ADropCharacter::Server_DbgHurt_Implementation(float Amt)
 {
-	if (HealthComp) HealthComp->ApplyDamage(Amt);
+	if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr);
 }
 

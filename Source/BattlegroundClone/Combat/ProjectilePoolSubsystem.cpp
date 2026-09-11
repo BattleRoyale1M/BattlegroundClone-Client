@@ -3,7 +3,7 @@
 
 AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjectileBullet> ProjectileClass,
 	const FVector& SpawnLocation, const FRotator& SpawnRotation, float Damage, float Range, AActor* Owner,
-	APawn* Instigator)
+	APawn* Instigator, const FText& WeaponName)
 {
 	UWorld* World = GetWorld();
 	if (!World || !ProjectileClass) return nullptr;
@@ -13,7 +13,7 @@ AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjecti
 	{
 		if (IsValid(Bullet) && !Bullet->IsInUse())
 		{
-			Bullet->ActivateBullet(SpawnLocation, SpawnRotation, Damage, Range, Owner, Instigator);
+			Bullet->ActivateBullet(SpawnLocation, SpawnRotation, Damage, Range, Owner, Instigator, WeaponName);
 			return Bullet;
 		}
 	}
@@ -26,7 +26,7 @@ AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjecti
 	if (NewBullet)
 	{
 		ProjectilePool.Add(NewBullet);
-		NewBullet->ActivateBullet(SpawnLocation, SpawnRotation, Damage, Range, Owner, Instigator);
+		NewBullet->ActivateBullet(SpawnLocation, SpawnRotation, Damage, Range, Owner, Instigator, WeaponName);
 		return NewBullet;
 	}
 

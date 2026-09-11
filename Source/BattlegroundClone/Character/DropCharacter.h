@@ -81,6 +81,9 @@ public:
 		return HealthComp;
 	}
 	
+	UFUNCTION()
+	void HandleDeath(AController* Killer, AActor* DamageCauser);
+	
 	/*
 	 DEBUG
 	*/

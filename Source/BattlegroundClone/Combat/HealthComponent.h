@@ -4,7 +4,7 @@
 #include "HealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, Health, float, MaxHealth);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeath, AController*, Killer, AActor*, DamageCauser);
 
 UCLASS(ClassGroup = (Combat), meta = (BlueprintSpawnableComponent))
 class BATTLEGROUNDCLONE_API UHealthComponent : public UActorComponent
@@ -16,7 +16,7 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	void ApplyDamage(float Amount);
+	void ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser);
 	
 	UFUNCTION(BlueprintPure, Category = "Health") float GetHealth() const { return Health; }
 	UFUNCTION(BlueprintPure, Category = "Health") float GetMaxHealth() const { return MaxHealth; }

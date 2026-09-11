@@ -15,10 +15,12 @@ class BATTLEGROUNDCLONE_API AProjectileBullet : public AActor
 public:	
 	AProjectileBullet();
 	
-	void ActivateBullet(const FVector& SpawnLocation, const FRotator& SpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator);
-	
+	void ActivateBullet(const FVector& SpawnLocation, const FRotator& SpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator, const FText& InWeaponName);
+	FText GetWeaponDisplayName() const
+	{
+		return WeaponDisplayName;
+	}
 	void DeactivateBullet();
-
 	bool IsInUse() const { return bInUse; }
 	
 protected:
@@ -39,6 +41,7 @@ protected:
 
 	float Damage = 0.f;
 	float Range = 0.f;
+	FText WeaponDisplayName;
 	FVector SpawnLocation = FVector::ZeroVector;
 	bool bInUse = false;
 	

@@ -178,7 +178,8 @@ void AWeaponBase::Fire()
 				Damage,
 				Range,
 				GetOwner(),
-				Cast<APawn>(GetOwner())
+				Cast<APawn>(GetOwner()),
+				WeaponDisplayName
 			);
 		}
 	}
