@@ -55,7 +55,7 @@ ADropCharacter::ADropCharacter()
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParachuteMesh"));
 	ParachuteMesh->SetupAttachment(GetCapsuleComponent());
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ParachuteMeshAsset(
-		TEXT("/Script/Engine.StaticMesh'/Game/Fab/Parachute/SM_Parachute.SM_Parachute'"));
+		TEXT("/Script/Engine.StaticMesh'/Game/Fab/Parachute/parachute.parachute'"));
 	if (ParachuteMeshAsset.Succeeded())
 	{
 		ParachuteMesh->SetStaticMesh(ParachuteMeshAsset.Object);
