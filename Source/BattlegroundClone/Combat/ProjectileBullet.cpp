@@ -12,7 +12,7 @@ AProjectileBullet::AProjectileBullet()
 	
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
 	CollisionComp -> InitSphereRadius(5.0f);
-	CollisionComp -> SetCollisionProfileName(TEXT("Projectile")); // BlockAllDynamic / Custom Profile
+	CollisionComp -> SetCollisionProfileName(TEXT("BlockAllDynamic")); // BlockAllDynamic / Custom Profile
 	CollisionComp -> BodyInstance.bUseCCD = true;
 	CollisionComp -> OnComponentHit.AddDynamic(this, &AProjectileBullet::OnHit);
 	
