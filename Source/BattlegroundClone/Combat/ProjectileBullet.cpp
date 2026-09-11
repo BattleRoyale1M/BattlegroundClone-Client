@@ -8,7 +8,6 @@ AProjectileBullet::AProjectileBullet()
 {
  	
 	PrimaryActorTick.bCanEverTick = false;
-	
 	bReplicates = true;
 	
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
@@ -26,25 +25,63 @@ AProjectileBullet::AProjectileBullet()
 	ProjectileMovement -> bRotationFollowsVelocity = true;
 	ProjectileMovement -> bShouldBounce  = false;
 	ProjectileMovement -> ProjectileGravityScale = 0.5f;
+	
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+	if (ProjectileMovement)
+	{
+		ProjectileMovement -> Deactivate();
+	}
 
 }
 
 void AProjectileBullet::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+// ★
+void AProjectileBullet::ActivateBullet(const FVector& InSpawnLocation, const FRotator& InSpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator)
+{
+	bInUse = true;
+	Damage = InDamage;
+	Range = InRange; // range 넘어서면 비활성화
+	SpawnLocation = InSpawnLocation;
 	
-	if (GetOwner())
+	SetOwner(InOwner);
+	SetInstigator(InInstigator);
+	
+	SetActorLocationAndRotation(InSpawnLocation, InSpawnRotation);
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	
+	if (InOwner)
 	{
-		CollisionComp -> IgnoreActorWhenMoving(GetOwner(), true);
+		CollisionComp ->IgnoreActorWhenMoving(InOwner, true);
+	}
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->Activate(true);
+		ProjectileMovement->Velocity = InSpawnRotation.Vector() * ProjectileMovement->InitialSpeed;
 	}
 }
 
-void AProjectileBullet::InitBullet(float InDamage, float InRange)
+void AProjectileBullet::DeactivateBullet()
 {
-	Damage = InDamage;
-	Range = InRange;
-	SpawnLocation = GetActorLocation();
+	bInUse = false;
+	
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	
+	if (ProjectileMovement)
+	{
+		ProjectileMovement -> StopMovementImmediately();
+		ProjectileMovement -> Deactivate();
+	}
 }
+
+
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
@@ -78,7 +115,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 				UDamageType::StaticClass()
 			);
 		}
-		Destroy();
+		DeactivateBullet();
 	}
 }
 

@@ -15,36 +15,25 @@ class BATTLEGROUNDCLONE_API AProjectileBullet : public AActor
 public:	
 	AProjectileBullet();
 	
-	/*
-	Weapon에서 스폰 직후 호출하여 데미지 및 사거리 주입 ★
-	*/
-	void InitBullet(float InDamage, float InRange);
+	void ActivateBullet(const FVector& SpawnLocation, const FRotator& SpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator);
+	
+	void DeactivateBullet();
+
+	bool IsInUse() const { return bInUse; }
 	
 protected:
 	virtual void BeginPlay() override;
 	
-	/* 
-	 총알 충돌체 
-	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionComp;
-	
-	/* 
-	 투사체 이동컴포넌트
-	*/
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
-	
-	/* 
-	 기본 데미지
-	*/
+
 	float Damage = 0.f;
 	float Range = 0.f;
-	
-	/* 
-	 사거리 계산을 위한 스폰 위치
-	*/
 	FVector SpawnLocation = FVector::ZeroVector;
+	bool bInUse = false;
 	
 	/* 
 	 충돌 콜백 함수
