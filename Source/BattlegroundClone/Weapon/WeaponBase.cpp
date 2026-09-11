@@ -1,6 +1,7 @@
 #include "Weapon/WeaponBase.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Core/DropPlayerController.h"
 
 #include "Combat/ProjectilePoolSubsystem.h"
 
@@ -114,6 +115,17 @@ void AWeaponBase::StartFire()
 	}
 }
 
+void AWeaponBase::ClientShowAmmoEmpty_Implementation()
+{
+	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	{
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(C->GetController()))
+		{
+			PC->ShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("탄약 없음")), FLinearColor(1.f, 0.3f, 0.1f));
+		}
+	}
+}
+
 void AWeaponBase::Fire()
 {
 	if (bReloading)
@@ -127,9 +139,9 @@ void AWeaponBase::Fire()
 		{
 			StartReload();
 		}
-		else if (GEngine)
+		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("*click*"));
+			ClientShowAmmoEmpty();
 		}
 		return;
 	}

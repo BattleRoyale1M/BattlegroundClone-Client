@@ -63,6 +63,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void RefreshPlayerMarkers(class UCanvasPanel* MarkerCanvas,
 		TSubclassOf<UUserWidget> MarkerClass, float MapPixels, bool bIncludeSelf = false);
+	
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void ShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 
 protected:
 	virtual void BeginPlay() override;

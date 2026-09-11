@@ -121,6 +121,9 @@ protected:
 	FTimerHandle FireTimerHandle;
 	FTimerHandle ReloadTimerHandle;
 
+	UFUNCTION(Client, Reliable)
+	void ClientShowAmmoEmpty();
+	
 	void Fire();
 	void FinishReload();
 	void PlayFireFX();

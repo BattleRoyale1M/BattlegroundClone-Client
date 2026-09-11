@@ -1,5 +1,7 @@
 #include "Core/DropPlayerController.h"
 
+#include "UI/DropHUDWidget.h"
+
 #include "Core/DropGameMode.h"
 #include "Drop/AirPlane.h"
 
@@ -231,5 +233,13 @@ void ADropPlayerController::RefreshPlayerMarkers(class UCanvasPanel* MarkerCanva
 			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
 			Slot->SetPosition(Positions[i]); // 지도 캔버스 내의 해당 X, Y 좌표 위치로 마커를 이동
 		}
+	}
+}
+
+void ADropPlayerController::ShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color)
+{
+	if (UDropHUDWidget* HUD = Cast<UDropHUDWidget>(HUDWidget))
+	{
+		HUD->ShowCenterNotification(Line1, Line2, Line2Color);
 	}
 }
