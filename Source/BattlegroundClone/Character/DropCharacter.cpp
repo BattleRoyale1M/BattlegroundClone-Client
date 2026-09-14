@@ -76,8 +76,6 @@ ADropCharacter::ADropCharacter()
 	
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
-	
-	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleOwnDeath);
 }
 
