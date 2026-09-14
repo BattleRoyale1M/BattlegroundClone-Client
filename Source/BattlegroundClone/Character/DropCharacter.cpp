@@ -877,6 +877,15 @@ void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 
 void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+	Multicast_Die();
+}
+
+void ADropCharacter::Multicast_Die_Implementation()
+{
 	if (bIsDead)
 	{
 		return;
@@ -895,15 +904,6 @@ void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 			AnimInst->Montage_Play(Montage);
 		}
 	}
-}
-
-void ADropCharacter::Multicast_Die_Implementation()
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-	Multicast_Die();
 }
 
 /*
