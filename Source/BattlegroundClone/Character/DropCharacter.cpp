@@ -193,6 +193,10 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(AimAction, ETriggerEvent::Started,   this, &ADropCharacter::OnAimPressed);
 		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::OnAimReleased);
 	}
+	if (ChangeFireModeAction)
+	{
+		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, this, &ADropCharacter::ChangeFireMode);
+	}
 }
 
 void ADropCharacter::OnJumpPressed()
@@ -239,9 +243,6 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(Axis.Y);
 }
 
-/*
-낙하산
-*/
 void ADropCharacter::SetDropState(EDropState NewState)
 {
 	if (DropState == NewState)
@@ -679,7 +680,6 @@ void ADropCharacter::PlayFireMontage()
 	if (!Anim) return;
 	Anim->Montage_Play(FireAnimMontage);
 }
-
 
 /*
 RPC Server

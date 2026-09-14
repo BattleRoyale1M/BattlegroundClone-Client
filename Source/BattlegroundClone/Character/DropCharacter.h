@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "Combat/HealthComponent.h"
 #include "Core/Enums/DropTypes.h"
+#include "Core/Enums/EFireMode.h"
 
 #include "DropCharacter.generated.h"
 
@@ -179,6 +180,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> AimAction;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> ChangeFireModeAction;
+	
 	// Reload Sequence
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
@@ -213,6 +217,12 @@ protected:
 	// Threshold: 임계값 / 기준치
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float AimTapThreshold = 0.18f;
+	
+	// B
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	EFireMode CurrentFireMode = EFireMode::Single;
+	
+	void ChangeFireMode();
 	
 	float AimPressTime = 0.f;
 	
