@@ -25,6 +25,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "Engine/DamageEvents.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -826,9 +827,15 @@ HP
 float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	FVector ShotDirection = GetActorForwardVector();
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent& PointDamageEvent = static_cast<const FPointDamageEvent&>(DamageEvent);
+		ShotDirection = PointDamageEvent.ShotDirection;
+	}
 	if (HealthComp)
 	{
-		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser);
+		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser, ShotDirection);
 	}
 	return Applied;
 }
@@ -874,7 +881,7 @@ void ADropCharacter::DbgHurt(float Amt)
 {
 	if (HasAuthority())
 	{
-		if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr);
+		if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr, FVector::ZeroVector);
 	}
 	else
 	{
@@ -884,6 +891,6 @@ void ADropCharacter::DbgHurt(float Amt)
 
 void ADropCharacter::Server_DbgHurt_Implementation(float Amt)
 {
-	if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr);
+	if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr, FVector::ZeroVector);
 }
 

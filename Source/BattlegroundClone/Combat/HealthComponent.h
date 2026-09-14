@@ -16,7 +16,7 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	void ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser);
+	void ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser, const FVector& ShotDirection);
 	
 	UFUNCTION(BlueprintPure, Category = "Health") float GetHealth() const { return Health; }
 	UFUNCTION(BlueprintPure, Category = "Health") float GetMaxHealth() const { return MaxHealth; }

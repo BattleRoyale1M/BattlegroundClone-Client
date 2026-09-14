@@ -26,7 +26,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION_NOTIFY(UHealthComponent, Health, COND_None, REPNOTIFY_Always);
 }
 
-void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser)
+void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser, const FVector& ShotDirection)
 {
 	if (bDead || Amount <= 0.f || !GetOwner() || !GetOwner()->HasAuthority())
 	{
