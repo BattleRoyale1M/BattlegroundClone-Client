@@ -408,6 +408,17 @@ void ADropCharacter::ServerSetAimMode_Implementation(EDropAimMode NewMode)
 	ApplyAimVisuals(OldMode, NewMode);
 }
 
+void ADropCharacter::ChangeFireMode()
+{
+	uint8 NextMode = (static_cast<uint8>(CurrentFireMode) + 1) % 2;
+	CurrentFireMode = static_cast<EFireMode>(NextMode);
+	
+	if (OnFireModeChanged.IsBound())
+	{
+		OnFireModeChanged.Broadcast(CurrentFireMode);
+	}
+}
+
 /*
 Aim
 */

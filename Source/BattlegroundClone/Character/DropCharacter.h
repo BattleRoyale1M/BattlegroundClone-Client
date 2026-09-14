@@ -120,6 +120,15 @@ public:
 	void DestroySelf();
 	
 	/*
+	 B : 사격 이벤트 변경을 HUD/UI로 전달
+	*/
+	UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+	FOnFireModeChanged OnFireModeChanged;
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	EFireMode GetCurrentFireMode() const { return CurrentFireMode; }
+	
+	/*
 	 DEBUG
 	*/
 	UFUNCTION(Exec)
