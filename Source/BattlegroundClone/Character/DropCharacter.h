@@ -86,6 +86,21 @@ public:
 	UFUNCTION()
 	void HandleOwnDeath(AController* Killer, AActor* DamageCauser);
 	
+	UFUNCTION()
+	void HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_HitReact(FVector ShotDirection);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<UAnimMontage*> HitReactMontages; // 0=Front,1=Back,2=Left,3=Right
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float KnockbackPower = 600.f;
+
+	int32 GetHitDirectionIndex(const FVector& ShotDirection) const;
+
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Die();
 	

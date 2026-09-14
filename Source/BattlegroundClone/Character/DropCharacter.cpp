@@ -77,6 +77,7 @@ ADropCharacter::ADropCharacter()
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleOwnDeath);
+	HealthComp->OnHit.AddDynamic(this, &ADropCharacter::HandleHit);
 }
 
 void ADropCharacter::BeginPlay()
@@ -882,6 +883,48 @@ void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 		return;
 	}
 	Multicast_Die();
+}
+
+void ADropCharacter::HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection)
+{
+	if (!HasAuthority() || bIsDead)
+	{
+		return;
+	}
+	// https://developer-bing-gu.tistory.com/entry/UnrealC-Launch-Character-%EB%8F%99%EC%9E%91-%ED%95%98%EC%A7%80-%EC%95%8A%EB%8A%94-%EC%9D%B4%EC%9C%A0
+	LaunchCharacter(ShotDirection * KnockbackPower, true, true);
+	Multicast_HitReact(ShotDirection);
+}
+
+void ADropCharacter::Multicast_HitReact_Implementation(FVector ShotDirection)
+{
+	if (bIsDead || HitReactMontages.Num() == 0)
+	{
+		return;
+	}
+	// 총알이 날아온 방향(ShotDirection)을 계산해서 몇 번 피격 모션을 틀지 인덱스를 구함 (예: 0번=전방, 1번=후방, 2번=좌측, 3번=우측 피격 몽타주)
+	const int32 Index = GetHitDirectionIndex(ShotDirection);
+	if (!HitReactMontages.IsValidIndex(Index) || !HitReactMontages[Index])
+	{
+		return;
+	}
+	// 캐릭터 메쉬에서 애니메이션 인스턴스 불러오기
+	if (UAnimInstance* AnimInst = GetMesh()->GetAnimInstance())
+	{
+		AnimInst->Montage_Play(HitReactMontages[Index]);
+	}
+}
+
+int32 ADropCharacter::GetHitDirectionIndex(const FVector& ShotDirection) const
+{
+	const FVector ToAttacker = -ShotDirection;
+	const float ForwardDot = FVector::DotProduct(GetActorForwardVector(), ToAttacker);
+	const float RightDot = FVector::DotProduct(GetActorRightVector(), ToAttacker);
+	if (FMath::Abs(ForwardDot) >= FMath::Abs(RightDot))
+	{
+		return ForwardDot >= 0.f ? 0 : 1; 
+	}
+	return RightDot >= 0.f ? 3 : 2;
 }
 
 void ADropCharacter::Multicast_Die_Implementation()
