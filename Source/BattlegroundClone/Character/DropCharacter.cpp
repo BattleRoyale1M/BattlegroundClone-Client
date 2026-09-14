@@ -146,6 +146,18 @@ void ADropCharacter::Tick(float DeltaTime)
 	{
 		UpdateParachuteVisual(DeltaTime);
 	}
+	if (HasAuthority() && !bIsDead)
+	{
+		MapLocationUpdateElapsed += DeltaTime;
+		if (MapLocationUpdateElapsed >= 0.2f)
+		{
+			MapLocationUpdateElapsed = 0.f;
+			if (ADropPlayerState* DPS = GetPlayerState<ADropPlayerState>())
+			{
+				DPS -> MapLocation = GetActorLocation();
+			}
+		}
+	}
 }
 
 void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
