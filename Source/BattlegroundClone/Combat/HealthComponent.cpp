@@ -23,7 +23,11 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
+	/*
+	등록
+	*/
 	DOREPLIFETIME_CONDITION_NOTIFY(UHealthComponent, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME(UHealthComponent, bDead);
 }
 
 void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser, const FVector& ShotDirection)
@@ -44,6 +48,10 @@ void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor
 		bDead = true;
 		OnDeath.Broadcast(Instigator, DamageCauser); // [서버] 이벤트 발생
 	}
+	else
+	{
+		OnHit.Broadcast(Instigator, DamageCauser, ShotDirection);
+	}
 }
 
 void UHealthComponent::OnRep_Health()
@@ -54,6 +62,11 @@ void UHealthComponent::OnRep_Health()
 		bDead = true;
 		OnDeath.Broadcast(nullptr, nullptr); // [클라이언트] 이벤트 발생
 	}
+}
+
+void UHealthComponent::OnRep_Dead()
+{
+	// 다음 단계에서 사망 연출 트리거용
 }
 
 /*

@@ -5,6 +5,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, Health, float, MaxHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeath, AController*, Killer, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHit, AController*, InstigatorController, AActor*, DamageCauser, FVector, ShotDirection);
 
 UCLASS(ClassGroup = (Combat), meta = (BlueprintSpawnableComponent))
 class BATTLEGROUNDCLONE_API UHealthComponent : public UActorComponent
@@ -28,6 +29,7 @@ public:
 	*/
 	UPROPERTY(BlueprintAssignable, Category = "Health") FOnHealthChanged OnHealthChanged;
 	UPROPERTY(BlueprintAssignable, Category = "Health") FOnDeath OnDeath;
+	UPROPERTY(BlueprintAssignable, Category = "Health") FOnHit OnHit;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -38,8 +40,12 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_Health)
 	float Health = 100.f;
 	
+	UPROPERTY(ReplicatedUsing=OnRep_Dead)
 	bool bDead = false;
 	
 	UFUNCTION()
 	void OnRep_Health();
+	
+	UFUNCTION()
+	void OnRep_Dead();
 };
