@@ -181,7 +181,9 @@ void ADropPlayerController::GetPlayerMarkers(float MapPixels, bool bIncludeSelf,
 	{
 		return;
 	}
+
 	const FVector2D MapSize(MapPixels, MapPixels);
+
 	for (APlayerState* PS : GS->PlayerArray)
 	{
 		const ADropPlayerState* DPS = Cast<ADropPlayerState>(PS);
@@ -193,7 +195,14 @@ void ADropPlayerController::GetPlayerMarkers(float MapPixels, bool bIncludeSelf,
 		{
 			continue;
 		}
-		const FVector2D N = UDropMapLibrary::WorldToNormalized(DPS->MapLocation, WorldMin, WorldMax);
+
+		const APawn* Pawning = PS->GetPawn();
+		if (!Pawning)
+		{
+			continue;
+		}
+		
+		const FVector2D N = UDropMapLibrary::WorldToNormalized(Pawning->GetActorLocation(), WorldMin, WorldMax);
 		OutPositions.Add(UDropMapLibrary::NormalizedToWidget(FVector2D(N.Y, N.X), MapSize, true));
 		OutColors.Add(DPS->MarkerColor);
 	}

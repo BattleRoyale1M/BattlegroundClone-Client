@@ -6,5 +6,5 @@ void ADropPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ADropPlayerState, MarkerColor);
 	DOREPLIFETIME(ADropPlayerState, KillCount);
-	DOREPLIFETIME(ADropPlayerState, MapLocation);
+
 }

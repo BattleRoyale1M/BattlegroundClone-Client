@@ -222,8 +222,6 @@ protected:
 	void UpdateAimCamera(float Dt);
 	// --
 	
-	float MapLocationUpdateElapsed = 0.f;
-	
 	void StartFire();
 	void StopFire();
 	void OnReloadPressed();

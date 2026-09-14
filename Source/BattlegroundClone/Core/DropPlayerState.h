@@ -16,7 +16,4 @@ public:
 	
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Combat")
 	int32 KillCount = 0;
-	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Map")
-	FVector MapLocation = FVector::ZeroVector;
 };
