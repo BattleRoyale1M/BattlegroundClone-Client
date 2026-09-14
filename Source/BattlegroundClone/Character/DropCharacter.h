@@ -109,6 +109,16 @@ public:
 	bool bIsDead = false;
 	
 	/*
+	Death and Destroy()
+	*/
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float DeathDestroyDelay = 5.f;
+
+	FTimerHandle DeathDestroyTimerHandle;
+
+	void DestroySelf();
+	
+	/*
 	 DEBUG
 	*/
 	UFUNCTION(Exec)

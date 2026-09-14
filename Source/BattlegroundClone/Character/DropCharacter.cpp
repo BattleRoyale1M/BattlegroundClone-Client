@@ -883,6 +883,12 @@ void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 		return;
 	}
 	Multicast_Die();
+	GetWorldTimerManager().SetTimer(DeathDestroyTimerHandle, this, &ADropCharacter::DestroySelf, DeathDestroyDelay, false);
+}
+
+void ADropCharacter::DestroySelf()
+{
+	Destroy();
 }
 
 void ADropCharacter::HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection)
@@ -892,7 +898,7 @@ void ADropCharacter::HandleHit(AController* InstigatorController, AActor* Damage
 		return;
 	}
 	// https://developer-bing-gu.tistory.com/entry/UnrealC-Launch-Character-%EB%8F%99%EC%9E%91-%ED%95%98%EC%A7%80-%EC%95%8A%EB%8A%94-%EC%9D%B4%EC%9C%A0
-	LaunchCharacter(ShotDirection * KnockbackPower, true, true);
+	LaunchCharacter(-ShotDirection * KnockbackPower, true, true);
 	Multicast_HitReact(ShotDirection);
 }
 
@@ -917,7 +923,7 @@ void ADropCharacter::Multicast_HitReact_Implementation(FVector ShotDirection)
 
 int32 ADropCharacter::GetHitDirectionIndex(const FVector& ShotDirection) const
 {
-	const FVector ToAttacker = -ShotDirection;
+	const FVector ToAttacker = ShotDirection;
 	const float ForwardDot = FVector::DotProduct(GetActorForwardVector(), ToAttacker);
 	const float RightDot = FVector::DotProduct(GetActorRightVector(), ToAttacker);
 	if (FMath::Abs(ForwardDot) >= FMath::Abs(RightDot))
