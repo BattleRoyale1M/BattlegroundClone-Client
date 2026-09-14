@@ -83,6 +83,15 @@ public:
 	
 	UFUNCTION()
 	void HandleDeath(AController* Killer, AActor* DamageCauser);
+	UFUNCTION()
+	void HandleOwnDeath(AController* Killer, AActor* DamageCauser);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Die();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<UAnimMontage*> DeathMontages;
+	bool bIsDead = false;
 	
 	/*
 	 DEBUG

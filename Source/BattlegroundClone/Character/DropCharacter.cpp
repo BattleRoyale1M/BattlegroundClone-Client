@@ -76,6 +76,9 @@ ADropCharacter::ADropCharacter()
 	
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
+	
+	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
+	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleOwnDeath);
 }
 
 void ADropCharacter::BeginPlay()
@@ -872,6 +875,37 @@ void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 
 	// 7. 킬러의 PlayerController를 통해 화면 중앙에 주황색(FLinearColor) 알림 텍스트를 띄움!
 	KillerPC->ClientShowCenterNotification(Line1, Line2, FLinearColor(1.f, 0.55f, 0.1f));
+}
+
+void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
+{
+	if (bIsDead)
+	{
+		return;
+	}
+	bIsDead = true;
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+	if (DeathMontages.Num() > 0)
+	{
+		UAnimMontage* Montage =  DeathMontages[FMath::RandHelper(DeathMontages.Num())];
+		if (UAnimInstance* AnimInst = GetMesh()->GetAnimInstance())
+		{
+			AnimInst->Montage_Play(Montage);
+		}
+	}
+}
+
+void ADropCharacter::Multicast_Die_Implementation()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	Multicast_Die();
 }
 
 /*
