@@ -215,7 +215,10 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<AActor> CurrentInteractable;
-	
+
+	UFUNCTION(BlueprintPure, Category = "Interaction")
+	AActor* GetCurrentInteractable() const { return CurrentInteractable; }
+
 	// --
 
 	UPROPERTY(ReplicatedUsing = OnRep_AimMode, BlueprintReadOnly, Category="Combat")
