@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Core/Enums/EFireMode.h"
 #include "WeaponBase.generated.h"
 
 class UStaticMeshComponent;
@@ -25,15 +26,21 @@ public:
 	void ServerStartFire();
 	UFUNCTION(Server, Reliable)
 	void ServerStopFire();
-	
+	UFUNCTION(Server, Reliable)
+	void ServerSetFireMode(EFireMode NewFireMode);
+
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastFireFX(FVector TracerEnd, bool bHit);
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReloadFX(float Duration);
-	
+
 	void StartFire();
 	void StopFire();
 	void StartReload();
+	void SetFireMode(EFireMode NewFireMode);
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	EFireMode GetFireMode() const { return CurrentFireMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FVector GetMuzzleLocation() const;
@@ -126,6 +133,10 @@ protected:
 	UPROPERTY(Replicated)
 	bool bReloading = false;
 	bool bTriggerHeld = false; // only Server
+
+	// B키로 캐릭터에서 토글되는 사격 모드. 서버가 권위를 가지며 StartFire()의 연사 타이머 여부를 결정.
+	UPROPERTY(Replicated)
+	EFireMode CurrentFireMode = EFireMode::Single;
 
 	FTimerHandle FireTimerHandle;
 	FTimerHandle ReloadTimerHandle;

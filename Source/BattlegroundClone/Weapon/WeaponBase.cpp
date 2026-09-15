@@ -44,6 +44,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& Ou
 	DOREPLIFETIME(AWeaponBase, CurrentAmmo);
 	DOREPLIFETIME(AWeaponBase, ReserveAmmo);
 	DOREPLIFETIME(AWeaponBase, bReloading);
+	DOREPLIFETIME(AWeaponBase, CurrentFireMode);
 }
 
 void AWeaponBase::ServerStartFire_Implementation()
@@ -54,6 +55,11 @@ void AWeaponBase::ServerStartFire_Implementation()
 void AWeaponBase::ServerStopFire_Implementation()
 {
 	StopFire();
+}
+
+void AWeaponBase::ServerSetFireMode_Implementation(EFireMode NewFireMode)
+{
+	SetFireMode(NewFireMode);
 }
 
 void AWeaponBase::ServerStartReload_Implementation()
@@ -105,14 +111,25 @@ void AWeaponBase::StartFire()
 	}
 	bTriggerHeld = true;
 	Fire();
-	
-	if (bTriggerHeld && CurrentAmmo > 0)
+
+	// Single: 방금 Fire()로 한 발 나갔으니 타이머 없이 종료. Automatic일 때만 연사 타이머를 건다.
+	if (CurrentFireMode == EFireMode::Automatic && bTriggerHeld && CurrentAmmo > 0)
 	{
 		const float Interval = 60.f / FMath::Max(RoundsPerMinute, 1.f);
 		// 사격 간격(Interval)마다 ADropCharacter 클래스의 Fire 함수를 계속(반복) 실행하도록 타이머를 ON
 		GetWorldTimerManager().SetTimer(
 			FireTimerHandle, this, &AWeaponBase::Fire, Interval, true);
 	}
+}
+
+void AWeaponBase::SetFireMode(EFireMode NewFireMode)
+{
+	if (!HasAuthority())
+	{
+		ServerSetFireMode(NewFireMode);
+		return;
+	}
+	CurrentFireMode = NewFireMode;
 }
 
 void AWeaponBase::ClientShowAmmoEmpty_Implementation()

@@ -412,7 +412,12 @@ void ADropCharacter::ChangeFireMode()
 {
 	uint8 NextMode = (static_cast<uint8>(CurrentFireMode) + 1) % 2;
 	CurrentFireMode = static_cast<EFireMode>(NextMode);
-	
+
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->SetFireMode(CurrentFireMode);
+	}
+
 	if (OnFireModeChanged.IsBound())
 	{
 		OnFireModeChanged.Broadcast(CurrentFireMode);
