@@ -129,6 +129,11 @@ public:
 	EFireMode GetCurrentFireMode() const { return CurrentFireMode; }
 	
 	/*
+	Interaction
+	*/
+	void EquipWeaponClassAtSlot(int32 Index, TSubclassOf<AWeaponBase> NewWeaponClass);
+	
+	/*
 	 DEBUG
 	*/
 	UFUNCTION(Exec)
@@ -192,6 +197,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> ChangeFireModeAction;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> InteractAction;
+	
 	// Reload Sequence
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
@@ -199,6 +207,14 @@ protected:
 	// 발사 몽타주 (BP_DropCharacter 디폴트에서 지정). 없으면 재생 스킵.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
+	
+	// --
+	
+	UPROPERTY()
+	TArray<TObjectPtr<AActor>> NearbyInteractables;
+	
+	UPROPERTY()
+	TObjectPtr<AActor> CurrentInteractable;
 	
 	// --
 
@@ -233,6 +249,23 @@ protected:
 	
 	void ChangeFireMode();
 	
+	/*
+	Interaction 
+	*/
+	void OnInteractPressed();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerInteract(AActor* InteractActor);
+	
+	UFUNCTION()
+	void OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnInteractableEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	void UpdateCurrentInteractable();
+	
+	// --
+	
 	float AimPressTime = 0.f;
 	
 	void OnAimPressed();
@@ -247,6 +280,11 @@ protected:
 	
 	UPROPERTY()
 	TArray<TObjectPtr<AWeaponBase>> WeaponSlots;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableChanged, FText, PromptText);
+	
+	UPROPERTY(BlueprintAssignable, Category = "Interaction")
+	FOnInteractableChanged OnInteractableChanged;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TArray<TSubclassOf<AWeaponBase>> WeaponSlotClasses;
@@ -282,10 +320,13 @@ protected:
 	TObjectPtr<AWeaponBase> EquippedWeapon;
 	
 	UFUNCTION(BlueprintPure, Category = "Weapon")
-	AWeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
+	AWeaponBase* GetEquippedWeapon() const
+	{
+		return EquippedWeapon;
+	}
 	
 	/*
-	현재 탑승 중인 비행기 
+	현재 탑승 중인 비행기
 	*/
 	UPROPERTY()
 	TObjectPtr<AAirPlane> BoardedPlane;

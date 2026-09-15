@@ -2,6 +2,7 @@
 
 #include "Combat/HealthComponent.h"
 #include "Weapon/WeaponBase.h"
+#include "Interaction/Interactable/InteractableInterface.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
@@ -84,6 +85,9 @@ void ADropCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	EquipWeaponSlot(0);
+
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ADropCharacter::OnInteractableBeginOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ADropCharacter::OnInteractableEndOverlap);
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -204,6 +208,10 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (EquipSlot2Action)
 	{
 		EIC->BindAction(EquipSlot2Action, ETriggerEvent::Started, this, &ADropCharacter::EquipSlot2);
+	}
+	if (InteractAction)
+	{
+		EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ADropCharacter::OnInteractPressed);
 	}
 }
 
@@ -716,6 +724,83 @@ void ADropCharacter::ServerSwtichWeaponSlot_Implementation(int32 Index)
 
 void ADropCharacter::EquipSlot1() { SwitchWeaponSlot(0); }
 void ADropCharacter::EquipSlot2() { SwitchWeaponSlot(1); }
+
+void ADropCharacter::OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!OtherActor || !OtherActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
+	{
+		return;
+	}
+	NearbyInteractables.AddUnique(OtherActor);
+	UpdateCurrentInteractable();
+}
+
+void ADropCharacter::OnInteractableEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	NearbyInteractables.Remove(OtherActor);
+	UpdateCurrentInteractable();
+}
+
+void ADropCharacter::UpdateCurrentInteractable()
+{
+	AActor* Best = NearbyInteractables.Num() > 0 ? NearbyInteractables[0] : nullptr;
+	if (Best == CurrentInteractable)
+	{
+		return;
+	}
+	CurrentInteractable = Best;
+
+	if (IsLocallyControlled())
+	{
+		const FText Prompt = CurrentInteractable
+			? IInteractableInterface::Execute_GetInteractionPromptText(CurrentInteractable)
+			: FText::GetEmpty();
+		OnInteractableChanged.Broadcast(Prompt);
+	}
+}
+
+void ADropCharacter::OnInteractPressed()
+{
+	if (DropState != EDropState::Ground || !CurrentInteractable)
+	{
+		return;
+	}
+	ServerInteract(CurrentInteractable);
+}
+
+void ADropCharacter::ServerInteract_Implementation(AActor* InteractActor)
+{
+	if (InteractActor && InteractActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
+	{
+		IInteractableInterface::Execute_Interact(InteractActor, this);
+	}
+}
+
+void ADropCharacter::EquipWeaponClassAtSlot(int32 Index, TSubclassOf<AWeaponBase> NewWeaponClass)
+{
+	if (!HasAuthority() || !NewWeaponClass)
+	{
+		return;
+	}
+	if (!WeaponSlotClasses.IsValidIndex(Index))
+	{
+		WeaponSlotClasses.SetNum(Index + 1);
+	}
+	WeaponSlotClasses[Index] = NewWeaponClass;
+
+	if (WeaponSlots.IsValidIndex(Index) && WeaponSlots[Index])
+	{
+		if (WeaponSlots[Index] == EquippedWeapon)
+		{
+			EquippedWeapon = nullptr;
+		}
+		WeaponSlots[Index]->Destroy();
+		WeaponSlots[Index] = nullptr;
+	}
+
+	CurrentWeaponIndex = -1; // 강제로 재장착되게 가드 우회
+	EquipWeaponSlot(Index);
+}
 
 /*
 무기 재장전(Reload) 애니메이션 몽타주를 재장전 소요 시간(Duration)에 맞춰 재생 속도(Rate)를 동적으로 조절하여 실행
