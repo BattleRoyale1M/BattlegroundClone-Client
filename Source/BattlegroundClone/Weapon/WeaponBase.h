@@ -40,7 +40,10 @@ public:
 	void SetFireMode(EFireMode NewFireMode);
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
-	EFireMode GetFireMode() const { return CurrentFireMode; }
+	EFireMode GetFireMode() const
+	{
+		return CurrentFireMode;
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FVector GetMuzzleLocation() const;

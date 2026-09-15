@@ -83,7 +83,7 @@ ADropCharacter::ADropCharacter()
 void ADropCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	EquipDefaultWeapon();
+	EquipWeaponSlot(0);
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -196,6 +196,14 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (ChangeFireModeAction)
 	{
 		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, this, &ADropCharacter::ChangeFireMode);
+	}
+	if (EquipSlot1Action)
+	{
+		EIC->BindAction(EquipSlot1Action, ETriggerEvent::Started, this, &ADropCharacter::EquipSlot1);
+	}
+	if (EquipSlot2Action)
+	{
+		EIC->BindAction(EquipSlot2Action, ETriggerEvent::Started, this, &ADropCharacter::EquipSlot2);
 	}
 }
 
@@ -641,6 +649,7 @@ void ADropCharacter::OnReloadPressed()
 	}
 }
 
+
 void ADropCharacter::OnRep_EquippedWeapon()
 {
 	if (!EquippedWeapon)
@@ -651,29 +660,62 @@ void ADropCharacter::OnRep_EquippedWeapon()
 		GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
 }
 
-void ADropCharacter::EquipDefaultWeapon()
+void ADropCharacter::EquipWeaponSlot(int32 Index)
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
-	if (!DefaultWeaponClass || EquippedWeapon)
+	if (!WeaponSlotClasses.IsValidIndex(Index) || Index == CurrentWeaponIndex)
 	{
 		return;
 	}
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = this;
-	SpawnParams.SpawnCollisionHandlingOverride =
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	EquippedWeapon = GetWorld()->SpawnActor<AWeaponBase>(DefaultWeaponClass, SpawnParams);
+	if (WeaponSlots.Num() != WeaponSlotClasses.Num())
+	{
+		WeaponSlots.SetNum(WeaponSlotClasses.Num());
+	}
 	if (EquippedWeapon)
 	{
+		EquippedWeapon->StopFire();
+		EquippedWeapon->SetActorHiddenInGame(true);
+	}
+
+	CurrentWeaponIndex = Index;
+	if (!WeaponSlots[Index])
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = this;
+		SpawnParams.SpawnCollisionHandlingOverride =
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		WeaponSlots[Index] = GetWorld()->SpawnActor<AWeaponBase>(WeaponSlotClasses[Index], SpawnParams);
+	}
+	EquippedWeapon = WeaponSlots[Index];
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->SetActorHiddenInGame(false);
 		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
+		EquippedWeapon->SetFireMode(CurrentFireMode);
 	}
 }
+
+void ADropCharacter::SwitchWeaponSlot(int32 Index)
+{
+	if (!HasAuthority())
+	{
+		ServerSwtichWeaponSlot(Index);
+		return;
+	}
+	EquipWeaponSlot(Index);
+}
+
+void ADropCharacter::ServerSwtichWeaponSlot_Implementation(int32 Index)
+{
+	EquipWeaponSlot(Index);
+}
+
+void ADropCharacter::EquipSlot1() { SwitchWeaponSlot(0); }
+void ADropCharacter::EquipSlot2() { SwitchWeaponSlot(1); }
 
 /*
 무기 재장전(Reload) 애니메이션 몽타주를 재장전 소요 시간(Duration)에 맞춰 재생 속도(Rate)를 동적으로 조절하여 실행

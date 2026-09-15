@@ -245,8 +245,26 @@ protected:
 	void StopFire();
 	void OnReloadPressed();
 	
+	UPROPERTY()
+	TArray<TObjectPtr<AWeaponBase>> WeaponSlots;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TSubclassOf<AWeaponBase> DefaultWeaponClass;
+	TArray<TSubclassOf<AWeaponBase>> WeaponSlotClasses;
+	int32 CurrentWeaponIndex = -1;
+	
+	void EquipWeaponSlot(int32 Index);
+	void SwitchWeaponSlot(int32 Index);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSwtichWeaponSlot(int32 Index);
+	
+	void EquipSlot1();
+	void EquipSlot2();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> EquipSlot1Action;
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> EquipSlot2Action;
 	
 	/*
 	무기 붙일 캐릭터 스켈레탈 메시 소켓. 
@@ -265,8 +283,6 @@ protected:
 	
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	AWeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
-	
-	void EquipDefaultWeapon();
 	
 	/*
 	현재 탑승 중인 비행기 
