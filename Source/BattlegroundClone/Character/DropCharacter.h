@@ -208,6 +208,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
+	// 무기교체 몽타주
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<UAnimMontage> EquipAnimMontage;
+	bool bIsSwitchingWeapon = false;
+	FTimerHandle EquipTimerHandle;
+	
+	void FinishWeaponSwitch();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayEquipMontage();
+	
 	// --
 	
 	UPROPERTY()

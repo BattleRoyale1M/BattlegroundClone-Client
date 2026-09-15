@@ -634,7 +634,7 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
-	if (DropState != EDropState::Ground || !bIsAiming || !EquippedWeapon)
+	if (DropState != EDropState::Ground || !bIsAiming || !EquippedWeapon || bIsSwitchingWeapon)
 	{
 		return;
 	}
@@ -651,6 +651,10 @@ void ADropCharacter::StopFire()
 
 void ADropCharacter::OnReloadPressed()
 {
+	if (bIsSwitchingWeapon)
+	{
+		return;
+	}
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->StartReload();
@@ -704,6 +708,7 @@ void ADropCharacter::EquipWeaponSlot(int32 Index)
 		EquippedWeapon->SetActorHiddenInGame(false);
 		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
 		EquippedWeapon->SetFireMode(CurrentFireMode);
+		MulticastPlayEquipMontage();
 	}
 }
 
@@ -722,9 +727,30 @@ void ADropCharacter::ServerSwtichWeaponSlot_Implementation(int32 Index)
 	EquipWeaponSlot(Index);
 }
 
+// --
 void ADropCharacter::EquipSlot1() { SwitchWeaponSlot(0); }
 void ADropCharacter::EquipSlot2() { SwitchWeaponSlot(1); }
+// --
 
+void ADropCharacter::MulticastPlayEquipMontage_Implementation()
+{
+	bIsSwitchingWeapon = true;
+	float Duration = 0.f;
+	if (EquipAnimMontage)
+	{
+		Duration = EquipAnimMontage -> GetPlayLength();
+		if (UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr)
+		{
+			Anim->Montage_Play(EquipAnimMontage);
+		}
+	}
+	GetWorldTimerManager().SetTimer(EquipTimerHandle, this, &ADropCharacter::FinishWeaponSwitch, FMath::Max(Duration, 0.01f), false);
+}
+
+void ADropCharacter::FinishWeaponSwitch()
+{
+	bIsSwitchingWeapon = false;
+}
 void ADropCharacter::OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor || !OtherActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
