@@ -7,6 +7,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 

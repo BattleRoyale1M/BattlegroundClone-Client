@@ -88,7 +88,11 @@ void ADropCharacter::BeginPlay()
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ADropCharacter::OnInteractableBeginOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ADropCharacter::OnInteractableEndOverlap);
+}
 
+void ADropCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
