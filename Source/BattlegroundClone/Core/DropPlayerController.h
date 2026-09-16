@@ -70,6 +70,8 @@ public:
 	UFUNCTION(Client, Reliable, Category = "HUD")
 	void ClientShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 	
+	void SetGameplayHUDVisible(bool bVisible);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

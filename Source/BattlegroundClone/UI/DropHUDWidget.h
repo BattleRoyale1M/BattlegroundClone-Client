@@ -14,4 +14,16 @@ class BATTLEGROUNDCLONE_API UDropHUDWidget : public UUserWidget
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 	void ShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* AmmoBox;
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* ItemSlotsBox;
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* HealthBar;
+
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void SetGameplayHUDVisible(bool bVisible);
 };

@@ -51,11 +51,19 @@ void ADropPlayerController::EnsureBounds() const
 	}
 }
 
+void ADropPlayerController::SetGameplayHUDVisible(bool bVisible)
+{
+	if (UDropHUDWidget* HUD = Cast<UDropHUDWidget>(HUDWidget))
+	{
+		HUD->SetGameplayHUDVisible(bVisible);
+	}
+}
+
 void ADropPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
 	EnsureBounds();
+	SetGameplayHUDVisible(false);
 
 	if (!IsLocalController())
 	{

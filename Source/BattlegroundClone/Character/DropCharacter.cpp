@@ -868,6 +868,15 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 
 void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 {
+	if (IsLocallyControlled())
+	{
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
+		{
+			bool bIsOnGround = (NewState == EDropState::Ground);
+			PC->SetGameplayHUDVisible(bIsOnGround);
+		}
+	}
+
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
 		switch (NewState)
