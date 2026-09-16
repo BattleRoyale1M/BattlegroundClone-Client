@@ -37,7 +37,10 @@ void ADropPlayerController::EnsureBounds() const
 		{
 			if (UClass* GMClass = GS->GameModeClass)
 			{
-				GM = GMClass->GetDefaultObject<ADropGameMode>();
+				if (GMClass->IsChildOf(ADropGameMode::StaticClass()))
+				{
+					GM = GMClass->GetDefaultObject<ADropGameMode>();
+				}
 			}
 		}
 	}
@@ -57,6 +60,12 @@ void ADropPlayerController::BeginPlay()
 	if (!IsLocalController())
 	{
 		return;
+	}
+	
+	const AGameStateBase* GS = GetWorld()->GetGameState();
+	if (!GS || !GS->GameModeClass || !GS->GameModeClass->IsChildOf(ADropGameMode::StaticClass()))
+	{
+		return; // 로비 등 매치맵이 아니면 HUD 생성 스킵
 	}
 
 	if (HUDWidgetClass)

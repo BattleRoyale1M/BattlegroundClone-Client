@@ -95,6 +95,11 @@ void ADropCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
+		if (PC->IsLocalController())
+		{
+			PC->SetInputMode(FInputModeGameOnly());
+			PC->SetShowMouseCursor(false);
+		}
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 		{
@@ -221,20 +226,16 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ADropCharacter::OnJumpPressed()
 {
-	
-	if (DropState == EDropState::InPlane)
-	{
-		ServerBeginFreefall();
-	}
-	else
-	{
-		Jump();
-	}
+	Jump();
 }
 
 void ADropCharacter::OnParachutePressed()
 {
-	if (DropState == EDropState::Freefall)
+	if (DropState == EDropState::InPlane)
+	{
+		ServerBeginFreefall();
+	}
+	else if (DropState == EDropState::Freefall)
 	{
 		ServerDeployParachute();
 	}
