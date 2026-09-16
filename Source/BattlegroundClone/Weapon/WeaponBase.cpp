@@ -5,7 +5,8 @@
 
 #include "Combat/ProjectilePoolSubsystem.h"
 
-#include "Character/DropCharacter.h" 
+#include "Character/DropCharacter.h"
+#include "Weapon/WeaponInventoryComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"

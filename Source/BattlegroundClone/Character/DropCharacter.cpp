@@ -2,6 +2,7 @@
 
 #include "Combat/HealthComponent.h"
 #include "Weapon/WeaponBase.h"
+#include "Weapon/WeaponInventoryComponent.h"
 #include "Interaction/Interactable/InteractableInterface.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
@@ -79,12 +80,17 @@ ADropCharacter::ADropCharacter()
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleOwnDeath);
 	HealthComp->OnHit.AddDynamic(this, &ADropCharacter::HandleHit);
+
+	WeaponInventory = CreateDefaultSubobject<UWeaponInventoryComponent>(TEXT("WeaponInventory"));
 }
 
 void ADropCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	EquipWeaponSlot(0);
+	if (WeaponInventory)
+	{
+		WeaponInventory->InitialEquip();
+	}
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ADropCharacter::OnInteractableBeginOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ADropCharacter::OnInteractableEndOverlap);
@@ -206,17 +212,19 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(AimAction, ETriggerEvent::Started,   this, &ADropCharacter::OnAimPressed);
 		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::OnAimReleased);
 	}
-	if (ChangeFireModeAction)
+	if (ChangeFireModeAction && WeaponInventory)
 	{
-		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, this, &ADropCharacter::ChangeFireMode);
+		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, WeaponInventory, &UWeaponInventoryComponent::ChangeFireMode);
 	}
-	if (EquipSlot1Action)
+	if (WeaponInventory)
 	{
-		EIC->BindAction(EquipSlot1Action, ETriggerEvent::Started, this, &ADropCharacter::EquipSlot1);
-	}
-	if (EquipSlot2Action)
-	{
-		EIC->BindAction(EquipSlot2Action, ETriggerEvent::Started, this, &ADropCharacter::EquipSlot2);
+		for (int32 i = 0; i < WeaponSlotActions.Num(); ++i)
+		{
+			if (WeaponSlotActions[i])
+			{
+				EIC->BindAction(WeaponSlotActions[i], ETriggerEvent::Started, WeaponInventory, &UWeaponInventoryComponent::SwitchWeaponSlot, i);
+			}
+		}
 	}
 	if (InteractAction)
 	{
@@ -429,22 +437,6 @@ void ADropCharacter::ServerSetAimMode_Implementation(EDropAimMode NewMode)
 	ApplyAimVisuals(OldMode, NewMode);
 }
 
-void ADropCharacter::ChangeFireMode()
-{
-	uint8 NextMode = (static_cast<uint8>(CurrentFireMode) + 1) % 2;
-	CurrentFireMode = static_cast<EFireMode>(NextMode);
-
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->SetFireMode(CurrentFireMode);
-	}
-
-	if (OnFireModeChanged.IsBound())
-	{
-		OnFireModeChanged.Broadcast(CurrentFireMode);
-	}
-}
-
 /*
 Aim
 */
@@ -497,22 +489,23 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 		HideScopeOverlay();
 	}
 	
-	if (IsLocallyControlled() && EquippedWeapon)
+	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
+	if (IsLocallyControlled() && Weapon)
 	{
 		if (NewMode == EDropAimMode::Scoped)
 		{
-			EquippedWeapon->AttachToComponent(
+			Weapon->AttachToComponent(
 				FollowCamera,
 				FAttachmentTransformRules::SnapToTargetIncludingScale);
 
-			if (UStaticMeshComponent* WM = EquippedWeapon->GetWeaponMesh())
+			if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 			{
 				if (WM->DoesSocketExist(TEXT("Aim")))
 				{
 					// 역변환
 					const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
-					EquippedWeapon->SetActorRelativeLocation(Inv.GetLocation());
-					EquippedWeapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+					Weapon->SetActorRelativeLocation(Inv.GetLocation());
+					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 				}
 			}
 
@@ -523,12 +516,12 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 		}
 		else if (OldMode == EDropAimMode::Scoped)
 		{
-			EquippedWeapon->AttachToComponent(
+			Weapon->AttachToComponent(
 				GetMesh(),
 				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				WeaponAttachSocket);
-			EquippedWeapon->SetActorRelativeLocation(FVector::ZeroVector);
-			EquippedWeapon->SetActorRelativeRotation(FRotator::ZeroRotator);
+				WeaponInventory->GetWeaponAttachSocket());
+			Weapon->SetActorRelativeLocation(FVector::ZeroVector);
+			Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
 			if (GetMesh())
 			{
 				GetMesh()->UnHideBoneByName(TEXT("head"));
@@ -573,16 +566,17 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset,    TargetOffset, Dt, AimInterpSpeed);
 	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,    TargetFOV,    Dt, AimInterpSpeed));
 	
-	if (AimMode == EDropAimMode::Scoped && EquippedWeapon && EquippedWeapon->GetRootComponent()
-	&& EquippedWeapon->GetRootComponent()->GetAttachParent() == FollowCamera)
+	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
+	if (AimMode == EDropAimMode::Scoped && Weapon && Weapon->GetRootComponent()
+	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera)
 	{
-		if (UStaticMeshComponent* WM = EquippedWeapon->GetWeaponMesh())
+		if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 		{
 			if (WM->DoesSocketExist(TEXT("Aim")))
 			{
 				const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
-				EquippedWeapon->SetActorRelativeLocation(Inv.GetLocation());
-				EquippedWeapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+				Weapon->SetActorRelativeLocation(Inv.GetLocation());
+				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 			}
 		}
 	}
@@ -639,123 +633,32 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
-	if (DropState != EDropState::Ground || !bIsAiming || !EquippedWeapon || bIsSwitchingWeapon)
+	if (DropState != EDropState::Ground || !bIsAiming)
 	{
 		return;
 	}
-	EquippedWeapon->StartFire();
+	if (WeaponInventory)
+	{
+		WeaponInventory->StartFire();
+	}
 }
 
 void ADropCharacter::StopFire()
 {
-	if (EquippedWeapon)
+	if (WeaponInventory)
 	{
-		EquippedWeapon->StopFire();
+		WeaponInventory->StopFire();
 	}
 }
 
 void ADropCharacter::OnReloadPressed()
 {
-	if (bIsSwitchingWeapon)
+	if (WeaponInventory)
 	{
-		return;
-	}
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->StartReload();
+		WeaponInventory->OnReloadPressed();
 	}
 }
 
-
-void ADropCharacter::OnRep_EquippedWeapon()
-{
-	if (!EquippedWeapon)
-	{
-		return;
-	}
-	EquippedWeapon->AttachToComponent(
-		GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
-}
-
-void ADropCharacter::EquipWeaponSlot(int32 Index)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-	if (!WeaponSlotClasses.IsValidIndex(Index) || Index == CurrentWeaponIndex)
-	{
-		return;
-	}
-	if (WeaponSlots.Num() != WeaponSlotClasses.Num())
-	{
-		WeaponSlots.SetNum(WeaponSlotClasses.Num());
-	}
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->StopFire();
-		EquippedWeapon->SetActorHiddenInGame(true);
-	}
-
-	CurrentWeaponIndex = Index;
-	if (!WeaponSlots[Index])
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		SpawnParams.Instigator = this;
-		SpawnParams.SpawnCollisionHandlingOverride =
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		WeaponSlots[Index] = GetWorld()->SpawnActor<AWeaponBase>(WeaponSlotClasses[Index], SpawnParams);
-	}
-	EquippedWeapon = WeaponSlots[Index];
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->SetActorHiddenInGame(false);
-		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
-		EquippedWeapon->SetFireMode(CurrentFireMode);
-		MulticastPlayEquipMontage();
-	}
-}
-
-void ADropCharacter::SwitchWeaponSlot(int32 Index)
-{
-	if (!HasAuthority())
-	{
-		ServerSwtichWeaponSlot(Index);
-		return;
-	}
-	EquipWeaponSlot(Index);
-}
-
-void ADropCharacter::ServerSwtichWeaponSlot_Implementation(int32 Index)
-{
-	EquipWeaponSlot(Index);
-}
-
-// --
-void ADropCharacter::EquipSlot1() { SwitchWeaponSlot(0); }
-void ADropCharacter::EquipSlot2() { SwitchWeaponSlot(1); }
-// --
-
-void ADropCharacter::MulticastPlayEquipMontage_Implementation()
-{
-	bIsSwitchingWeapon = true;
-	float Duration = 0.f;
-	if (EquipAnimMontage)
-	{
-		Duration = EquipAnimMontage -> GetPlayLength();
-		if (UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr)
-		{
-			Anim->Montage_Play(EquipAnimMontage);
-		}
-	}
-	GetWorldTimerManager().SetTimer(EquipTimerHandle, this, &ADropCharacter::FinishWeaponSwitch, FMath::Max(Duration, 0.01f), false);
-}
-
-void ADropCharacter::FinishWeaponSwitch()
-{
-	bIsSwitchingWeapon = false;
-}
 void ADropCharacter::OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor || !OtherActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
@@ -807,52 +710,14 @@ void ADropCharacter::ServerInteract_Implementation(AActor* InteractActor)
 	}
 }
 
-void ADropCharacter::EquipWeaponClassAtSlot(int32 Index, TSubclassOf<AWeaponBase> NewWeaponClass)
+AWeaponBase* ADropCharacter::GetEquippedWeapon() const
 {
-	if (!HasAuthority() || !NewWeaponClass)
-	{
-		return;
-	}
-	if (!WeaponSlotClasses.IsValidIndex(Index))
-	{
-		WeaponSlotClasses.SetNum(Index + 1);
-	}
-	WeaponSlotClasses[Index] = NewWeaponClass;
-
-	if (WeaponSlots.IsValidIndex(Index) && WeaponSlots[Index])
-	{
-		if (WeaponSlots[Index] == EquippedWeapon)
-		{
-			EquippedWeapon = nullptr;
-		}
-		WeaponSlots[Index]->Destroy();
-		WeaponSlots[Index] = nullptr;
-	}
-
-	CurrentWeaponIndex = -1; // 강제로 재장착되게 가드 우회
-	EquipWeaponSlot(Index);
+	return WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
 }
 
-/*
-무기 재장전(Reload) 애니메이션 몽타주를 재장전 소요 시간(Duration)에 맞춰 재생 속도(Rate)를 동적으로 조절하여 실행
-*/
-void ADropCharacter::HandleReloadStarted(float Duration)
+EFireMode ADropCharacter::GetCurrentFireMode() const
 {
-	if (!ReloadAnimMontage) return;
-	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr; //몽타주가 등록되지 않았다면 조기 종료
-	
-	if (!Anim) return;
-	const float MontageLen = ReloadAnimMontage->GetPlayLength();
-	const float Rate = (Duration > 0.f && MontageLen > 0.f) ? (MontageLen / Duration) : 1.f;
-	Anim->Montage_Play(ReloadAnimMontage, Rate);
-}
-
-void ADropCharacter::PlayFireMontage()
-{
-	if (!FireAnimMontage) return;
-	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (!Anim) return;
-	Anim->Montage_Play(FireAnimMontage);
+	return WeaponInventory ? WeaponInventory->GetCurrentFireMode() : EFireMode::Single;
 }
 
 /*
@@ -861,7 +726,6 @@ RPC Server
 void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ADropCharacter, EquippedWeapon);
 	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
 	DOREPLIFETIME(ADropCharacter, DropState);
 }

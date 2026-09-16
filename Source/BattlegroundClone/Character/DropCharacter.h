@@ -19,6 +19,7 @@ class AWeaponBase;
 class USceneComponent;
 class UserWidget;
 class UHealthComponent;
+class UWeaponInventoryComponent;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -70,18 +71,25 @@ public:
 	void  UpdateFreefall(float Dt);
 	void  UpdateParachute(float Dt);
 
-	// MulticastReloadFX에서 모든 머신에 호출됨. 재장전 시작 시 몽타주 재생.
-	void HandleReloadStarted(float Duration);
-
-	// 발사 시 1회성 상체 반동 몽타주. MulticastFireFX에서 모든 머신에 호출됨.
-	void PlayFireMontage();
-	
 	UFUNCTION(BlueprintPure, Category="Combat")
 	UHealthComponent* GetHealthComp() const
 	{
 		return HealthComp;
 	}
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	TObjectPtr<UWeaponInventoryComponent> WeaponInventory;
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	UWeaponInventoryComponent* GetWeaponInventory() const { return WeaponInventory; }
+
+	// 블루프린트(WBP_DropHUD)가 기존처럼 그대로 쓸 수 있게 남겨둔 위임 함수
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	AWeaponBase* GetEquippedWeapon() const;
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	EFireMode GetCurrentFireMode() const;
+
 	UFUNCTION()
 	void HandleDeath(AController* Killer, AActor* DamageCauser);
 	UFUNCTION()
@@ -118,20 +126,6 @@ public:
 	FTimerHandle DeathDestroyTimerHandle;
 
 	void DestroySelf();
-	
-	/*
-	 B : 사격 이벤트 변경을 HUD/UI로 전달
-	*/
-	UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-	FOnFireModeChanged OnFireModeChanged;
-	
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	EFireMode GetCurrentFireMode() const { return CurrentFireMode; }
-	
-	/*
-	Interaction
-	*/
-	void EquipWeaponClassAtSlot(int32 Index, TSubclassOf<AWeaponBase> NewWeaponClass);
 	
 	/*
 	 DEBUG
@@ -201,27 +195,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
 	
-	// Reload Sequence
-	UPROPERTY(EditDefaultsOnly, Category = "reload")
-	TObjectPtr<UAnimMontage> ReloadAnimMontage;
-
-	// 발사 몽타주 (BP_DropCharacter 디폴트에서 지정). 없으면 재생 스킵.
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<UAnimMontage> FireAnimMontage;
-	
-	// 무기교체 몽타주
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<UAnimMontage> EquipAnimMontage;
-	bool bIsSwitchingWeapon = false;
-	FTimerHandle EquipTimerHandle;
-	
-	void FinishWeaponSwitch();
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayEquipMontage();
-	
 	// --
-	
+
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> NearbyInteractables;
 	
@@ -258,14 +233,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float AimTapThreshold = 0.18f;
 	
-	// B
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	EFireMode CurrentFireMode = EFireMode::Single;
-	
-	void ChangeFireMode();
-	
 	/*
-	Interaction 
+	Interaction
 	*/
 	void OnInteractPressed();
 	
@@ -293,53 +262,14 @@ protected:
 	void StopFire();
 	void OnReloadPressed();
 	
-	UPROPERTY()
-	TArray<TObjectPtr<AWeaponBase>> WeaponSlots;
-
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableChanged, FText, PromptText);
-	
+
 	UPROPERTY(BlueprintAssignable, Category = "Interaction")
 	FOnInteractableChanged OnInteractableChanged;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TArray<TSubclassOf<AWeaponBase>> WeaponSlotClasses;
-	int32 CurrentWeaponIndex = -1;
-	
-	void EquipWeaponSlot(int32 Index);
-	void SwitchWeaponSlot(int32 Index);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerSwtichWeaponSlot(int32 Index);
-	
-	void EquipSlot1();
-	void EquipSlot2();
-	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> EquipSlot1Action;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> EquipSlot2Action;
-	
-	/*
-	무기 붙일 캐릭터 스켈레탈 메시 소켓. 
-	*/
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	FName WeaponAttachSocket = TEXT("hand_r");
-	
-	/*
-	RPC Server
-	*/
-	UFUNCTION()
-	void OnRep_EquippedWeapon();
-	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_EquippedWeapon, Category = "Weapon")
-	TObjectPtr<AWeaponBase> EquippedWeapon;
-	
-	UFUNCTION(BlueprintPure, Category = "Weapon")
-	AWeaponBase* GetEquippedWeapon() const
-	{
-		return EquippedWeapon;
-	}
-	
+	TArray<TObjectPtr<UInputAction>> WeaponSlotActions;
+
 	/*
 	현재 탑승 중인 비행기
 	*/
