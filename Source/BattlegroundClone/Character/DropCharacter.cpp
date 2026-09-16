@@ -214,7 +214,7 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	}
 	if (ChangeFireModeAction && WeaponInventory)
 	{
-		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, WeaponInventory, &UWeaponInventoryComponent::ChangeFireMode);
+		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, WeaponInventory.Get(), &UWeaponInventoryComponent::ChangeFireMode);
 	}
 	if (WeaponInventory)
 	{
@@ -222,7 +222,7 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		{
 			if (WeaponSlotActions[i])
 			{
-				EIC->BindAction(WeaponSlotActions[i], ETriggerEvent::Started, WeaponInventory, &UWeaponInventoryComponent::SwitchWeaponSlot, i);
+				EIC->BindAction(WeaponSlotActions[i], ETriggerEvent::Started, WeaponInventory.Get(), &UWeaponInventoryComponent::SwitchWeaponSlot, i);
 			}
 		}
 	}

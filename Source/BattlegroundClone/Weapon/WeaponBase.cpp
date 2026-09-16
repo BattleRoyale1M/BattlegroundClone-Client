@@ -87,7 +87,10 @@ void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 
 	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
 	{
-		C->PlayFireMontage();
+		if (UWeaponInventoryComponent* Inv = C->GetWeaponInventory())
+		{
+			Inv->PlayFireMontage();
+		}
 	}
 }
 
@@ -95,7 +98,10 @@ void AWeaponBase::MulticastReloadFX_Implementation(float Duration)
 {
 	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
 	{
-		C->HandleReloadStarted(Duration);
+		if (UWeaponInventoryComponent* Inv = C->GetWeaponInventory())
+		{
+			Inv->HandleReloadStarted(Duration);
+		}
 	}
 }
 

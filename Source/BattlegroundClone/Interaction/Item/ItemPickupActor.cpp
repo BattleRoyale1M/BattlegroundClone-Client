@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "Character/DropCharacter.h"
 #include "Weapon/WeaponBase.h"
+#include "Weapon/WeaponInventoryComponent.h"
 
 AItemPickupActor::AItemPickupActor()
 {
@@ -27,8 +28,11 @@ void AItemPickupActor::Interact_Implementation(AActor* Interactor)
 	}
 	if (ADropCharacter* Character = Cast<ADropCharacter>(Interactor))
 	{
-		Character->EquipWeaponClassAtSlot(TargetSlotIndex, WeaponClass);
-		Destroy();
+		if (UWeaponInventoryComponent* Inv = Character->GetWeaponInventory())
+		{
+			Inv->EquipWeaponClassAtSlot(TargetSlotIndex, WeaponClass);
+			Destroy();
+		}
 	}
 }
 
