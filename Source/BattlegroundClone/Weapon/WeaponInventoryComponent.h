@@ -15,6 +15,13 @@ class BATTLEGROUNDCLONE_API UWeaponInventoryComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	// 무기 슬롯 인덱스 가이드 (참고용)
+	// 0: 주무기 1 (Primary 1)
+	// 1: 주무기 2 (Primary 2)
+	// 2: 보조무기 (Secondary / Handgun)
+	// 3: 근접무기 (Melee)
+	// 4: 투척무기 (Throwable)
+	
 	UWeaponInventoryComponent();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -55,6 +55,17 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 	{
 		return;
 	}
+	if (!WeaponSlotClasses[Index])
+	{
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->StopFire();
+			EquippedWeapon->SetActorHiddenInGame(true);
+		}
+		CurrentWeaponIndex = Index;
+		EquippedWeapon = nullptr;
+		// TODO: 맨손 애니메이션이나 상태로 전환하는 로직 추가 가능
+	}
 	if (WeaponSlots.Num() != WeaponSlotClasses.Num())
 	{
 		WeaponSlots.SetNum(WeaponSlotClasses.Num());
@@ -64,8 +75,8 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 		EquippedWeapon->StopFire();
 		EquippedWeapon->SetActorHiddenInGame(true);
 	}
-
 	CurrentWeaponIndex = Index;
+	
 	if (!WeaponSlots[Index])
 	{
 		FActorSpawnParameters SpawnParams;
