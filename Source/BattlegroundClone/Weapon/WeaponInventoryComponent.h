@@ -101,12 +101,13 @@ protected:
 
 	ACharacter* GetOwnerCharacter() const;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponSlotClasses, EditDefaultsOnly, Category = "Weapon")
 	TArray<TSubclassOf<AWeaponBase>> WeaponSlotClasses;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AWeaponBase>> WeaponSlots;
 
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponIndex)
 	int32 CurrentWeaponIndex = -1;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
