@@ -94,15 +94,6 @@ void ADropPlayerController::BeginPlay()
 			WorldMapWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
-	if (InventoryWidgetClass)
-	{
-		InventoryWidget = CreateWidget<UUserWidget>(this, InventoryWidgetClass);
-		if (InventoryWidget)
-		{
-			InventoryWidget->AddToViewport(10);
-			InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
-		}
-	}
 }
 
 void ADropPlayerController::SetupInputComponent()
@@ -200,13 +191,16 @@ void ADropPlayerController::ToggleInventory()
 {
 	bInventoryOpen = !bInventoryOpen;
 
-	if (InventoryWidget)
-	{
-		InventoryWidget->SetVisibility(bInventoryOpen ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	}
-
 	if (bInventoryOpen)
 	{
+		if (InventoryWidgetClass)
+		{
+			InventoryWidget = CreateWidget<UUserWidget>(this, InventoryWidgetClass);
+			if (InventoryWidget)
+			{
+				InventoryWidget->AddToViewport(10);
+			}
+		}
 		FInputModeGameAndUI Mode;
 		Mode.SetHideCursorDuringCapture(false);
 		SetInputMode(Mode);
@@ -214,6 +208,11 @@ void ADropPlayerController::ToggleInventory()
 	}
 	else
 	{
+		if (InventoryWidget)
+		{
+			InventoryWidget->RemoveFromParent();
+			InventoryWidget = nullptr;
+		}
 		SetInputMode(FInputModeGameOnly());
 		SetShowMouseCursor(false);
 	}
