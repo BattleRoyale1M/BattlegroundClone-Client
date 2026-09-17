@@ -9,6 +9,7 @@ class UStaticMeshComponent;
 class USceneComponent;
 class UNiagaraSystem;
 class USoundBase;
+class UTexture2D;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStarted, float, Duration);
 
@@ -68,6 +69,15 @@ public:
 	// 장전 시작 이벤트 (BP/UI용). 몽타주 재생은 MulticastReloadFX가 담당.
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FOnReloadStarted OnReloadStarted;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|UI")
+	TObjectPtr<UTexture2D> WeaponIcon;
+	
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	UTexture2D* GetWeaponIcon() const
+	{
+		return WeaponIcon;
+	}
 
 protected:
 	virtual void BeginPlay() override;
