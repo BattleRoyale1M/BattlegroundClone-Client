@@ -96,6 +96,12 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+	
+	UFUNCTION()
+	void OnRep_WeaponSlotClasses();
+
+	UFUNCTION()
+	void OnRep_CurrentWeaponIndex();
 
 	void FinishWeaponSwitch();
 
