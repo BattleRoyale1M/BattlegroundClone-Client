@@ -85,6 +85,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	TArray<FWeaponSlotInfo> GetWeaponSlotInfo() const;
 
+	UFUNCTION(BlueprintPure, Category="Weapon")
+	AWeaponBase* GetWeaponAtSlot(int32 Index) const
+	{
+		return WeaponSlots.IsValidIndex(Index) ? WeaponSlots[Index] : nullptr;
+	}
+	
 protected:
 	void EquipWeaponSlot(int32 Index);
 
