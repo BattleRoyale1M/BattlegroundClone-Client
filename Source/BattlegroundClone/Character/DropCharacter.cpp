@@ -592,7 +592,13 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 		{
 			if (WM->DoesSocketExist(TEXT("Aim")))
 			{
-				const FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
+				FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+
+				// [★] 총기마다 설정된 고유의 회전 오프셋 적용 (AWP만 -90도 들어가고 나머지는 0도)
+				FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+				SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+
+				const FTransform Inv = SocketTransform.Inverse();
 				Weapon->SetActorRelativeLocation(Inv.GetLocation());
 				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 			}

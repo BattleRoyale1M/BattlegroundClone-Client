@@ -84,6 +84,8 @@ public:
 	{
 		return WeaponIcon;
 	}
+	
+	FORCEINLINE FRotator GetAimCameraRotationOffset() const { return AimCameraRotationOffset; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -168,6 +170,9 @@ protected:
 	void PlayFireFX();
 	AController* GetOwningController() const;
 	bool GetAimTrace(FVector& OutStart, FVector& OutEnd, FRotator& OutViewRot) const;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	FRotator AimCameraRotationOffset = FRotator::ZeroRotator;
 };
 
 /*
