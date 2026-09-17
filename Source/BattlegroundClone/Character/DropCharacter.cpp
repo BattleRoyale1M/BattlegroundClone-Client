@@ -605,8 +605,16 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
 
 					const FTransform Inv = SocketTransform.Inverse();
-					Weapon->SetActorRelativeLocation(Inv.GetLocation());
-					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+					FVector FinalLoc = Inv.GetLocation();
+					FRotator FinalRot = Inv.GetRotation().Rotator();
+					
+					if (Weapon->GetClass()->GetName().Contains(TEXT("AWP")))
+					{
+						FinalRot.Yaw += 90.f; // 또는 Roll/Pitch 중 돌아간 축
+					}
+
+					Weapon->SetActorRelativeLocation(FinalLoc);
+					Weapon->SetActorRelativeRotation(FinalRot);
 				}
 			}
 		}
