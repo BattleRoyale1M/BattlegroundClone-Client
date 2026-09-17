@@ -555,23 +555,20 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 		break;
 	case EDropAimMode::Scoped:
 		{
-			if (AimMode == EDropAimMode::Scoped)
-			{
-				AWeaponBase* DebugWeapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-				const bool bHasSocket = DebugWeapon && DebugWeapon->GetWeaponMesh()
-					&& DebugWeapon->GetWeaponMesh()->DoesSocketExist(TEXT("Aim"));
-				const bool bAttached = DebugWeapon && DebugWeapon->GetRootComponent()
-					&& DebugWeapon->GetRootComponent()->GetAttachParent() == FollowCamera;
-
-				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Cyan, FString::Printf(
-					TEXT("Arm=%.1f FOV=%.1f HasSocket=%d Attached=%d"),
-					CameraBoom->TargetArmLength, FollowCamera->FieldOfView, bHasSocket, bAttached));
-			}
-
 			TargetArm = ScopedArmLength;
 			TargetOffset = ScopedSocketOffset;
+
 			const AWeaponBase* Equipped = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-			TargetFOV = Equipped ? Equipped->GetScopedFOV() : ScopedFOV;
+			bool bIsAWP = Equipped && (Equipped->GetClass()->GetName().Contains(TEXT("AWP")));
+        
+			if (bIsAWP)
+			{
+				TargetFOV = Equipped ? Equipped->GetScopedFOV() : 30.f;
+			}
+			else
+			{
+				TargetFOV = ShoulderFOV;
+			}
 			break;
 		}
 	default:
