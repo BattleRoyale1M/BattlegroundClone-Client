@@ -554,10 +554,13 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 		TargetArm = ShoulderArmLength; TargetOffset = ShoulderSocketOffset; TargetFOV = ShoulderFOV;
 		break;
 	case EDropAimMode::Scoped:
-		TargetOffset = ScopedSocketOffset;
-		const AWeaponBase* Equipped = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-		TargetFOV = Equipped ? Equipped->GetScopedFOV() : ScopedFOV;
-		break;
+		{
+			TargetArm = ScopedArmLength;
+			TargetOffset = ScopedSocketOffset;
+			const AWeaponBase* Equipped = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
+			TargetFOV = Equipped ? Equipped->GetScopedFOV() : ScopedFOV;
+			break;
+		}
 	default:
 		TargetArm = HipArmLength;      TargetOffset = HipSocketOffset;      TargetFOV = HipFOV;
 		break;
