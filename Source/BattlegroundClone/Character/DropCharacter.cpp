@@ -602,8 +602,12 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 
 		if (bIsAWP)
 		{
-			Weapon->SetActorRelativeLocation(FVector(/* 에디터에서 측정한 X, Y, Z */));
-			Weapon->SetActorRelativeRotation(FRotator(/* 에디터에서 측정한 Pitch, Yaw, Roll */));
+			Weapon->AttachToComponent(
+				FollowCamera,
+				FAttachmentTransformRules::SnapToTargetIncludingScale);
+             
+			Weapon->SetActorRelativeLocation(FVector::ZeroVector);
+			Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
 		}
 		else
 		{
