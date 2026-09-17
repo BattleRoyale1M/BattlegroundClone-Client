@@ -497,28 +497,18 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 			Weapon->AttachToComponent(
 			   FollowCamera,
 			   FAttachmentTransformRules::SnapToTargetIncludingScale);
-			
-			bool bIsAWP = Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
 
-			if (bIsAWP)
+			if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 			{
-				Weapon->SetActorRelativeLocation(FVector(20.f, 0.f, -5.f)); // 필요시 수치 조절
-				Weapon->SetActorRelativeRotation(FRotator(0.f, 0.f, 0.f));     // 필요시 회전 조절
-			}
-			else
-			{
-				if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
+				if (WM->DoesSocketExist(TEXT("Aim")))
 				{
-					if (WM->DoesSocketExist(TEXT("Aim")))
-					{
-						FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-						FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-						SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+					FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+					FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
 
-						const FTransform Inv = SocketTransform.Inverse();
-						Weapon->SetActorRelativeLocation(Inv.GetLocation());
-						Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
-					}
+					const FTransform Inv = SocketTransform.Inverse();
+					Weapon->SetActorRelativeLocation(Inv.GetLocation());
+					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 				}
 			}
 
@@ -598,31 +588,17 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	if (AimMode == EDropAimMode::Scoped && Weapon && Weapon->GetRootComponent()
 	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera)
 	{
-		bool bIsAWP = Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
-
-		if (bIsAWP)
+		if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 		{
-			Weapon->AttachToComponent(
-				FollowCamera,
-				FAttachmentTransformRules::SnapToTargetIncludingScale);
-             
-			Weapon->SetActorRelativeLocation(FVector::ZeroVector);
-			Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
-		}
-		else
-		{
-			if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
+			if (WM->DoesSocketExist(TEXT("Aim")))
 			{
-				if (WM->DoesSocketExist(TEXT("Aim")))
-				{
-					FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-					FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+				FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+				FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+				SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
 
-					const FTransform Inv = SocketTransform.Inverse();
-					Weapon->SetActorRelativeLocation(Inv.GetLocation());
-					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
-				}
+				const FTransform Inv = SocketTransform.Inverse();
+				Weapon->SetActorRelativeLocation(Inv.GetLocation());
+				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 			}
 		}
 	}
