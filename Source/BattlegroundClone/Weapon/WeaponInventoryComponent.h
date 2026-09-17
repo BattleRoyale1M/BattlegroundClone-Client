@@ -9,6 +9,26 @@ class AWeaponBase;
 class UAnimMontage;
 class ACharacter;
 
+USTRUCT(BlueprintType)
+struct FWeaponSlotInfo
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	int32 SlotIndex = -1;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	TSubclassOf<AWeaponBase> WeaponClass;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	bool bHasWeapon = false;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	bool bIsEquipped = false;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryChanged);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BATTLEGROUNDCLONE_API UWeaponInventoryComponent : public UActorComponent
 {
@@ -40,15 +60,30 @@ public:
 	void HandleReloadStarted(float Duration);
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
-	AWeaponBase* GetEquippedWeapon() const { return EquippedWeapon; }
+	AWeaponBase* GetEquippedWeapon() const
+	{
+		return EquippedWeapon;
+	}
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
-	EFireMode GetCurrentFireMode() const { return CurrentFireMode; }
+	EFireMode GetCurrentFireMode() const
+	{
+		return CurrentFireMode;
+	}
 
-	FName GetWeaponAttachSocket() const { return WeaponAttachSocket; }
+	FName GetWeaponAttachSocket() const
+	{
+		return WeaponAttachSocket;
+	}
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon|Events")
 	FOnFireModeChanged OnFireModeChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category="Weapon|Events")
+	FOnInventoryChanged OnInventoryChanged;
+	
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	TArray<FWeaponSlotInfo> GetWeaponSlotInfo() const;
 
 protected:
 	void EquipWeaponSlot(int32 Index);
