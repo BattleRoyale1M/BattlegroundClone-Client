@@ -19,6 +19,8 @@ void UWeaponInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWeaponInventoryComponent, EquippedWeapon);
+	DOREPLIFETIME(UWeaponInventoryComponent, WeaponSlotClasses);
+	DOREPLIFETIME(UWeaponInventoryComponent, CurrentWeaponIndex);
 }
 
 ACharacter* UWeaponInventoryComponent::GetOwnerCharacter() const
@@ -42,6 +44,32 @@ void UWeaponInventoryComponent::OnRep_EquippedWeapon()
 		EquippedWeapon->AttachToComponent(
 			OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
 	}
+}
+
+void UWeaponInventoryComponent::OnRep_WeaponSlotClasses()
+{
+	OnInventoryChanged.Broadcast();
+}
+
+void UWeaponInventoryComponent::OnRep_CurrentWeaponIndex()
+{
+	OnInventoryChanged.Broadcast();
+}
+
+TArray<FWeaponSlotInfo> UWeaponInventoryComponent::GetWeaponSlotInfo() const
+{
+	TArray<FWeaponSlotInfo> Result;
+	Result.Reserve(WeaponSlotClasses.Num());
+	for (int32 i = 0; i < WeaponSlotClasses.Num(); ++i)
+	{
+		FWeaponSlotInfo Info;
+		Info.SlotIndex = i;
+		Info.WeaponClass = WeaponSlotClasses[i];
+		Info.bHasWeapon = WeaponSlotClasses[i] != nullptr;
+		Info.bIsEquipped = (i == CurrentWeaponIndex);
+		Result.Add(Info);
+	}
+	return Result;
 }
 
 void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
