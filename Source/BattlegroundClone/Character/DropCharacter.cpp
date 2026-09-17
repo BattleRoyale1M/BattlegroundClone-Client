@@ -585,23 +585,32 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	if (AimMode == EDropAimMode::Scoped && Weapon && Weapon->GetRootComponent()
 	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera)
 	{
-		if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
+		bool bIsAWP = Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
+
+		if (bIsAWP)
 		{
-			if (WM->DoesSocketExist(TEXT("Aim")))
+			Weapon->SetActorRelativeLocation(FVector(20.f, 0.f, -5.f));
+			Weapon->SetActorRelativeRotation(FRotator(0.f, -90.f, 0.f));
+		}
+		else
+		{
+			if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 			{
-				FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+				if (WM->DoesSocketExist(TEXT("Aim")))
+				{
+					FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
 
-				// [★] 총기마다 설정된 고유의 회전 오프셋 적용 (AWP만 -90도 들어가고 나머지는 0도)
-				FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-				SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+					// [★] 총기마다 설정된 고유의 회전 오프셋 적용 (AWP만 -90도 들어가고 나머지는 0도)
+					FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
 
-				const FTransform Inv = SocketTransform.Inverse();
-				Weapon->SetActorRelativeLocation(Inv.GetLocation());
-				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+					const FTransform Inv = SocketTransform.Inverse();
+					Weapon->SetActorRelativeLocation(Inv.GetLocation());
+					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+				}
 			}
 		}
 	}
-
 }
 
 void ADropCharacter::UpdateParachuteVisual(float Dt)

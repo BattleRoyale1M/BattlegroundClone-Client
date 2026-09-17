@@ -29,7 +29,7 @@ AWeaponBase::AWeaponBase()
 
 	// 1인칭 스코프 카메라가 붙는 지점. 위치는 BP_WeaponBase 뷰포트에서 잡음.
 	AimPoint = CreateDefaultSubobject<USceneComponent>(TEXT("AimPoint"));
-	AimPoint->SetupAttachment(WeaponMesh);
+	AimPoint->SetupAttachment(WeaponMesh, TEXT("Aim"));
 
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionProfileName(TEXT("NoCollision"));
