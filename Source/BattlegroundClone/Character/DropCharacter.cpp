@@ -589,8 +589,8 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 
 		if (bIsAWP)
 		{
-			Weapon->SetActorRelativeLocation(FVector(20.f, 0.f, -5.f));
-			Weapon->SetActorRelativeRotation(FRotator(0.f, -90.f, 0.f));
+			Weapon->SetActorRelativeLocation(FVector(15.f, 0.f, -3.f)); 
+			Weapon->SetActorRelativeRotation(FRotator(0.f, 0.f, 0.f));
 		}
 		else
 		{
