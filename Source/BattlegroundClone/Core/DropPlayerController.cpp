@@ -94,6 +94,15 @@ void ADropPlayerController::BeginPlay()
 			WorldMapWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
+	if (InventoryWidgetClass)
+	{
+		InventoryWidget = CreateWidget<UUserWidget>(this, InventoryWidgetClass);
+		if (InventoryWidget)
+		{
+			InventoryWidget->AddToViewport(10);
+			InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
 }
 
 void ADropPlayerController::SetupInputComponent()
@@ -105,6 +114,10 @@ void ADropPlayerController::SetupInputComponent()
 		if (MapAction)
 		{
 			EIC->BindAction(MapAction, ETriggerEvent::Started, this, &ADropPlayerController::ToggleWorldMap);
+		}
+		if (ToggleInventoryAction)
+		{
+			EIC->BindAction(ToggleInventoryAction, ETriggerEvent::Started, this, &ADropPlayerController::ToggleInventory);
 		}
 	}
 }
@@ -170,6 +183,29 @@ void ADropPlayerController::ToggleWorldMap()
 	}
 
 	if (bWorldMapOpen)
+	{
+		FInputModeGameAndUI Mode;
+		Mode.SetHideCursorDuringCapture(false);
+		SetInputMode(Mode);
+		SetShowMouseCursor(true);
+	}
+	else
+	{
+		SetInputMode(FInputModeGameOnly());
+		SetShowMouseCursor(false);
+	}
+}
+
+void ADropPlayerController::ToggleInventory()
+{
+	bInventoryOpen = !bInventoryOpen;
+
+	if (InventoryWidget)
+	{
+		InventoryWidget->SetVisibility(bInventoryOpen ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+
+	if (bInventoryOpen)
 	{
 		FInputModeGameAndUI Mode;
 		Mode.SetHideCursorDuringCapture(false);

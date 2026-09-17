@@ -43,6 +43,9 @@ public:
 	void ToggleWorldMap();
 	
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void ToggleInventory();
+	
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void GetMinimapView(float MapPixels, float ViewportPixels,
 		FVector2D& OutPan, float& OutSelfAngle,
 		bool& bMarkerValid, FVector2D& OutMarkerPos) const;
@@ -84,17 +87,31 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "DropMap|Input")
 	TObjectPtr<UInputAction> MapAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "DropMap|UI")
+	TSubclassOf<UUserWidget> InventoryWidgetClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "DropMap|Input")
+	TObjectPtr<UInputAction> ToggleInventoryAction;
 
 private:
 	AAirPlane* FindPlane() const;
 	
 	void EnsureBounds() const;
 
+	/*
+	실제로 생성된 위젯(인스턴스)을 메모리에 담아두고 관리하는 변수
+	*/
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> HUDWidget;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> WorldMapWidget;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> InventoryWidget;
+	bool bInventoryOpen = false;
+	// --
 
 	mutable FVector2D WorldMin = FVector2D(-100000.0, -100000.0);
 	mutable FVector2D WorldMax = FVector2D(100000.0, 100000.0);
