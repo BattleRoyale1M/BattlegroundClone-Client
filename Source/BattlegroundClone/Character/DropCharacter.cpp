@@ -589,8 +589,8 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 
 		if (bIsAWP)
 		{
-			Weapon->SetActorRelativeLocation(FVector(15.f, 0.f, -3.f)); 
-			Weapon->SetActorRelativeRotation(FRotator(0.f, 0.f, 0.f));
+			Weapon->SetActorRelativeLocation(FVector(/* 에디터에서 측정한 X, Y, Z */));
+			Weapon->SetActorRelativeRotation(FRotator(/* 에디터에서 측정한 Pitch, Yaw, Roll */));
 		}
 		else
 		{
@@ -599,22 +599,12 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 				if (WM->DoesSocketExist(TEXT("Aim")))
 				{
 					FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-
-					// [★] 총기마다 설정된 고유의 회전 오프셋 적용 (AWP만 -90도 들어가고 나머지는 0도)
 					FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
 					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
 
 					const FTransform Inv = SocketTransform.Inverse();
-					FVector FinalLoc = Inv.GetLocation();
-					FRotator FinalRot = Inv.GetRotation().Rotator();
-					
-					if (Weapon->GetClass()->GetName().Contains(TEXT("AWP")))
-					{
-						FinalRot.Yaw += 90.f; // 또는 Roll/Pitch 중 돌아간 축
-					}
-
-					Weapon->SetActorRelativeLocation(FinalLoc);
-					Weapon->SetActorRelativeRotation(FinalRot);
+					Weapon->SetActorRelativeLocation(Inv.GetLocation());
+					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 				}
 			}
 		}
