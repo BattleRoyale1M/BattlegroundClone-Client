@@ -59,6 +59,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	int32 GetReserveAmmo() const { return ReserveAmmo; }
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Scope")
+	float ScopedFOV = 55.f;
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	float GetScopedFOV() const { return ScopedFOV; }
 
 	/*
 	RPC Server
