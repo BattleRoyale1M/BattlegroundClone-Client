@@ -411,15 +411,15 @@ void ADropCharacter::ShowSniperScope()
 			if (ScopeLensMID)
 			{
 				ScopeLensMID->SetTextureParameterValue(TEXT("ScopeTexture"), ScopeRenderTarget);
-				const FVector2D ViewportSize = UWidgetLayoutLibrary::GetViewportSize(this);
-				if (ViewportSize.Y > 0.f)
-				{
-					// 원형 마스크가 화면비에 관계없이 항상 동그랗게 보이도록
-					ScopeLensMID->SetScalarParameterValue(TEXT("AspectRatio"), ViewportSize.X / ViewportSize.Y);
-				}
 				if (UImage* LensImage = Cast<UImage>(SniperScopeOverlayWidget->GetWidgetFromName(TEXT("LensImage"))))
 				{
 					LensImage->SetBrushFromMaterial(ScopeLensMID);
+
+					const FVector2D LensSize = LensImage->GetCachedGeometry().GetLocalSize();
+					if (LensSize.Y > 0.f)
+					{
+						ScopeLensMID->SetScalarParameterValue(TEXT("AspectRatio"), LensSize.X / LensSize.Y);
+					}
 				}
 			}
 			SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
