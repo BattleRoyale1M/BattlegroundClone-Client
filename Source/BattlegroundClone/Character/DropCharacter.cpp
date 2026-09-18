@@ -109,9 +109,9 @@ void ADropCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ADropCharacter::OnInteractableEndOverlap);
 }
 
-void ADropCharacter::PossessedBy(AController* NewController)
+void ADropCharacter::PawnClientRestart()
 {
-	Super::PossessedBy(NewController);
+	Super::PawnClientRestart();
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (PC->IsLocalController())
