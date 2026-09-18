@@ -375,9 +375,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ScopedFOV = 55.f;
 
-	// BP 디폴트에서 PIE 보며 튜닝
+	// AWP 전용 하드코딩 : BP 디폴트에서 PIE 보며 튜닝
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	FVector ScopedWeaponOffset = FVector(30.f, 7.f, -6.f);   // 카메라 기준 (앞, 오른쪽, 아래)
+	FVector ScopedWeaponOffset = FVector(60.f, 0.f, 20.f);   // 카메라 기준 (앞, 오른쪽, 아래)
 
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
 	FRotator ScopedWeaponRotation = FRotator(0.f, -90.f, 0.f); // 총열을 시야 방향으로 (WeaponMesh Yaw90 상쇄)

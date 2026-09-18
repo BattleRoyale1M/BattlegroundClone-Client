@@ -498,15 +498,23 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 			   FollowCamera,
 			   FAttachmentTransformRules::SnapToTargetIncludingScale);
 
-			if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
+			const bool bIsAWP = Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
+			if (bIsAWP)
+			{
+				// 조준경 달린 무기는 AWP 하나뿐이라, 소켓 역산 대신 카메라 기준 고정 오프셋을 씀
+				Weapon->SetActorRelativeLocation(ScopedWeaponOffset);
+				Weapon->SetActorRelativeRotation(ScopedWeaponRotation);
+			}
+			else if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 			{
 				if (WM->DoesSocketExist(TEXT("Aim")))
 				{
-					FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-					FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-					SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+					const FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+					FTransform Inv = SocketTransform.Inverse();
 
-					const FTransform Inv = SocketTransform.Inverse();
+					const FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+					Inv.ConcatenateRotation(AxisCorrection.Quaternion());
+
 					Weapon->SetActorRelativeLocation(Inv.GetLocation());
 					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
 				}
@@ -586,28 +594,21 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	
 	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
 	if (AimMode == EDropAimMode::Scoped && Weapon && Weapon->GetRootComponent()
-	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera)
+	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera
+	&& !Weapon->GetClass()->GetName().Contains(TEXT("AWP"))) // AWP는 ApplyAimVisuals에서 고정 오프셋으로 한 번만 세팅하면 됨
 	{
 		if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 		{
 			if (WM->DoesSocketExist(TEXT("Aim")))
 			{
-				FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-				FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-				SocketTransform.ConcatenateRotation(AxisCorrection.Quaternion());
+				const FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
+				FTransform Inv = SocketTransform.Inverse();
 
-				const FTransform Inv = SocketTransform.Inverse();
+				const FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
+				Inv.ConcatenateRotation(AxisCorrection.Quaternion());
+
 				Weapon->SetActorRelativeLocation(Inv.GetLocation());
 				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
-
-				// DEBUG
-				const FVector CamLoc = FollowCamera->GetComponentLocation();
-				const FVector SocketWorldLoc = WM->GetSocketLocation(TEXT("Aim"));
-				DrawDebugSphere(GetWorld(), CamLoc, 5.f, 12, FColor::Green, false, 0.f, 0, 1.f);
-				DrawDebugSphere(GetWorld(), SocketWorldLoc, 5.f, 12, FColor::Red, false, 0.f, 0, 1.f);
-				DrawDebugLine(GetWorld(), CamLoc, SocketWorldLoc, FColor::Yellow, false, 0.f, 0, 0.5f);
-				DrawDebugCoordinateSystem(GetWorld(), CamLoc, FollowCamera->GetComponentRotation(), 15.f, false, 0.f, 0, 1.f);
-				DrawDebugCoordinateSystem(GetWorld(), SocketWorldLoc, WM->GetSocketRotation(TEXT("Aim")), 15.f, false, 0.f, 0, 1.f);
 			}
 		}
 	}
