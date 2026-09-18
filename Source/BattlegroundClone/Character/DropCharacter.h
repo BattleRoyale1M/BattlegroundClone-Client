@@ -20,6 +20,10 @@ class USceneComponent;
 class UserWidget;
 class UHealthComponent;
 class UWeaponInventoryComponent;
+class USceneCaptureComponent2D;
+class UTextureRenderTarget2D;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -151,7 +155,11 @@ protected:
 	/** Follow camera on the end of the boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
-	
+
+	// 스코프 렌즈용 별도 카메라. 좁은 FOV로 렌더타겟에 찍어서 원형 UI에 씌움 (메인 카메라는 줌 안 함)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Scope", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneCaptureComponent2D> ScopeCapture;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
 	float InPlaneArmLength = 3500.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
@@ -398,11 +406,33 @@ protected:
 	void ShowParachutePrompt();
 	void HideParachutePrompt();
 	
-	// --- Scope ----------------------------------------
+	// --- Scope (Shoulder 크로스헤어) ----------------------------------------
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> ScopeOverlayWidget;
 	void ShowScopeOverlay();
 	void HideScopeOverlay();
+
+	// --- 저격 스코프 렌즈 (Scoped, SceneCapture 렌더타겟) --------------------
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Scope")
+	TSubclassOf<UUserWidget> SniperScopeOverlayClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Scope")
+	TObjectPtr<UMaterialInterface> ScopeLensMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Scope")
+	int32 ScopeRenderTargetSize = 1024;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextureRenderTarget2D> ScopeRenderTarget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInstanceDynamic> ScopeLensMID;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> SniperScopeOverlayWidget;
+
+	void ShowSniperScope();
+	void HideSniperScope();
 	
 	// --- 낙하산 캐노피 상태 ------------------------------------------
 	float ParachuteDeployElapsed = -1.f;

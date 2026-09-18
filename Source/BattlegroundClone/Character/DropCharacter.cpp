@@ -30,7 +30,11 @@
 #include "Engine/DamageEvents.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Components/Image.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
 ADropCharacter::ADropCharacter()
@@ -58,6 +62,14 @@ ADropCharacter::ADropCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; // camera is fixed on the boom
+
+	ScopeCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ScopeCapture"));
+	ScopeCapture->SetupAttachment(FollowCamera);
+	ScopeCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	ScopeCapture->bCaptureEveryFrame = false; // 스코프 켤 때만 캡처 (성능)
+	ScopeCapture->bCaptureOnMovement = false;
+	ScopeCapture->FOVAngle = 8.f; // ShowSniperScope에서 무기별 값으로 덮어씀
+	ScopeCapture->SetActive(false);
 
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParachuteMesh"));
 	ParachuteMesh->SetupAttachment(GetCapsuleComponent());
@@ -350,7 +362,79 @@ void ADropCharacter::HideScopeOverlay()
 }
 
 /*
-활강속도 
+저격 스코프 렌즈: SceneCapture로 좁은 FOV를 렌더타겟에 찍고, 원형 마스크 머티리얼로 화면 중앙에 표시.
+메인 카메라는 줌하지 않고, 화면 전체가 아니라 렌즈 원 안에서만 확대되어 보임.
+*/
+void ADropCharacter::ShowSniperScope()
+{
+	if (!IsLocallyControlled() || !ScopeCapture)
+	{
+		return;
+	}
+
+	if (!ScopeRenderTarget)
+	{
+		ScopeRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+		ScopeRenderTarget->InitAutoFormat(ScopeRenderTargetSize, ScopeRenderTargetSize);
+		ScopeRenderTarget->UpdateResourceImmediate(true);
+		ScopeCapture->TextureTarget = ScopeRenderTarget;
+	}
+
+	if (const AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr)
+	{
+		ScopeCapture->FOVAngle = Weapon->GetScopedFOV();
+	}
+	ScopeCapture->bCaptureEveryFrame = true;
+	ScopeCapture->SetActive(true);
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (!SniperScopeOverlayClass)
+		{
+			return;
+		}
+		if (!SniperScopeOverlayWidget)
+		{
+			SniperScopeOverlayWidget = CreateWidget<UUserWidget>(PC, SniperScopeOverlayClass);
+			if (SniperScopeOverlayWidget)
+			{
+				SniperScopeOverlayWidget->AddToViewport(10); // 크로스헤어보다 위에
+			}
+		}
+		if (SniperScopeOverlayWidget)
+		{
+			if (!ScopeLensMID && ScopeLensMaterial)
+			{
+				ScopeLensMID = UMaterialInstanceDynamic::Create(ScopeLensMaterial, this);
+			}
+			if (ScopeLensMID)
+			{
+				ScopeLensMID->SetTextureParameterValue(TEXT("ScopeTexture"), ScopeRenderTarget);
+				if (UImage* LensImage = Cast<UImage>(SniperScopeOverlayWidget->GetWidgetFromName(TEXT("LensImage"))))
+				{
+					LensImage->SetBrushFromMaterial(ScopeLensMID);
+				}
+			}
+			SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+	}
+}
+
+void ADropCharacter::HideSniperScope()
+{
+	if (ScopeCapture)
+	{
+		ScopeCapture->SetActive(false);
+		ScopeCapture->bCaptureEveryFrame = false;
+	}
+	if (SniperScopeOverlayWidget)
+	{
+		SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+/*
+활강속도
 */
 void ADropCharacter::UpdateFreefall(float Dt)
 {
@@ -479,7 +563,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 
 void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 {
-	// 1인칭 스코프
+	// 1인칭 스코프 (Shoulder = 크로스헤어, Scoped = 저격 스코프 렌즈. 렌즈는 AWP 전용)
 	if (NewMode == EDropAimMode::Shoulder)
 	{
 		ShowScopeOverlay();
@@ -488,8 +572,19 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 	{
 		HideScopeOverlay();
 	}
-	
+
 	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
+	const bool bIsAWPEquipped = Weapon && Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
+
+	if (NewMode == EDropAimMode::Scoped && bIsAWPEquipped)
+	{
+		ShowSniperScope();
+	}
+	else if (OldMode == EDropAimMode::Scoped)
+	{
+		HideSniperScope(); // AWP가 아니었으면 애초에 켠 적이 없어서 안전하게 no-op
+	}
+
 	if (IsLocallyControlled() && Weapon)
 	{
 		if (NewMode == EDropAimMode::Scoped)
@@ -498,8 +593,7 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 			   FollowCamera,
 			   FAttachmentTransformRules::SnapToTargetIncludingScale);
 
-			const bool bIsAWP = Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
-			if (bIsAWP)
+			if (bIsAWPEquipped)
 			{
 				// 조준경 달린 무기는 AWP 하나뿐이라, 소켓 역산 대신 카메라 기준 고정 오프셋을 씀
 				Weapon->SetActorRelativeLocation(ScopedWeaponOffset);
@@ -565,23 +659,9 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 		TargetArm = ShoulderArmLength; TargetOffset = ShoulderSocketOffset; TargetFOV = ShoulderFOV;
 		break;
 	case EDropAimMode::Scoped:
-		{
-			TargetArm = ScopedArmLength;
-			TargetOffset = ScopedSocketOffset;
-
-			const AWeaponBase* Equipped = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-			bool bIsAWP = Equipped && (Equipped->GetClass()->GetName().Contains(TEXT("AWP")));
-        
-			if (bIsAWP)
-			{
-				TargetFOV = Equipped ? Equipped->GetScopedFOV() : 30.f;
-			}
-			else
-			{
-				TargetFOV = ShoulderFOV;
-			}
-			break;
-		}
+		// 메인 카메라는 줌하지 않음 - 확대는 ScopeCapture 렌즈(원형 UI)가 담당
+		TargetArm = ScopedArmLength; TargetOffset = ScopedSocketOffset; TargetFOV = ShoulderFOV;
+		break;
 	default:
 		TargetArm = HipArmLength;      TargetOffset = HipSocketOffset;      TargetFOV = HipFOV;
 		break;
