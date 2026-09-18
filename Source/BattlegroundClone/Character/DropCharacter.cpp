@@ -599,6 +599,15 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 				const FTransform Inv = SocketTransform.Inverse();
 				Weapon->SetActorRelativeLocation(Inv.GetLocation());
 				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+
+				// DEBUG
+				const FVector CamLoc = FollowCamera->GetComponentLocation();
+				const FVector SocketWorldLoc = WM->GetSocketLocation(TEXT("Aim"));
+				DrawDebugSphere(GetWorld(), CamLoc, 5.f, 12, FColor::Green, false, 0.f, 0, 1.f);
+				DrawDebugSphere(GetWorld(), SocketWorldLoc, 5.f, 12, FColor::Red, false, 0.f, 0, 1.f);
+				DrawDebugLine(GetWorld(), CamLoc, SocketWorldLoc, FColor::Yellow, false, 0.f, 0, 0.5f);
+				DrawDebugCoordinateSystem(GetWorld(), CamLoc, FollowCamera->GetComponentRotation(), 15.f, false, 0.f, 0, 1.f);
+				DrawDebugCoordinateSystem(GetWorld(), SocketWorldLoc, WM->GetSocketRotation(TEXT("Aim")), 15.f, false, 0.f, 0, 1.f);
 			}
 		}
 	}
