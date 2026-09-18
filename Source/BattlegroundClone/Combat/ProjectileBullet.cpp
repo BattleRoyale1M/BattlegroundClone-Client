@@ -58,6 +58,8 @@ void AProjectileBullet::ActivateBullet(const FVector& InSpawnLocation, const FRo
 	SetOwner(InOwner);
 	SetInstigator(InInstigator);
 	
+	CollisionComp->ClearMoveIgnoreActors();
+	
 	SetActorLocationAndRotation(InSpawnLocation, InSpawnRotation);
 	SetActorHiddenInGame(false);
 	SetActorEnableCollision(true);
