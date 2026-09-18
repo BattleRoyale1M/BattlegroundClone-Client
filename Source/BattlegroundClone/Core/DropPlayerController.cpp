@@ -1,6 +1,7 @@
 #include "Core/DropPlayerController.h"
 
 #include "UI/DropHUDWidget.h"
+#include "UI/DropMapLabelWidget.h"
 
 #include "Core/DropGameMode.h"
 #include "Drop/AirPlane.h"
@@ -285,6 +286,65 @@ void ADropPlayerController::RefreshPlayerMarkers(class UCanvasPanel* MarkerCanva
 			Slot->SetAutoSize(true);
 			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
 			Slot->SetPosition(Positions[i]); // 지도 캔버스 내의 해당 X, Y 좌표 위치로 마커를 이동
+		}
+	}
+}
+
+void ADropPlayerController::GetLocationLabels(float MapPixels, TArray<FVector2D>& OutPositions, TArray<FText>& OutNames) const
+{
+	OutPositions.Reset();
+	OutNames.Reset();
+
+	if (!LocationDataTable)
+	{
+		return;
+	}
+
+	EnsureBounds();
+	const FVector2D MapSize(MapPixels, MapPixels);
+
+	TArray<FMapLocationRow*> Rows;
+	LocationDataTable->GetAllRows<FMapLocationRow>(TEXT("GetLocationLabels"), Rows);
+	for (const FMapLocationRow* Row : Rows)
+	{
+		if (!Row)
+		{
+			continue;
+		}
+		const FVector2D N = UDropMapLibrary::WorldToNormalized(Row->WorldLocation, WorldMin, WorldMax);
+		OutPositions.Add(UDropMapLibrary::NormalizedToWidget(FVector2D(N.Y, N.X), MapSize, true));
+		OutNames.Add(Row->LocationName);
+	}
+}
+
+void ADropPlayerController::RefreshLocationLabels(UCanvasPanel* LabelCanvas, TSubclassOf<UUserWidget> LabelWidgetClass, float MapPixels)
+{
+	if (!LabelCanvas || !LabelWidgetClass)
+	{
+		return;
+	}
+	LabelCanvas->ClearChildren();
+
+	TArray<FVector2D> Positions;
+	TArray<FText> Names;
+	GetLocationLabels(MapPixels, Positions, Names);
+
+	for (int32 i = 0; i < Positions.Num(); ++i)
+	{
+		UUserWidget* Label = CreateWidget<UUserWidget>(this, LabelWidgetClass);
+		if (!Label)
+		{
+			continue;
+		}
+		if (UDropMapLabelWidget* MapLabel = Cast<UDropMapLabelWidget>(Label))
+		{
+			MapLabel->SetLabelText(Names[i]);
+		}
+		if (UCanvasPanelSlot* Slot = LabelCanvas->AddChildToCanvas(Label))
+		{
+			Slot->SetAutoSize(true);
+			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+			Slot->SetPosition(Positions[i]);
 		}
 	}
 }

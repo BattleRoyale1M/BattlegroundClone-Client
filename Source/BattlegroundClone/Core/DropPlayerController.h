@@ -2,11 +2,25 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/DataTable.h"
 #include "DropPlayerController.generated.h"
 
 class UUserWidget;
 class UInputAction;
 class AAirPlane;
+class UCanvasPanel;
+
+USTRUCT(BlueprintType)
+struct FMapLocationRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DropMap")
+	FText LocationName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DropMap")
+	FVector WorldLocation = FVector::ZeroVector;
+};
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropPlayerController : public APlayerController
@@ -66,7 +80,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void RefreshPlayerMarkers(class UCanvasPanel* MarkerCanvas,
 		TSubclassOf<UUserWidget> MarkerClass, float MapPixels, bool bIncludeSelf = false);
-	
+
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void GetLocationLabels(float MapPixels, TArray<FVector2D>& OutPositions, TArray<FText>& OutNames) const;
+
+	UFUNCTION(BlueprintCallable, Category = "DropMap")
+	void RefreshLocationLabels(class UCanvasPanel* LabelCanvas, TSubclassOf<UUserWidget> LabelWidgetClass, float MapPixels);
+
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void ShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 	// RPC 방향 문제대응
@@ -85,6 +105,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "DropMap|UI")
 	TSubclassOf<UUserWidget> WorldMapWidgetClass;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "DropMap|UI")
+	TObjectPtr<UDataTable> LocationDataTable;
+
 	UPROPERTY(EditDefaultsOnly, Category = "DropMap|Input")
 	TObjectPtr<UInputAction> MapAction;
 	
