@@ -14,7 +14,10 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnHostClicked()
 {
-	UGameplayStatics::OpenLevel(this,  FName("L_TestRange"), true, TEXT("listen"));
+	if (UWorld* World = GetWorld())
+	{
+		World->ServerTravel(TEXT("L_TestRange?listen"));
+	}
 }
 
 void UMainMenuWidget::OnJoinClicked()
