@@ -19,6 +19,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
@@ -410,6 +411,12 @@ void ADropCharacter::ShowSniperScope()
 			if (ScopeLensMID)
 			{
 				ScopeLensMID->SetTextureParameterValue(TEXT("ScopeTexture"), ScopeRenderTarget);
+				const FVector2D ViewportSize = UWidgetLayoutLibrary::GetViewportSize(this);
+				if (ViewportSize.Y > 0.f)
+				{
+					// 원형 마스크가 화면비에 관계없이 항상 동그랗게 보이도록
+					ScopeLensMID->SetScalarParameterValue(TEXT("AspectRatio"), ViewportSize.X / ViewportSize.Y);
+				}
 				if (UImage* LensImage = Cast<UImage>(SniperScopeOverlayWidget->GetWidgetFromName(TEXT("LensImage"))))
 				{
 					LensImage->SetBrushFromMaterial(ScopeLensMID);
@@ -582,7 +589,7 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 	}
 	else if (OldMode == EDropAimMode::Scoped)
 	{
-		HideSniperScope(); // AWP가 아니었으면 애초에 켠 적이 없어서 안전하게 no-op
+		HideSniperScope();
 	}
 
 	if (IsLocallyControlled() && Weapon)
@@ -595,9 +602,9 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 
 			if (bIsAWPEquipped)
 			{
-				// 조준경 달린 무기는 AWP 하나뿐이라, 소켓 역산 대신 카메라 기준 고정 오프셋을 씀
 				Weapon->SetActorRelativeLocation(ScopedWeaponOffset);
 				Weapon->SetActorRelativeRotation(ScopedWeaponRotation);
+				Weapon->SetActorHiddenInGame(true);
 			}
 			else if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
 			{
@@ -627,6 +634,7 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 				WeaponInventory->GetWeaponAttachSocket());
 			Weapon->SetActorRelativeLocation(FVector::ZeroVector);
 			Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
+			Weapon->SetActorHiddenInGame(false); // AWP가 아니었으면 애초에 숨긴 적 없으니 안전한 no-op
 			if (GetMesh())
 			{
 				GetMesh()->UnHideBoneByName(TEXT("head"));
