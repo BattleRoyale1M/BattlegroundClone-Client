@@ -169,7 +169,7 @@ void ADropCharacter::Tick(float DeltaTime)
 		if (HasAuthority() && GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
 		break;
 	case EDropState::Ground:
-		if (IsLocallyControlled()) UpdateAimCamera(DeltaTime);
+		if (IsLocallyControlled() || HasAuthority()) UpdateAimCamera(DeltaTime);
 		break;
 	default:
 		break;

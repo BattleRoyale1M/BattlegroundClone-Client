@@ -81,7 +81,7 @@ void ADropPlayerController::BeginPlay()
 		HUDWidget = CreateWidget<UUserWidget>(this, HUDWidgetClass);
 		if (HUDWidget)
 		{
-			HUDWidget->AddToViewport(0);
+			HUDWidget->AddToViewport(20);
 		}
 	}
 
