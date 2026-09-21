@@ -876,7 +876,8 @@ void ADropCharacter::MulticastPlayMeleeMontage_Implementation(UAnimMontage* Atta
 	{
 		if (AttackMontage && !AnimInstance->IsAnyMontagePlaying())
 		{
-			AnimInstance->Montage_Play(AttackMontage, 1.f);
+			AnimInstance->Montage_Play(AttackMontage, 1.2f);
+			AnimInstance->Montage_JumpToSection(TEXT("Attack"), AttackMontage);
 		}
 	}
 }
