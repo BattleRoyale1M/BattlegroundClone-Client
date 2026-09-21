@@ -13,6 +13,14 @@ class UTexture2D;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStarted, float, Duration);
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	Gun    UMETA(DisplayName = "Gun"),
+	Melee  UMETA(DisplayName = "Melee"),
+	Grenade UMETA(DisplayName = "Grenade"),
+};
+
 UCLASS()
 class BATTLEGROUNDCLONE_API AWeaponBase : public AActor
 {
@@ -39,6 +47,13 @@ public:
 	void StopFire();
 	void StartReload();
 	void SetFireMode(EFireMode NewFireMode);
+	
+	// 무기 타입 반환 함수
+	UFUNCTION(BlueprintPure, Category="Weapon")
+	EWeaponType GetWeaponType() const
+	{
+		return WeaponType;
+	}
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	EFireMode GetFireMode() const
@@ -173,6 +188,13 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	FRotator AimCameraRotationOffset = FRotator::ZeroRotator;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Type")
+	EWeaponType WeaponType = EWeaponType::Gun;
+	
+	// --- 근접 무기 전용 몽타주---
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Melee", meta = (EditCondition = "WeaponType == EWeaponType::Melee", EditConditionHides))
+	TObjectPtr<UAnimMontage> AttackMontage;
 };
 
 /*
