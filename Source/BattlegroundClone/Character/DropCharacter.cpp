@@ -558,7 +558,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 {
 	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() :  nullptr;
 
-	if (!Weapon && NewMode != EDropAimMode::Hip)
+	if ((!Weapon || Weapon->GetWeaponType() == EWeaponType::Melee) && NewMode != EDropAimMode::Hip)
 	{
 		NewMode = EDropAimMode::Hip;
 	}
