@@ -555,6 +555,13 @@ void ADropCharacter::OnAimReleased()
 
 void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 {
+	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() :  nullptr;
+
+	if (!Weapon && NewMode != EDropAimMode::Hip)
+	{
+		NewMode = EDropAimMode::Hip;
+	}
+	
 	// ★ 스코프 상태일때는 카메라의 YAW에 따라 캐릭터도 움직여야함 ★
 	if (AimMode == NewMode) return;
 	const EDropAimMode OldMode = AimMode;
