@@ -92,7 +92,10 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 		}
 		CurrentWeaponIndex = Index;
 		EquippedWeapon = nullptr;
-		// TODO: 맨손 애니메이션이나 상태로 전환하는 로직 추가 가능
+		if (!WeaponSlots.IsValidIndex(Index) || !WeaponSlots[Index])
+		{
+			return;
+		}
 	}
 	if (WeaponSlots.Num() != WeaponSlotClasses.Num())
 	{
