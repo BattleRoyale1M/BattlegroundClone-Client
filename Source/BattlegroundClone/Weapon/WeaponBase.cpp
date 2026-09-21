@@ -2,6 +2,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "Core/DropPlayerController.h"
+#include "Engine/DamageEvents.h"
 
 #include "Combat/ProjectilePoolSubsystem.h"
 
@@ -118,6 +119,7 @@ void AWeaponBase::StartFire()
 		{
 			C->MeleeAttack(AttackMontage);
 		}
+		MeleeTrace();
 		return;
 	}
 	if (bReloading)
@@ -221,6 +223,35 @@ void AWeaponBase::Fire()
 	MulticastFireFX(ImpactPoint, bHit);
 
 	// TODO: 발사 몽타주
+}
+
+void AWeaponBase::MeleeTrace()
+{
+	FVector Start, End;
+	FRotator ViewRot;
+	if (!GetAimTrace(Start, End, ViewRot))
+	{
+		return;
+	}
+
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(MeleeTrace), true, this);
+	Params.AddIgnoredActor(GetOwner());
+
+	if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		return;
+	}
+
+	UGameplayStatics::ApplyPointDamage(
+		Hit.GetActor(),
+		Damage,
+		Hit.ImpactNormal,
+		Hit,
+		GetOwningController(),
+		this,
+		UDamageType::StaticClass()
+	);
 }
 
 void AWeaponBase::PlayFireFX()

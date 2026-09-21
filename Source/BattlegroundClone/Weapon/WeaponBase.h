@@ -169,6 +169,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Melee", meta = (EditCondition = "WeaponType == EWeaponType::Melee", EditConditionHides))
 	TObjectPtr<UAnimMontage> AttackMontage;
 	
+	void MeleeTrace();
+	
 	// --- Runtime state ---------------------------------------
 	UPROPERTY(Replicated)
 	int32 CurrentAmmo = 0;
