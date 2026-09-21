@@ -15,6 +15,7 @@
 #include "Core/DropPlayerState.h"
 
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -759,10 +760,17 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
-	if (DropState != EDropState::Ground || !bIsAiming)
+	if (DropState != EDropState::Ground)
 	{
 		return;
 	}
+	AWeaponBase* Weapon = GetEquippedWeapon();
+	const bool bIsMelee = Weapon && Weapon->GetWeaponType() == EWeaponType::Melee;
+	if (!bIsMelee && !bIsAiming)
+	{
+		return;
+	}
+	
 	if (WeaponInventory)
 	{
 		WeaponInventory->StartFire();
