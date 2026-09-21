@@ -196,6 +196,31 @@ void UWeaponInventoryComponent::EquipWeaponClassAtSlot(int32 Index, TSubclassOf<
 	EquipWeaponSlot(Index);
 }
 
+void UWeaponInventoryComponent::EquipWeaponClassInSlots(const TArray<int32>& AllowedSlots, TSubclassOf<AWeaponBase> NewWeaponClass)
+{
+	if (AllowedSlots.Num() == 0 || !NewWeaponClass)
+	{
+		return;
+	}
+
+	int32 TargetIndex = -1;
+	for (int32 Slot : AllowedSlots)
+	{
+		if (!WeaponSlotClasses.IsValidIndex(Slot) || !WeaponSlotClasses[Slot])
+		{
+			TargetIndex = Slot;
+			break;
+		}
+	}
+	if (TargetIndex == -1)
+	{
+		TargetIndex = AllowedSlots.Contains(CurrentWeaponIndex) ? CurrentWeaponIndex : AllowedSlots[0];
+	}
+
+	EquipWeaponClassAtSlot(TargetIndex, NewWeaponClass);
+}
+
+
 void UWeaponInventoryComponent::ChangeFireMode()
 {
 	uint8 NextMode = (static_cast<uint8>(CurrentFireMode) + 1) % 2;

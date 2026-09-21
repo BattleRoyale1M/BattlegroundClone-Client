@@ -30,7 +30,7 @@ void AItemPickupActor::Interact_Implementation(AActor* Interactor)
 	{
 		if (UWeaponInventoryComponent* Inv = Character->GetWeaponInventory())
 		{
-			Inv->EquipWeaponClassAtSlot(TargetSlotIndex, WeaponClass);
+			Inv->EquipWeaponClassInSlots(AllowedSlots, WeaponClass);
 			Destroy();
 		}
 	}

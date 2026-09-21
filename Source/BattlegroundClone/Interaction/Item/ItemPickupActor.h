@@ -26,7 +26,7 @@ protected:
 	TObjectPtr<USphereComponent> InteractionSphere;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
-	int32 TargetSlotIndex = 0;
+	TArray<int32> AllowedSlots = {0,1};
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	TSubclassOf<AWeaponBase> WeaponClass;
