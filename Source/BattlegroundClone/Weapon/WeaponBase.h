@@ -10,6 +10,7 @@ class USceneComponent;
 class UNiagaraSystem;
 class USoundBase;
 class UTexture2D;
+class UAnimMontage;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStarted, float, Duration);
 

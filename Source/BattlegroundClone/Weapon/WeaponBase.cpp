@@ -3,6 +3,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Core/DropPlayerController.h"
 #include "Engine/DamageEvents.h"
+#include "GameFramework/DamageType.h"
+#include "Engine/Engine.h"
 
 #include "Combat/ProjectilePoolSubsystem.h"
 
@@ -227,22 +229,33 @@ void AWeaponBase::Fire()
 
 void AWeaponBase::MeleeTrace()
 {
-	FVector Start, End;
-	FRotator ViewRot;
-	if (!GetAimTrace(Start, End, ViewRot))
+	AController* C = GetOwningController();
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!C || !OwnerPawn)
 	{
 		return;
 	}
+
+	FVector ViewLoc;
+	FRotator ViewRot;
+	C->GetPlayerViewPoint(ViewLoc, ViewRot);
+	ViewRot.Pitch = 0.f;
+
+	const FVector Start = OwnerPawn->GetActorLocation();
+	const FVector End = Start + ViewRot.Vector() * Range;
 
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(MeleeTrace), true, this);
 	Params.AddIgnoredActor(GetOwner());
 
-	if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	const bool bHit = GetWorld()->SweepSingleByChannel(
+		Hit, Start, End, FQuat::Identity, ECC_Pawn,
+		FCollisionShape::MakeSphere(40.f), Params);
+
+	if (!bHit)
 	{
 		return;
 	}
-
 	UGameplayStatics::ApplyPointDamage(
 		Hit.GetActor(),
 		Damage,
