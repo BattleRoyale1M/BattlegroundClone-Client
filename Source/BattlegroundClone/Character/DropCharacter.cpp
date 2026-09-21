@@ -846,6 +846,38 @@ EFireMode ADropCharacter::GetCurrentFireMode() const
 	return WeaponInventory ? WeaponInventory->GetCurrentFireMode() : EFireMode::Single;
 }
 
+void ADropCharacter::MeleeAttack(UAnimMontage* AttackMontage)
+{
+	if (!AttackMontage)
+	{
+		return;
+	}
+	if (HasAuthority())
+	{
+		MulticastPlayMeleeMontage(AttackMontage);
+	}
+	else
+	{
+		ServerMeleeAttack(AttackMontage); 
+	}
+}
+
+void ADropCharacter::MulticastPlayMeleeMontage_Implementation(UAnimMontage* AttackMontage)
+{
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (AttackMontage && !AnimInstance->IsAnyMontagePlaying())
+		{
+			AnimInstance->Montage_Play(AttackMontage, 1.f);
+		}
+	}
+}
+
+void ADropCharacter::ServerMeleeAttack_Implementation(UAnimMontage* AttackMontage)
+{
+	MulticastPlayMeleeMontage(AttackMontage);
+}
+
 /*
 RPC Server
 */

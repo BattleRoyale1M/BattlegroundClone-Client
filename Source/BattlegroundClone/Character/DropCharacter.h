@@ -86,13 +86,20 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	UWeaponInventoryComponent* GetWeaponInventory() const { return WeaponInventory; }
-
-	// 블루프린트(WBP_DropHUD)가 기존처럼 그대로 쓸 수 있게 남겨둔 위임 함수
+	
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	AWeaponBase* GetEquippedWeapon() const;
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	EFireMode GetCurrentFireMode() const;
+	
+	void MeleeAttack(UAnimMontage* AttackMontage);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerMeleeAttack(UAnimMontage* AttackMontage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayMeleeMontage(UAnimMontage* AttackMontage);
 
 	UFUNCTION()
 	void HandleDeath(AController* Killer, AActor* DamageCauser);

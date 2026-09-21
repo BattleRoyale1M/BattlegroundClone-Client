@@ -162,6 +162,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	TSubclassOf<class AProjectileBullet> ProjectileClass;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Type")
+	EWeaponType WeaponType = EWeaponType::Gun;
+    	
+	// --- 근접 무기 전용 몽타주---
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Melee", meta = (EditCondition = "WeaponType == EWeaponType::Melee", EditConditionHides))
+	TObjectPtr<UAnimMontage> AttackMontage;
+	
 	// --- Runtime state ---------------------------------------
 	UPROPERTY(Replicated)
 	int32 CurrentAmmo = 0;
@@ -189,12 +196,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	FRotator AimCameraRotationOffset = FRotator::ZeroRotator;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Type")
-	EWeaponType WeaponType = EWeaponType::Gun;
 	
-	// --- 근접 무기 전용 몽타주---
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Melee", meta = (EditCondition = "WeaponType == EWeaponType::Melee", EditConditionHides))
-	TObjectPtr<UAnimMontage> AttackMontage;
 };
 
 /*

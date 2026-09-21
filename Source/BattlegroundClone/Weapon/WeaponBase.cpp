@@ -112,6 +112,14 @@ void AWeaponBase::StartFire()
 		ServerStartFire();
 		return;
 	}
+	if (WeaponType == EWeaponType::Melee)
+	{
+		if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+		{
+			C->MeleeAttack(AttackMontage);
+		}
+		return;
+	}
 	if (bReloading)
 	{
 		return;
