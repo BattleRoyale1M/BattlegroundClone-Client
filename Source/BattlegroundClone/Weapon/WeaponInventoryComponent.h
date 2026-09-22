@@ -117,7 +117,7 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponSlotClasses, EditDefaultsOnly, Category = "Weapon")
 	TArray<TSubclassOf<AWeaponBase>> WeaponSlotClasses;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	TArray<TObjectPtr<AWeaponBase>> WeaponSlots;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponIndex)

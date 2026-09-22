@@ -21,6 +21,7 @@ void UWeaponInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	DOREPLIFETIME(UWeaponInventoryComponent, EquippedWeapon);
 	DOREPLIFETIME(UWeaponInventoryComponent, WeaponSlotClasses);
 	DOREPLIFETIME(UWeaponInventoryComponent, CurrentWeaponIndex);
+	DOREPLIFETIME(UWeaponInventoryComponent, WeaponSlots);
 }
 
 ACharacter* UWeaponInventoryComponent::GetOwnerCharacter() const
