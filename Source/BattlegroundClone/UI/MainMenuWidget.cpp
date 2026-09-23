@@ -16,7 +16,7 @@ void UMainMenuWidget::OnHostClicked()
 {
 	if (UWorld* World = GetWorld())
 	{
-		World->ServerTravel(TEXT("L_TestRange?listen"));
+		World->ServerTravel(TEXT("L_Lobby?listen"));
 	}
 }
 
