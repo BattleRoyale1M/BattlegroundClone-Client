@@ -6,6 +6,8 @@ Saved/
 # Packaged / staged builds
 /Package/
 Packaged/
+Packaged_Build.log*
+Build/Windows/FileOpenOrder/
 # IDE
 .vs/
 .idea/
