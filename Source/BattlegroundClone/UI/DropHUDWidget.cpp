@@ -7,4 +7,7 @@ void UDropHUDWidget::SetGameplayHUDVisible(bool bVisible)
 	if (AmmoBox) AmmoBox->SetVisibility(Vis);
 	if (ItemSlotsBox) ItemSlotsBox->SetVisibility(Vis);
 	if (HealthBar) HealthBar->SetVisibility(Vis);
+	if (CompassClip) CompassClip->SetVisibility(Vis);
+	if (CompassCenter) CompassCenter->SetVisibility(Vis);
+	if (MinimapRoot) MinimapRoot->SetVisibility(Vis);
 }

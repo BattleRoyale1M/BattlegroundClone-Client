@@ -94,7 +94,7 @@ public:
 	void ClientShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 	
 	void SetGameplayHUDVisible(bool bVisible);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ShowDeathUI();
 
@@ -125,8 +125,10 @@ protected:
 
 private:
 	AAirPlane* FindPlane() const;
-	
+
 	void EnsureBounds() const;
+
+	void CloseInventoryWidget();
 
 	/*
 	실제로 생성된 위젯(인스턴스)을 메모리에 담아두고 관리하는 변수
@@ -143,6 +145,9 @@ private:
 	
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> DeathUIWidget;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float DeathFadeDuration = 2.f;
 	
 	// --
 

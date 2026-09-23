@@ -5,6 +5,7 @@
 
 #include "Core/DropGameMode.h"
 #include "Drop/AirPlane.h"
+#include "Character/DropCharacter.h"
 
 #include "Blueprint/UserWidget.h"
 #include "EnhancedInputComponent.h"
@@ -64,14 +65,25 @@ void ADropPlayerController::ShowDeathUI()
 {
 	if (bInventoryOpen)
 	{
-		ToggleInventory();
+		bInventoryOpen = false;
+		CloseInventoryWidget();
 	}
 	SetGameplayHUDVisible(false);
 	if (DeathUIWidgetClass && !DeathUIWidget)
 	{
-		DeathUIWidget->AddToViewport(30);
+		DeathUIWidget = CreateWidget<UUserWidget>(this, DeathUIWidgetClass);
+		if (DeathUIWidget)
+		{
+			DeathUIWidget->AddToViewport(30);
+		}
 	}
 	SetInputMode(FInputModeGameOnly());
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StartCameraFade(
+		0.f, 1.f, DeathFadeDuration, FLinearColor::Black,
+		/*bFadeAudio=*/false, /*bHoldWhenFinished=*/true);
+	}
 }
 
 void ADropPlayerController::BeginPlay()
@@ -181,6 +193,11 @@ void ADropPlayerController::ClearMarker()
 
 void ADropPlayerController::ToggleWorldMap()
 {
+	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
+	if (Char && Char->bIsDead)
+	{
+		return;
+	}
 	bWorldMapOpen = !bWorldMapOpen;
 
 	if (WorldMapWidget)
@@ -204,6 +221,11 @@ void ADropPlayerController::ToggleWorldMap()
 
 void ADropPlayerController::ToggleInventory()
 {
+	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
+	if (Char && Char->bIsDead)
+	{
+		return;
+	}
 	bInventoryOpen = !bInventoryOpen;
 
 	if (bInventoryOpen)
@@ -223,14 +245,19 @@ void ADropPlayerController::ToggleInventory()
 	}
 	else
 	{
-		if (InventoryWidget)
-		{
-			InventoryWidget->RemoveFromParent();
-			InventoryWidget = nullptr;
-		}
-		SetInputMode(FInputModeGameOnly());
-		SetShowMouseCursor(false);
+		CloseInventoryWidget();
 	}
+}
+
+void ADropPlayerController::CloseInventoryWidget()
+{
+	if (InventoryWidget)
+	{
+		InventoryWidget->RemoveFromParent();
+		InventoryWidget = nullptr;
+	}
+	SetInputMode(FInputModeGameOnly());
+	SetShowMouseCursor(false);
 }
 
 AAirPlane* ADropPlayerController::FindPlane() const

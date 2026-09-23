@@ -23,6 +23,16 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UWidget* HealthBar;
+	
+	// hide
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* CompassClip;
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* CompassCenter;
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* MinimapRoot;
 
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void SetGameplayHUDVisible(bool bVisible);

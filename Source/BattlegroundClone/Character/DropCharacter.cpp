@@ -1179,6 +1179,8 @@ void ADropCharacter::Multicast_Die_Implementation()
 		return;
 	}
 	bIsDead = true;
+	ForceStopAim();
+	
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
