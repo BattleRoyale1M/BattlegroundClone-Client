@@ -61,6 +61,14 @@ void ADropPlayerController::SetGameplayHUDVisible(bool bVisible)
 	}
 }
 
+void ADropPlayerController::SetNavigationHUDVisible(bool bVisible)
+{
+	if (UDropHUDWidget* HUD = Cast<UDropHUDWidget>(HUDWidget))
+	{
+		HUD->SetNavigationHUDVisible(bVisible);
+	}
+}
+
 void ADropPlayerController::ShowDeathUI()
 {
 	if (bInventoryOpen)
@@ -69,6 +77,7 @@ void ADropPlayerController::ShowDeathUI()
 		CloseInventoryWidget();
 	}
 	SetGameplayHUDVisible(false);
+	SetNavigationHUDVisible(false);
 	if (DeathUIWidgetClass && !DeathUIWidget)
 	{
 		DeathUIWidget = CreateWidget<UUserWidget>(this, DeathUIWidgetClass);

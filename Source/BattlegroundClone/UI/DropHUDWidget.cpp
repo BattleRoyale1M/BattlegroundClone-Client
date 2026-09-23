@@ -7,6 +7,11 @@ void UDropHUDWidget::SetGameplayHUDVisible(bool bVisible)
 	if (AmmoBox) AmmoBox->SetVisibility(Vis);
 	if (ItemSlotsBox) ItemSlotsBox->SetVisibility(Vis);
 	if (HealthBar) HealthBar->SetVisibility(Vis);
+}
+
+void UDropHUDWidget::SetNavigationHUDVisible(bool bVisible)
+{
+	const ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
 	if (CompassClip) CompassClip->SetVisibility(Vis);
 	if (CompassCenter) CompassCenter->SetVisibility(Vis);
 	if (MinimapRoot) MinimapRoot->SetVisibility(Vis);

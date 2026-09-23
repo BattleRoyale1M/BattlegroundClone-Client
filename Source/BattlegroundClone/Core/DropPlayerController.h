@@ -94,6 +94,7 @@ public:
 	void ClientShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 	
 	void SetGameplayHUDVisible(bool bVisible);
+	void SetNavigationHUDVisible(bool bVisible);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ShowDeathUI();
