@@ -60,6 +60,20 @@ void ADropPlayerController::SetGameplayHUDVisible(bool bVisible)
 	}
 }
 
+void ADropPlayerController::ShowDeathUI()
+{
+	if (bInventoryOpen)
+	{
+		ToggleInventory();
+	}
+	SetGameplayHUDVisible(false);
+	if (DeathUIWidgetClass && !DeathUIWidget)
+	{
+		DeathUIWidget->AddToViewport(30);
+	}
+	SetInputMode(FInputModeGameOnly());
+}
+
 void ADropPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

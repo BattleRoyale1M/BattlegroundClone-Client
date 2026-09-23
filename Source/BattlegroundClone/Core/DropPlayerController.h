@@ -94,6 +94,9 @@ public:
 	void ClientShowCenterNotification(const FText& Line1, const FText& Line2, FLinearColor Line2Color);
 	
 	void SetGameplayHUDVisible(bool bVisible);
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ShowDeathUI();
 
 protected:
 	virtual void BeginPlay() override;
@@ -116,6 +119,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "DropMap|Input")
 	TObjectPtr<UInputAction> ToggleInventoryAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|UI")
+	TSubclassOf<UUserWidget> DeathUIWidgetClass;
 
 private:
 	AAirPlane* FindPlane() const;
@@ -134,6 +140,10 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> InventoryWidget;
 	bool bInventoryOpen = false;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> DeathUIWidget;
+	
 	// --
 
 	mutable FVector2D WorldMin = FVector2D(-100000.0, -100000.0);
