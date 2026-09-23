@@ -1,9 +1,9 @@
-#include "Core/DropGameMode.h"
+#include "Core/GameModes/DropGameMode.h"
 
 #include "Drop/AirPlane.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "DropMapLibrary.h"
+#include "Core/DropMapLibrary.h"
 #include "Character/DropCharacter.h"
 #include "Core/DropPlayerController.h"
 #include "Core/DropPlayerState.h"

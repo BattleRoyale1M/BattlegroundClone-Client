@@ -3,7 +3,7 @@
 #include "UI/DropHUDWidget.h"
 #include "UI/DropMapLabelWidget.h"
 
-#include "Core/DropGameMode.h"
+#include "Core/GameModes/DropGameMode.h"
 #include "Drop/AirPlane.h"
 #include "Character/DropCharacter.h"
 

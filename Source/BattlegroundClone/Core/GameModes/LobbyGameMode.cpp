@@ -1,4 +1,4 @@
-#include "Core/LobbyGameMode.h"
+#include "Core/GameModes/LobbyGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
