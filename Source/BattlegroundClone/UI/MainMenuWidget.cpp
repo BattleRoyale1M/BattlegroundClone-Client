@@ -16,7 +16,7 @@ void UMainMenuWidget::OnHostClicked()
 {
 	if (UWorld* World = GetWorld())
 	{
-		World->ServerTravel(TEXT("L_Lobby?listen"));
+		World->ServerTravel(TEXT("/Game/Maps/L_Lobby?listen"));
 	}
 }
 
