@@ -534,6 +534,7 @@ Aim
 */
 void ADropCharacter::OnAimPressed()
 {
+	if (bIsDead) return;
 	if (DropState != EDropState::Ground) return;
 	AimPressTime = GetWorld()->GetTimeSeconds();
 	if (AimMode == EDropAimMode::Scoped) return; // 스코프 중 다시 누름
@@ -760,6 +761,10 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
+	if (bIsDead)
+	{
+		return;
+	}
 	if (DropState != EDropState::Ground)
 	{
 		return;
@@ -787,6 +792,10 @@ void ADropCharacter::StopFire()
 
 void ADropCharacter::OnReloadPressed()
 {
+	if (bIsDead)
+	{
+		return;
+	}
 	if (WeaponInventory)
 	{
 		WeaponInventory->OnReloadPressed();
@@ -829,6 +838,10 @@ void ADropCharacter::UpdateCurrentInteractable()
 
 void ADropCharacter::OnInteractPressed()
 {
+	if (bIsDead)
+	{
+		return;
+	}
 	if (DropState != EDropState::Ground || !CurrentInteractable)
 	{
 		return;
@@ -1100,6 +1113,18 @@ void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 	GetWorldTimerManager().SetTimer(DeathDestroyTimerHandle, this, &ADropCharacter::DestroySelf, DeathDestroyDelay, false);
 }
 
+void ADropCharacter::ForceStopAim()
+{
+	if (AimMode == EDropAimMode::Hip)
+	{
+		return;
+	}
+	const EDropAimMode OldMode = AimMode;
+	AimMode = EDropAimMode::Hip;
+	bIsAiming = false;
+	ApplyAimVisuals(OldMode, EDropAimMode::Hip);
+}
+
 void ADropCharacter::DestroySelf()
 {
 	Destroy();
@@ -1165,6 +1190,13 @@ void ADropCharacter::Multicast_Die_Implementation()
 		if (UAnimInstance* AnimInst = GetMesh()->GetAnimInstance())
 		{
 			AnimInst->Montage_Play(Montage);
+		}
+	}
+	if (IsLocallyControlled())
+	{
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
+		{
+			PC->ShowDeathUI();
 		}
 	}
 }

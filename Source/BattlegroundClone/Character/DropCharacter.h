@@ -105,6 +105,7 @@ public:
 	void HandleDeath(AController* Killer, AActor* DamageCauser);
 	UFUNCTION()
 	void HandleOwnDeath(AController* Killer, AActor* DamageCauser);
+	void ForceStopAim();
 	
 	UFUNCTION()
 	void HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection);
