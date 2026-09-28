@@ -265,6 +265,7 @@ void UWeaponInventoryComponent::SwapWeaponSlots(int32 IndexA, int32 IndexB)
 	{
 		CurrentWeaponIndex = IndexA;
 	}
+	OnInventoryChanged.Broadcast();
 }
 
 void UWeaponInventoryComponent::ServerSwapWeaponSlots_Implementation(int32 IndexA, int32 IndexB)
