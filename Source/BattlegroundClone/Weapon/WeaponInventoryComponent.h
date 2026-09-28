@@ -6,6 +6,7 @@
 #include "WeaponInventoryComponent.generated.h"
 
 class AWeaponBase;
+class UTexture2D;
 class UAnimMontage;
 class ACharacter;
 
@@ -25,6 +26,18 @@ struct FWeaponSlotInfo
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	bool bIsEquipped = false;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	FText WeaponDisplayName;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	TObjectPtr<UTexture2D> WeaponIcon;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	int32 CurrentAmmo = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
+	int32 ReserveAmmo = 0;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryChanged);

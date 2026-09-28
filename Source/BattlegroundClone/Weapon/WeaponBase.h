@@ -101,6 +101,11 @@ public:
 		return WeaponIcon;
 	}
 	
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FText GetWeaponDisplayName() const
+	{
+		return WeaponDisplayName;
+	}
 	FORCEINLINE FRotator GetAimCameraRotationOffset() const { return AimCameraRotationOffset; }
 
 protected:
@@ -120,11 +125,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	FText WeaponDisplayName = FText::FromString(TEXT("Weapon"));
 
-	UFUNCTION(BlueprintPure, Category = "Weapon")
-	FText GetWeaponDisplayName() const
-	{
-		return WeaponDisplayName;
-	}
+	
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Stats")
 	int32 MagSize = 30;

@@ -68,6 +68,17 @@ TArray<FWeaponSlotInfo> UWeaponInventoryComponent::GetWeaponSlotInfo() const
 		Info.WeaponClass = WeaponSlotClasses[i];
 		Info.bHasWeapon = WeaponSlotClasses[i] != nullptr;
 		Info.bIsEquipped = (i == CurrentWeaponIndex);
+
+		if (const AWeaponBase* CDO = Info.WeaponClass ? Info.WeaponClass->GetDefaultObject<AWeaponBase>() : nullptr)
+		{
+			Info.WeaponDisplayName = CDO->GetWeaponDisplayName();
+			Info.WeaponIcon = CDO->GetWeaponIcon();
+		}
+		if (WeaponSlots.IsValidIndex(i) && WeaponSlots[i])
+		{
+			Info.CurrentAmmo = WeaponSlots[i]->GetCurrentAmmo();
+			Info.ReserveAmmo = WeaponSlots[i]->GetReserveAmmo();
+		}
 		Result.Add(Info);
 	}
 	return Result;
