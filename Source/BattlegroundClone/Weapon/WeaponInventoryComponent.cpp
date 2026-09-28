@@ -224,6 +224,42 @@ void UWeaponInventoryComponent::EquipWeaponClassInSlots(const TArray<int32>& All
 	EquipWeaponClassAtSlot(TargetIndex, NewWeaponClass);
 }
 
+void UWeaponInventoryComponent::SwapWeaponSlots(int32 IndexA, int32 IndexB)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+	if (!Owner->HasAuthority())
+	{
+		ServerSwapWeaponSlots(IndexA, IndexB);
+		return;
+	}
+	if (IndexA == IndexB || !WeaponSlotClasses.IsValidIndex(IndexA) || !WeaponSlotClasses.IsValidIndex(IndexB))
+	{
+		return;
+	}
+	WeaponSlotClasses.Swap(IndexA, IndexB);
+	if (WeaponSlots.Num() != WeaponSlotClasses.Num())
+	{
+		WeaponSlots.SetNum(WeaponSlotClasses.Num());
+	}
+	WeaponSlots.Swap(IndexA, IndexB);
+	if (CurrentWeaponIndex == IndexA)
+	{
+		CurrentWeaponIndex = IndexB;
+	}
+	else if (CurrentWeaponIndex == IndexB)
+	{
+		CurrentWeaponIndex = IndexA;
+	}
+}
+
+void UWeaponInventoryComponent::ServerSwapWeaponSlots_Implementation(int32 IndexA, int32 IndexB)
+{
+	SwapWeaponSlots(IndexA, IndexB);
+}
 
 void UWeaponInventoryComponent::ChangeFireMode()
 {

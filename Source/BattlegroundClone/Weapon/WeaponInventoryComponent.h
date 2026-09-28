@@ -92,6 +92,9 @@ public:
 		return WeaponSlots.IsValidIndex(Index) ? WeaponSlots[Index] : nullptr;
 	}
 	
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SwapWeaponSlots(int32 IndexA, int32 IndexB);
+	
 protected:
 	void EquipWeaponSlot(int32 Index);
 
@@ -137,6 +140,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeaponSlots(int32 IndexA, int32 IndexB);
 
 	UPROPERTY(EditDefaultsOnly, Category = "reload")
 	TObjectPtr<UAnimMontage> ReloadAnimMontage;
