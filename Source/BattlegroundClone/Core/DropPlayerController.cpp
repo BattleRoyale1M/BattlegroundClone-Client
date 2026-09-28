@@ -6,6 +6,7 @@
 #include "Core/GameModes/DropGameMode.h"
 #include "Drop/AirPlane.h"
 #include "Character/DropCharacter.h"
+#include "Interaction/Item/LootContainer.h"
 
 #include "Blueprint/UserWidget.h"
 #include "EnhancedInputComponent.h"
@@ -235,27 +236,55 @@ void ADropPlayerController::ToggleInventory()
 	{
 		return;
 	}
-	bInventoryOpen = !bInventoryOpen;
 
 	if (bInventoryOpen)
 	{
-		if (InventoryWidgetClass)
-		{
-			InventoryWidget = CreateWidget<UUserWidget>(this, InventoryWidgetClass);
-			if (InventoryWidget)
-			{
-				InventoryWidget->AddToViewport(10);
-			}
-		}
-		FInputModeGameAndUI Mode;
-		Mode.SetHideCursorDuringCapture(false);
-		SetInputMode(Mode);
-		SetShowMouseCursor(true);
+		CloseInventoryWidget();
 	}
 	else
 	{
+		ShowInventoryWidget();
+	}
+}
+
+void ADropPlayerController::OpenLootScreen(ALootContainer* Container)
+{
+	if (!Container)
+	{
+		return;
+	}
+
+	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
+	if (Char && Char->bIsDead)
+	{
+		return;
+	}
+
+	if (bInventoryOpen)
+	{
 		CloseInventoryWidget();
 	}
+
+	ActiveLootContainer = Container;
+	ShowInventoryWidget();
+}
+
+void ADropPlayerController::ShowInventoryWidget()
+{
+	bInventoryOpen = true;
+
+	if (InventoryWidgetClass)
+	{
+		InventoryWidget = CreateWidget<UUserWidget>(this, InventoryWidgetClass);
+		if (InventoryWidget)
+		{
+			InventoryWidget->AddToViewport(10);
+		}
+	}
+	FInputModeGameAndUI Mode;
+	Mode.SetHideCursorDuringCapture(false);
+	SetInputMode(Mode);
+	SetShowMouseCursor(true);
 }
 
 void ADropPlayerController::CloseInventoryWidget()
@@ -265,6 +294,8 @@ void ADropPlayerController::CloseInventoryWidget()
 		InventoryWidget->RemoveFromParent();
 		InventoryWidget = nullptr;
 	}
+	ActiveLootContainer = nullptr;
+	bInventoryOpen = false;
 	SetInputMode(FInputModeGameOnly());
 	SetShowMouseCursor(false);
 }

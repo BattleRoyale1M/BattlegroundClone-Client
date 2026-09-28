@@ -9,6 +9,7 @@ class UUserWidget;
 class UInputAction;
 class AAirPlane;
 class UCanvasPanel;
+class ALootContainer;
 
 USTRUCT(BlueprintType)
 struct FMapLocationRow : public FTableRowBase
@@ -58,7 +59,13 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void ToggleInventory();
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void OpenLootScreen(ALootContainer* Container);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
+	TObjectPtr<ALootContainer> ActiveLootContainer;
+
 	UFUNCTION(BlueprintCallable, Category = "DropMap")
 	void GetMinimapView(float MapPixels, float ViewportPixels,
 		FVector2D& OutPan, float& OutSelfAngle,
@@ -129,6 +136,7 @@ private:
 
 	void EnsureBounds() const;
 
+	void ShowInventoryWidget();
 	void CloseInventoryWidget();
 
 	/*
