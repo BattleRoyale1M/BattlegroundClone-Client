@@ -281,6 +281,7 @@ void ADropPlayerController::ShowInventoryWidget()
 			InventoryWidget->AddToViewport(10);
 		}
 	}
+	if (HUDWidget) HUDWidget->SetVisibility(ESlateVisibility::Collapsed);
 	FInputModeGameAndUI Mode;
 	Mode.SetHideCursorDuringCapture(false);
 	SetInputMode(Mode);
@@ -294,6 +295,7 @@ void ADropPlayerController::CloseInventoryWidget()
 		InventoryWidget->RemoveFromParent();
 		InventoryWidget = nullptr;
 	}
+	if (HUDWidget) HUDWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	ActiveLootContainer = nullptr;
 	bInventoryOpen = false;
 	SetInputMode(FInputModeGameOnly());
