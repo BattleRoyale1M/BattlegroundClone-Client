@@ -106,6 +106,19 @@ public:
 	{
 		return WeaponDisplayName;
 	}
+
+	// 툴팁 UI용 스탯 getter
+	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
+	float GetDamage() const { return Damage; }
+	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
+	float GetRoundsPerMinute() const { return RoundsPerMinute; }
+	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
+	int32 GetMagSize() const { return MagSize; }
+	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
+	float GetRange() const { return Range; }
+	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
+	float GetReloadTime() const { return ReloadTime; }
+
 	FORCEINLINE FRotator GetAimCameraRotationOffset() const { return AimCameraRotationOffset; }
 
 protected:
