@@ -46,8 +46,10 @@ bool UWeaponPreviewSubsystem::ApplyWeaponPreview(const UObject* WorldContextObje
 		return false;
 	}
 
-	TargetImage->SetBrushFromMaterial(MID);
-	TargetImage->SetDesiredSizeOverride(FVector2D(RenderWidth, RenderHeight)); // 부모 ScaleBox가 비율 유지하며 맞춤
+	FSlateBrush Brush = TargetImage->GetBrush();
+	Brush.SetResourceObject(MID);
+	Brush.SetImageSize(FVector2D(RenderWidth, RenderHeight));
+	TargetImage->SetBrush(Brush);
 	return true;
 }
 
