@@ -379,11 +379,11 @@ protected:
 	float HipFOV = 90.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ShoulderArmLength = 140.f;
-	
+	float ShoulderArmLength = 220.f;   // 배그 TPP 견착: 상반신~허리까지 보이게 뒤로 뺌
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	FVector ShoulderSocketOffset = FVector(0.f, 50.f, 60.f);
-	
+	FVector ShoulderSocketOffset = FVector(0.f, 45.f, 55.f);
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ShoulderFOV = 72.f;
 	
