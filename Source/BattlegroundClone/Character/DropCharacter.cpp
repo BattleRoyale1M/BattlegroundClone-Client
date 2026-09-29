@@ -70,8 +70,25 @@ ADropCharacter::ADropCharacter()
 	ScopeCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 	ScopeCapture->bCaptureEveryFrame = false; // 스코프 켤 때만 캡처 (성능)
 	ScopeCapture->bCaptureOnMovement = false;
-	ScopeCapture->FOVAngle = 8.f; // ShowSniperScope에서 무기별 값으로 덮어씀
+	ScopeCapture->FOVAngle = 8.f;
 	ScopeCapture->SetActive(false);
+
+	PreviewCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("PreviewCapture"));
+	PreviewCapture->SetupAttachment(RootComponent);
+	PreviewCapture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	PreviewCapture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	PreviewCapture->bCaptureEveryFrame = false; // 인벤토리 열 때만 캡처 (성능)
+	PreviewCapture->bCaptureOnMovement = false;
+	PreviewCapture->ShowFlags.SetAtmosphere(false);
+	PreviewCapture->ShowFlags.SetFog(false);
+	PreviewCapture->SetActive(false);
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PreviewMaterialAsset(
+		TEXT("/Script/Engine.Material'/Game/UI/M_CharacterPreview.M_CharacterPreview'"));
+	if (PreviewMaterialAsset.Succeeded())
+	{
+		PreviewMaterial = PreviewMaterialAsset.Object;
+	}
 
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParachuteMesh"));
 	ParachuteMesh->SetupAttachment(GetCapsuleComponent());
@@ -158,7 +175,13 @@ void ADropCharacter::BeginFreefall()
 void ADropCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	// 인벤토리 열린 동안 무기 변경 즉시 반영
+	if (PreviewCapture && PreviewCapture->bCaptureEveryFrame)
+	{
+		RefreshPreviewShowList();
+	}
+
 	switch (DropState)
 	{
 	case EDropState::Freefall:
@@ -438,6 +461,67 @@ void ADropCharacter::HideSniperScope()
 	if (SniperScopeOverlayWidget)
 	{
 		SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+/*
+인벤토리 캐릭터 프리뷰 (자신 + 부착 무기만 캡처, 배경 투명)
+*/
+void ADropCharacter::StartInventoryPreview(UImage* TargetImage)
+{
+	if (!IsLocallyControlled() || !PreviewCapture)
+	{
+		return;
+	}
+
+	if (!PreviewRenderTarget)
+	{
+		PreviewRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+		PreviewRenderTarget->ClearColor = FLinearColor(0.f, 0.f, 0.f, 1.f); // 알파 1 = 빈 배경
+		PreviewRenderTarget->InitCustomFormat(PreviewRenderTargetSize.X, PreviewRenderTargetSize.Y, PF_FloatRGBA, true);
+		PreviewRenderTarget->UpdateResourceImmediate(true);
+		PreviewCapture->TextureTarget = PreviewRenderTarget;
+	}
+
+	PreviewCapture->SetRelativeLocationAndRotation(PreviewCaptureOffset, FRotator(0.f, 180.f, 0.f));
+	PreviewCapture->FOVAngle = PreviewFOV;
+	RefreshPreviewShowList();
+	PreviewCapture->bCaptureEveryFrame = true;
+	PreviewCapture->SetActive(true);
+
+	if (!TargetImage || !PreviewMaterial)
+	{
+		return;
+	}
+	if (!PreviewMID)
+	{
+		PreviewMID = UMaterialInstanceDynamic::Create(PreviewMaterial, this);
+	}
+	PreviewMID->SetTextureParameterValue(TEXT("PreviewTexture"), PreviewRenderTarget);
+	PreviewMID->SetScalarParameterValue(TEXT("Brightness"), PreviewBrightness);
+	TargetImage->SetBrushFromMaterial(PreviewMID);
+	TargetImage->SetColorAndOpacity(FLinearColor::White); // WBP 기본 알파 0
+}
+
+void ADropCharacter::StopInventoryPreview()
+{
+	if (PreviewCapture)
+	{
+		PreviewCapture->SetActive(false);
+		PreviewCapture->bCaptureEveryFrame = false;
+	}
+}
+
+void ADropCharacter::RefreshPreviewShowList()
+{
+	PreviewCapture->ShowOnlyActors.Reset();
+	PreviewCapture->ShowOnlyActors.Add(this);
+
+	TArray<AActor*> Attached;
+	GetAttachedActors(Attached, true, true);
+	for (AActor* Actor : Attached)
+	{
+		PreviewCapture->ShowOnlyActors.Add(Actor);
 	}
 }
 

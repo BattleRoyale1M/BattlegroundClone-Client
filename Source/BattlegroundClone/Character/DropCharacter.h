@@ -24,6 +24,7 @@ class USceneCaptureComponent2D;
 class UTextureRenderTarget2D;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
+class UImage;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -147,6 +148,11 @@ public:
 	
 	UFUNCTION(Server, Reliable)
 	void Server_DbgHurt(float Amt);
+
+	// --- 인벤토리 캐릭터 프리뷰 (로컬 전용, 컨트롤러가 호출) ----------------
+
+	void StartInventoryPreview(UImage* TargetImage);
+	void StopInventoryPreview();
 
 
 protected:
@@ -441,8 +447,37 @@ protected:
 
 	void ShowSniperScope();
 	void HideSniperScope();
+
+	// --- 인벤토리 캐릭터 프리뷰 (SceneCapture 렌더타겟) ---------------------
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Preview", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneCaptureComponent2D> PreviewCapture;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Preview")
+	TObjectPtr<UMaterialInterface> PreviewMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Preview")
+	FVector PreviewCaptureOffset = FVector(320.f, 0.f, 5.f); // 캡슐 기준 (앞, 오른쪽, 위)
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Preview")
+	float PreviewFOV = 18.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Preview")
+	FIntPoint PreviewRenderTargetSize = FIntPoint(512, 1024);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Preview")
+	float PreviewBrightness = 1.f; 
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextureRenderTarget2D> PreviewRenderTarget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInstanceDynamic> PreviewMID;
+
+	void RefreshPreviewShowList();
 	
 	// --- 낙하산 캐노피 상태 ------------------------------------------
+	
 	float ParachuteDeployElapsed = -1.f;
 	float LastYawForLean = 0.f;
 	void ShowParachute();

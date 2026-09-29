@@ -16,6 +16,7 @@
 
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
 #include "Blueprint/UserWidget.h"
 
 #include "Core/DropPlayerState.h"
@@ -279,6 +280,11 @@ void ADropPlayerController::ShowInventoryWidget()
 		if (InventoryWidget)
 		{
 			InventoryWidget->AddToViewport(10);
+
+			if (ADropCharacter* Char = Cast<ADropCharacter>(GetPawn()))
+			{
+				Char->StartInventoryPreview(Cast<UImage>(InventoryWidget->GetWidgetFromName(TEXT("Img_CharacterPreview"))));
+			}
 		}
 	}
 	if (HUDWidget) HUDWidget->SetVisibility(ESlateVisibility::Collapsed);
@@ -294,6 +300,10 @@ void ADropPlayerController::CloseInventoryWidget()
 	{
 		InventoryWidget->RemoveFromParent();
 		InventoryWidget = nullptr;
+	}
+	if (ADropCharacter* Char = Cast<ADropCharacter>(GetPawn()))
+	{
+		Char->StopInventoryPreview();
 	}
 	if (HUDWidget) HUDWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	ActiveLootContainer = nullptr;
