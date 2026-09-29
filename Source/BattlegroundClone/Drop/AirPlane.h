@@ -119,6 +119,9 @@ protected:
 private:
 	UPROPERTY(Replicated) 
 	float FlightStartServerTime = -1.f;
+	
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> PropellerComps;
 
 	FTimerHandle BoardTimerHandle;
 	void TryBoardAll();

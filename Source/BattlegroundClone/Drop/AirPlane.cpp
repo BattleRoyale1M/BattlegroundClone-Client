@@ -50,6 +50,17 @@ void AAirPlane::BeginPlay()
 	{
 		BodyMesh->SetRelativeRotation(MeshRotationOffset);
 	}
+	
+	TArray<UStaticMeshComponent*> MeshComps;
+	GetComponents<UStaticMeshComponent>(MeshComps);
+	for (UStaticMeshComponent* Comp : MeshComps)
+	{
+		if (Comp && Comp->ComponentHasTag(TEXT("Propeller")))
+		{
+			PropellerComps.Add(Comp);
+		}
+	}
+	
 	if (!HasAuthority())
 	{
 		return;
@@ -105,9 +116,9 @@ void AAirPlane::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (Propeller)
+	for (UStaticMeshComponent* Comp : PropellerComps)
 	{
-		Propeller->AddLocalRotation(FRotator(0.f, 0.f, PropellerDegPerSec * DeltaSeconds));
+		Comp->AddLocalRotation(FRotator(0.f, 0.f, PropellerDegPerSec * DeltaSeconds));
 	}
 
 	const AGameStateBase* GS = GetWorld()->GetGameState();
