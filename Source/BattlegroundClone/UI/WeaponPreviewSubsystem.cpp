@@ -132,7 +132,7 @@ UMaterialInstanceDynamic* UWeaponPreviewSubsystem::GetOrCreatePreview(TSubclassO
 	const float Width = 2.f * FMath::Max(Ext.X, Ext.Y);
 	const float Height = 2.f * Ext.Z;
 	const float Aspect = static_cast<float>(RenderWidth) / RenderHeight;
-	Entry.OrthoWidth = FMath::Max(Width, Height * Aspect) * 1.1f; // 여백 10%
+	Entry.OrthoWidth = FMath::Max(Width, Height * Aspect) * 1.02f; // 여백 10%
 
 	Entry.RenderTarget = NewObject<UTextureRenderTarget2D>(this);
 	Entry.RenderTarget->ClearColor = FLinearColor(0.f, 0.f, 0.f, 1.f); // 알파 1 = 빈 배경 (M_CharacterPreview와 동일 규칙)
