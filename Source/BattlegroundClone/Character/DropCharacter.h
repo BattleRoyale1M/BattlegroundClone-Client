@@ -25,6 +25,10 @@ class UTextureRenderTarget2D;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UImage;
+class AItemPickupActor;
+class UBagComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNearbyPickupsChanged);
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -153,6 +157,21 @@ public:
 
 	void StartInventoryPreview(UImage* TargetImage);
 	void StopInventoryPreview();
+	
+	// --- 줍기 / 가방 ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TObjectPtr<UBagComponent> BagComp;
+
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	TArray<AItemPickupActor*> GetNearbyPickups() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestPickup(AItemPickupActor* Pickup);
+
+	bool TryPickup(AItemPickupActor* Pickup);   // 서버 전용
+
+	UPROPERTY(BlueprintAssignable, Category = "Inventory")
+	FOnNearbyPickupsChanged OnNearbyPickupsChanged;
 
 
 protected:
@@ -262,6 +281,12 @@ protected:
 	
 	UFUNCTION(Server, Reliable)
 	void ServerInteract(AActor* InteractActor);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerPickup(AItemPickupActor* Pickup);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	float MaxPickupDistance = 300.f;
 	
 	UFUNCTION()
 	void OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

@@ -64,7 +64,8 @@ public:
 	void SwitchWeaponSlot(int32 Index);
 	void EquipWeaponClassAtSlot(int32 Index, TSubclassOf<AWeaponBase> NewWeaponClass);
 	void EquipWeaponClassInSlots(const TArray<int32>& AllowedSlots, TSubclassOf<AWeaponBase> NewWeaponClass);
-
+	bool TryEquipToEmptySlot(const TArray<int32>& AllowedSlots, TSubclassOf<AWeaponBase> NewWeaponClass);
+	
 	void ChangeFireMode();
 	void StartFire();
 	void StopFire();

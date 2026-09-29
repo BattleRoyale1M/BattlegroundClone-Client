@@ -20,7 +20,9 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Interaction/Item/ItemPickupActor.h"
+#include "Interaction/Item/ItemTypes.h"
+#include "Inventory/BagComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
@@ -113,6 +115,7 @@ ADropCharacter::ADropCharacter()
 	HealthComp->OnHit.AddDynamic(this, &ADropCharacter::HandleHit);
 
 	WeaponInventory = CreateDefaultSubobject<UWeaponInventoryComponent>(TEXT("WeaponInventory"));
+	BagComp = CreateDefaultSubobject<UBagComponent>(TEXT("BagComp"));
 }
 
 void ADropCharacter::BeginPlay()
@@ -894,12 +897,14 @@ void ADropCharacter::OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedC
 	}
 	NearbyInteractables.AddUnique(OtherActor);
 	UpdateCurrentInteractable();
+	if (IsLocallyControlled()) OnNearbyPickupsChanged.Broadcast();
 }
 
 void ADropCharacter::OnInteractableEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	NearbyInteractables.Remove(OtherActor);
 	UpdateCurrentInteractable();
+	if (IsLocallyControlled()) OnNearbyPickupsChanged.Broadcast();
 }
 
 void ADropCharacter::UpdateCurrentInteractable()
@@ -940,6 +945,74 @@ void ADropCharacter::ServerInteract_Implementation(AActor* InteractActor)
 		IInteractableInterface::Execute_Interact(InteractActor, this);
 	}
 }
+
+TArray<AItemPickupActor*> ADropCharacter::GetNearbyPickups() const
+{
+	TArray<AItemPickupActor*> Result;
+	for (AActor* Actor : NearbyInteractables)
+	{
+		if (AItemPickupActor* Pickup = Cast<AItemPickupActor>(Actor); IsValid(Pickup))
+		{
+			Result.Add(Pickup);
+		}
+	}
+	return Result;
+}
+
+void ADropCharacter::RequestPickup(AItemPickupActor* Pickup)
+{
+	if (!Pickup || bIsDead)
+	{
+		return;
+	}
+	ServerPickup(Pickup);
+}
+
+void ADropCharacter::ServerPickup_Implementation(AItemPickupActor* Pickup)
+{
+	TryPickup(Pickup);
+}
+
+bool ADropCharacter::TryPickup(AItemPickupActor* Pickup)
+{
+	if (!HasAuthority() || bIsDead || !IsValid(Pickup))
+	{
+		return false;
+	}
+	if (FVector::Dist(GetActorLocation(), Pickup->GetActorLocation()) > MaxPickupDistance)
+	{
+		return false;
+	}
+	const FItemRow* Row = Pickup->GetItemRow();
+	if (!Row)
+	{
+		return false;
+	}
+
+	if (Row->ItemType == EBGItemType::Weapon)
+	{
+		if (!WeaponInventory || !WeaponInventory->TryEquipToEmptySlot(Row->AllowedSlots, Row->WeaponClass))
+		{
+			return false;
+		}
+		Pickup->Destroy();
+		return true;
+	}
+
+	if (!BagComp)
+	{
+		return false;
+	}
+	const int32 Left = BagComp->AddItem(Pickup->GetItemRowName(), Pickup->GetQuantity());
+	if (Left == Pickup->GetQuantity())
+	{
+		return false;
+	}
+	if (Left > 0) Pickup->SetQuantity(Left);
+	else          Pickup->Destroy();
+	return true;
+}
+
 
 AWeaponBase* ADropCharacter::GetEquippedWeapon() const
 {

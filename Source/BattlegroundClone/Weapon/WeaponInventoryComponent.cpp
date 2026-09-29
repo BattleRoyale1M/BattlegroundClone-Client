@@ -235,6 +235,30 @@ void UWeaponInventoryComponent::EquipWeaponClassInSlots(const TArray<int32>& All
 	EquipWeaponClassAtSlot(TargetIndex, NewWeaponClass);
 }
 
+// 빈 슬롯이 있을 때만 장착 꽉 찼으면 false
+bool UWeaponInventoryComponent::TryEquipToEmptySlot(const TArray<int32>& AllowedSlots, TSubclassOf<AWeaponBase> NewWeaponClass)
+{
+	if (!NewWeaponClass)
+	{
+		return false;
+	}
+	TArray<int32> Candidates = AllowedSlots;
+	if (Candidates.IsEmpty())
+	{
+		for (int32 i = 0; i < 5; ++i) Candidates.Add(i);
+	}
+	for (int32 Slot : Candidates)
+	{
+		if (!WeaponSlotClasses.IsValidIndex(Slot) || !WeaponSlotClasses[Slot])
+		{
+			EquipWeaponClassAtSlot(Slot, NewWeaponClass);
+			return true;
+		}
+	}
+	return false;
+}
+
+
 void UWeaponInventoryComponent::SwapWeaponSlots(int32 IndexA, int32 IndexB)
 {
 	AActor* Owner = GetOwner();
