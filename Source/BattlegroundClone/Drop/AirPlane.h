@@ -117,11 +117,8 @@ protected:
 	TObjectPtr<USceneComponent> SeatPoint;
 
 private:
-	UPROPERTY(Replicated)
-	float FlightAlpha = 0.f;
-
-	float FlightStartTime = -1.f;
-	float SmoothAlpha = 0.f;
+	UPROPERTY(Replicated) 
+	float FlightStartServerTime = -1.f;
 
 	FTimerHandle BoardTimerHandle;
 	void TryBoardAll();

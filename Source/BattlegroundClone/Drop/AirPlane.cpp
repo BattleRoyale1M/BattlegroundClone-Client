@@ -1,4 +1,5 @@
 #include "Drop/AirPlane.h"
+#include "GameFramework/GameStateBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 
@@ -61,7 +62,7 @@ void AAirPlane::BeginPlay()
 void AAirPlane::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AAirPlane, FlightAlpha);
+	DOREPLIFETIME(AAirPlane, FlightStartServerTime);
 	DOREPLIFETIME_CONDITION(AAirPlane, StartPoint, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AAirPlane, EndPoint,   COND_InitialOnly);
 }
@@ -89,11 +90,12 @@ void AAirPlane::TryBoardAll()
 			bBoardedSomeone = true;
 		}
 	}
-	if (bBoardedSomeone && FlightStartTime < 0.f)
+	if (bBoardedSomeone && FlightStartServerTime < 0.f)
 	{
-		FlightStartTime = GetWorld()->GetTimeSeconds();
+		FlightStartServerTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 	}
-	if (FlightAlpha > 0.5f)
+	if (FlightStartServerTime >= 0.f &&
+	GetWorld()->GetGameState()->GetServerWorldTimeSeconds() - FlightStartServerTime > FlightDuration * 0.5f)
 	{
 		GetWorldTimerManager().ClearTimer(BoardTimerHandle);
 	}
@@ -102,42 +104,19 @@ void AAirPlane::TryBoardAll()
 void AAirPlane::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	TArray<UStaticMeshComponent*> MeshComps;
-	GetComponents<UStaticMeshComponent>(MeshComps);
-	for (UStaticMeshComponent* Comp : MeshComps)
+
+	if (Propeller)
 	{
-		if (Comp && Comp -> ComponentHasTag(TEXT("Propeller")))
-		{
-			Comp -> AddLocalRotation(FRotator(0.f, 0.f,  PropellerDegPerSec * DeltaSeconds));
-		}
-	}
-	
-	if (HasAuthority())
-	{
-		if (FlightStartTime >= 0.f)
-		{
-			FlightAlpha = FMath::Clamp(
-				(GetWorld()->GetTimeSeconds() - FlightStartTime) / FMath::Max(FlightDuration, 0.01f),
-				0.f, 1.f);
-		}
-		SmoothAlpha = FlightAlpha;
-	}
-	else
-	{
-		if (FlightAlpha <= 0.f)
-		{
-			SmoothAlpha = 0.f;
-		}
-		else
-		{
-			SmoothAlpha = FMath::Clamp(SmoothAlpha + DeltaSeconds / FMath::Max(FlightDuration, 0.01f), 0.f, 1.f);
-			SmoothAlpha = FMath::FInterpTo(SmoothAlpha, FlightAlpha, DeltaSeconds, 8.f);
-		}
+		Propeller->AddLocalRotation(FRotator(0.f, 0.f, PropellerDegPerSec * DeltaSeconds));
 	}
 
-	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, SmoothAlpha));
+	const AGameStateBase* GS = GetWorld()->GetGameState();
+	const float Now = GS ? GS->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+	const float Alpha = FlightStartServerTime < 0.f ? 0.f
+		: FMath::Clamp((Now - FlightStartServerTime) / FlightDuration, 0.f, 1.f);
+	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
 
-	if (HasAuthority() && FlightAlpha >= 1.f && bDestroyOnArrival)
+	if (HasAuthority() && Alpha >= 1.f && bDestroyOnArrival)
 	{
 		Destroy();
 	}
