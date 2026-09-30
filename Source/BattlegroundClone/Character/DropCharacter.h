@@ -465,17 +465,39 @@ protected:
 	FVector ScopedSocketOffset = FVector(10.f, 0.f, 50.f);   // 붐 피벗(캡슐중심) 기준 눈 위치
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
-	float ScopedFOV = 55.f;
+	float ScopedFOV = 45.f;
 
 	// AWP 전용 하드코딩 : BP 디폴트에서 PIE 보며 튜닝
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
-	FVector ScopedWeaponOffset = FVector(60.f, 0.f, -20.f);   // 카메라 기준 (앞, 오른쪽, 아래)
+	FVector ScopedWeaponOffset = FVector(40.f, 0.f, -18.4f);   // 카메라 기준 (앞, 오른쪽, 아래)
 
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
 	FRotator ScopedWeaponRotation = FRotator(0.f, -90.f, 0.f); // 총열을 시야 방향으로 (WeaponMesh Yaw90 상쇄)
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float AimInterpSpeed = 12.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ScopeTransitionTime = 0.18f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FVector ScopedRaiseOffset = FVector(-6.f, 4.f, -16.f);
+
+	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
+	FRotator ScopedRaiseRotation = FRotator(-14.f, 4.f, 10.f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
+	float ScopeSpringOvershoot = 1.2f;
+
+	TWeakObjectPtr<AWeaponBase> ScopedWeapon;
+	float ScopeAlpha = 0.f;
+	float ScopeFromArm = 0.f;
+	FVector ScopeFromOffset = FVector::ZeroVector;
+	float ScopeFromFOV = 90.f;
+
+	void BeginScopedWeapon(AWeaponBase* Weapon);
+	void EndScopedWeapon();
+	FTransform GetScopedWeaponTransform(const AWeaponBase* Weapon) const;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	TSubclassOf<UUserWidget> ScopeOverlayClass;

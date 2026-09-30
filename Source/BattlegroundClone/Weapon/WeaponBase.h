@@ -48,6 +48,7 @@ public:
 	void StopFire();
 	void StartReload();
 	void SetFireMode(EFireMode NewFireMode);
+	void SetScopeCaptureActive(bool bActive);
 	
 	// 무기 타입 반환 함수
 	UFUNCTION(BlueprintPure, Category="Weapon")

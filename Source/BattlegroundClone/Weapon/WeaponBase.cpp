@@ -3,6 +3,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Core/DropPlayerController.h"
 #include "Engine/DamageEvents.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "GameFramework/DamageType.h"
 #include "Engine/Engine.h"
 
@@ -149,6 +150,30 @@ void AWeaponBase::SetFireMode(EFireMode NewFireMode)
 		return;
 	}
 	CurrentFireMode = NewFireMode;
+}
+
+void AWeaponBase::SetScopeCaptureActive(bool bActive)
+{
+	USceneCaptureComponent2D* Capture = FindComponentByClass<USceneCaptureComponent2D>();
+	if (!Capture)
+	{
+		return;
+	}
+	if (bActive)
+	{
+		Capture->HiddenActors.Reset();
+		Capture->HiddenActors.Add(this);
+		if (AActor* OwnerActor = GetOwner())
+		{
+			Capture->HiddenActors.Add(OwnerActor);
+		}
+	}
+	Capture->bCaptureEveryFrame = bActive;
+	Capture->SetActive(bActive);
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetScalarParameterValueOnMaterials(TEXT("ScopeActive"), bActive ? 1.f : 0.f);
+	}
 }
 
 void AWeaponBase::ClientShowAmmoEmpty_Implementation()

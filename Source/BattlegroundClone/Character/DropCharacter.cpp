@@ -308,6 +308,60 @@ void ADropCharacter::OnFastFallReleased()
 	bIsFastFalling = false;
 }
 
+void ADropCharacter::BeginScopedWeapon(AWeaponBase* Weapon)
+{
+	if (!Weapon || ScopedWeapon == Weapon)
+	{
+		return;
+	}
+	ScopedWeapon = Weapon;
+	ScopeAlpha = 0.f;
+	ScopeFromArm = CameraBoom->TargetArmLength;
+	ScopeFromOffset = CameraBoom->SocketOffset;
+	ScopeFromFOV = FollowCamera->FieldOfView;
+	Weapon->AttachToComponent(FollowCamera, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	Weapon->SetScopeCaptureActive(true);
+	if (GetMesh())
+	{
+		GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
+	}
+}
+
+void ADropCharacter::EndScopedWeapon()
+{
+	AWeaponBase* Weapon = ScopedWeapon.Get();
+	ScopedWeapon = nullptr;
+	ScopeAlpha = 0.f;
+	if (GetMesh())
+	{
+		GetMesh()->UnHideBoneByName(TEXT("head"));
+	}
+	if (!Weapon)
+	{
+		return;
+	}
+	Weapon->SetScopeCaptureActive(false);
+	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponInventory->GetWeaponAttachSocket());
+	Weapon->SetActorRelativeLocation(FVector::ZeroVector);
+	Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
+}
+
+FTransform ADropCharacter::GetScopedWeaponTransform(const AWeaponBase* Weapon) const
+{
+	if (Weapon->GetClass()->GetName().Contains(TEXT("AWP")))
+	{
+		return FTransform(ScopedWeaponRotation, ScopedWeaponOffset);
+	}
+	const UStaticMeshComponent* WM = Weapon->GetWeaponMesh();
+	if (WM && WM->DoesSocketExist(TEXT("Aim")))
+	{
+		FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
+		Inv.ConcatenateRotation(Weapon->GetAimCameraRotationOffset().Quaternion());
+		return FTransform(Inv.GetRotation(), Inv.GetLocation());
+	}
+	return FTransform::Identity;
+}
+
 void ADropCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D Axis = Value.Get<FVector2D>();
@@ -344,6 +398,7 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	if (NewState != EDropState::Ground && AimMode != EDropAimMode::Hip)
 	{
 		SetAimMode(EDropAimMode::Hip);
+		EndScopedWeapon();
 	}
 	ApplyDropState(Old, NewState);
 	PrevDropState = NewState;
@@ -699,65 +754,9 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 	}
 
 	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-	const bool bIsAWPEquipped = Weapon && Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
-
-	if (NewMode == EDropAimMode::Scoped && bIsAWPEquipped)
+	if (IsLocallyControlled() && Weapon && NewMode == EDropAimMode::Scoped)
 	{
-		ShowSniperScope();
-	}
-	else if (OldMode == EDropAimMode::Scoped)
-	{
-		HideSniperScope();
-	}
-
-	if (IsLocallyControlled() && Weapon)
-	{
-		if (NewMode == EDropAimMode::Scoped)
-		{
-			Weapon->AttachToComponent(
-			   FollowCamera,
-			   FAttachmentTransformRules::SnapToTargetIncludingScale);
-
-			if (bIsAWPEquipped)
-			{
-				Weapon->SetActorRelativeLocation(ScopedWeaponOffset);
-				Weapon->SetActorRelativeRotation(ScopedWeaponRotation);
-				Weapon->SetActorHiddenInGame(true);
-			}
-			else if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
-			{
-				if (WM->DoesSocketExist(TEXT("Aim")))
-				{
-					const FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-					FTransform Inv = SocketTransform.Inverse();
-
-					const FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-					Inv.ConcatenateRotation(AxisCorrection.Quaternion());
-
-					Weapon->SetActorRelativeLocation(Inv.GetLocation());
-					Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
-				}
-			}
-
-			if (GetMesh())
-			{
-				GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
-			}
-		}
-		else if (OldMode == EDropAimMode::Scoped)
-		{
-			Weapon->AttachToComponent(
-				GetMesh(),
-				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				WeaponInventory->GetWeaponAttachSocket());
-			Weapon->SetActorRelativeLocation(FVector::ZeroVector);
-			Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
-			Weapon->SetActorHiddenInGame(false); // AWP가 아니었으면 애초에 숨긴 적 없으니 안전한 no-op
-			if (GetMesh())
-			{
-				GetMesh()->UnHideBoneByName(TEXT("head"));
-			}
-		}
+		BeginScopedWeapon(Weapon);
 	}
 
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
@@ -774,50 +773,72 @@ void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
 void ADropCharacter::UpdateAimCamera(float Dt)
 {
 	if (!CameraBoom || !FollowCamera) return;
-	
-	float   TargetArm;
-	FVector TargetOffset;
-	float   TargetFOV;
 
-	switch (AimMode)
+	float   TargetArm    = HipArmLength;
+	FVector TargetOffset = HipSocketOffset;
+	float   TargetFOV    = HipFOV;
+
+	if (AimMode == EDropAimMode::Shoulder)
 	{
-	case EDropAimMode::Shoulder:
 		TargetArm = ShoulderArmLength; TargetOffset = ShoulderSocketOffset; TargetFOV = ShoulderFOV;
-		break;
-	case EDropAimMode::Scoped:
-		// 메인 카메라는 줌하지 않음 - 확대는 ScopeCapture 렌즈(원형 UI)가 담당
+	}
+	else if (AimMode == EDropAimMode::Scoped)
+	{
 		TargetArm = ScopedArmLength; TargetOffset = ScopedSocketOffset; TargetFOV = ShoulderFOV;
-		break;
-	default:
-		TargetArm = HipArmLength;      TargetOffset = HipSocketOffset;      TargetFOV = HipFOV;
-		break;
 	}
 
-	// FMath::FInterpTo(현재값, 목표값, 시간, 보간된 속도) : 누적해서 점차 목표값에 가까워지게 하는 선형보간함수 중 하나
-	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm,    Dt, AimInterpSpeed);
-	CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset,    TargetOffset, Dt, AimInterpSpeed);
-	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,    TargetFOV,    Dt, AimInterpSpeed));
-	
-	AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
-	if (AimMode == EDropAimMode::Scoped && Weapon && Weapon->GetRootComponent()
-	&& Weapon->GetRootComponent()->GetAttachParent() == FollowCamera
-	&& !Weapon->GetClass()->GetName().Contains(TEXT("AWP"))) // AWP는 ApplyAimVisuals에서 고정 오프셋으로 한 번만 세팅하면 됨
+	AWeaponBase* Weapon = ScopedWeapon.Get();
+	if (Weapon && WeaponInventory && WeaponInventory->GetEquippedWeapon() != Weapon)
 	{
-		if (UStaticMeshComponent* WM = Weapon->GetWeaponMesh())
+		EndScopedWeapon();
+		Weapon = nullptr;
+	}
+
+	const bool bSniper = Weapon && Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
+	if (!bSniper)
+	{
+		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, Dt, AimInterpSpeed);
+		CameraBoom->SocketOffset    = FMath::VInterpTo(CameraBoom->SocketOffset, TargetOffset, Dt, AimInterpSpeed);
+		FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView, TargetFOV, Dt, AimInterpSpeed));
+		if (Weapon)
 		{
-			if (WM->DoesSocketExist(TEXT("Aim")))
+			if (AimMode != EDropAimMode::Scoped)
 			{
-				const FTransform SocketTransform = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor);
-				FTransform Inv = SocketTransform.Inverse();
-
-				const FRotator AxisCorrection = Weapon->GetAimCameraRotationOffset();
-				Inv.ConcatenateRotation(AxisCorrection.Quaternion());
-
-				Weapon->SetActorRelativeLocation(Inv.GetLocation());
-				Weapon->SetActorRelativeRotation(Inv.GetRotation().Rotator());
+				EndScopedWeapon();
+				return;
 			}
+			const FTransform Aimed = GetScopedWeaponTransform(Weapon);
+			Weapon->SetActorRelativeLocation(Aimed.GetLocation());
+			Weapon->SetActorRelativeRotation(Aimed.GetRotation());
+		}
+		return;
+	}
+
+	const bool bScoping = (AimMode == EDropAimMode::Scoped);
+	ScopeAlpha = FMath::FInterpConstantTo(ScopeAlpha, bScoping ? 1.f : 0.f, Dt, 1.f / FMath::Max(ScopeTransitionTime, 0.01f));
+
+	if (!bScoping)
+	{
+		ScopeFromArm = TargetArm;
+		ScopeFromOffset = TargetOffset;
+		ScopeFromFOV = TargetFOV;
+		if (ScopeAlpha <= 0.f)
+		{
+			EndScopedWeapon();
+			return;
 		}
 	}
+
+	const float CamAlpha = FMath::InterpEaseInOut(0.f, 1.f, ScopeAlpha, 2.f);
+	CameraBoom->TargetArmLength = FMath::Lerp(ScopeFromArm, ScopedArmLength, CamAlpha);
+	CameraBoom->SocketOffset    = FMath::Lerp(ScopeFromOffset, ScopedSocketOffset, CamAlpha);
+	FollowCamera->SetFieldOfView(FMath::Lerp(ScopeFromFOV, ScopedFOV, CamAlpha));
+
+	const float T = ScopeAlpha - 1.f;
+	const float Spring = 1.f + (ScopeSpringOvershoot + 1.f) * T * T * T + ScopeSpringOvershoot * T * T;
+	const FTransform Aimed = GetScopedWeaponTransform(Weapon);
+	Weapon->SetActorRelativeLocation(Aimed.GetLocation() + ScopedRaiseOffset * (1.f - Spring));
+	Weapon->SetActorRelativeRotation((ScopedRaiseRotation * (1.f - Spring)).Quaternion() * Aimed.GetRotation());
 }
 
 void ADropCharacter::UpdateParachuteVisual(float Dt)
