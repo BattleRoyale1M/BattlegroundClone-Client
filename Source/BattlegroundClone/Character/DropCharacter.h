@@ -29,6 +29,8 @@ class AItemPickupActor;
 class UBagComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNearbyPickupsChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUseStarted, FText, ItemName, float, Duration);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUseEnded, bool, bCompleted);
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
@@ -173,6 +175,18 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnNearbyPickupsChanged OnNearbyPickupsChanged;
 
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestUseItem(FName RowName);
+
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	bool IsUsingItem() const { return !UsingItemRow.IsNone(); }
+
+	UPROPERTY(BlueprintAssignable, Category = "Inventory")
+	FOnItemUseStarted OnItemUseStarted; 
+
+	UPROPERTY(BlueprintAssignable, Category = "Inventory")
+	FOnItemUseEnded OnItemUseEnded;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -236,7 +250,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
 	
-	// --
 
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> NearbyInteractables;
@@ -247,7 +260,6 @@ protected:
 	UFUNCTION(BlueprintPure, Category = "Interaction")
 	AActor* GetCurrentInteractable() const { return CurrentInteractable; }
 
-	// --
 
 	UPROPERTY(ReplicatedUsing = OnRep_AimMode, BlueprintReadOnly, Category="Combat")
 	EDropAimMode AimMode = EDropAimMode::Hip;
@@ -284,6 +296,32 @@ protected:
 	
 	UFUNCTION(Server, Reliable)
 	void ServerPickup(AItemPickupActor* Pickup);
+	
+	//--
+	UFUNCTION(Server, Reliable)
+	void ServerUseItem(FName RowName);
+	UFUNCTION(Server, Reliable)
+	void ServerCancelUseItem();
+
+	void CancelUseItem();
+	void FinishUseItem();
+	void RequestCancelUseItem();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayUseMontage(UAnimMontage* Montage, float Duration);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStopUseMontage(UAnimMontage* Montage);
+
+	UFUNCTION(Client, Reliable)
+	void ClientItemUseStarted(const FText& ItemName, float Duration);
+	UFUNCTION(Client, Reliable)
+	void ClientItemUseEnded(bool bCompleted);
+
+	UPROPERTY(Replicated)
+	FName UsingItemRow;
+
+	FTimerHandle UseItemTimer;
+	//--
 
 	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	float MaxPickupDistance = 300.f;
@@ -295,7 +333,6 @@ protected:
 	
 	void UpdateCurrentInteractable();
 	
-	// --
 	
 	float AimPressTime = 0.f;
 	
@@ -303,7 +340,6 @@ protected:
 	void OnAimReleased();
 	void SetAimMode(EDropAimMode NewMode);
 	void UpdateAimCamera(float Dt);
-	// --
 	
 	void StartFire();
 	void StopFire();

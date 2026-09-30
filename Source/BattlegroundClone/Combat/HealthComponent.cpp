@@ -1,5 +1,7 @@
 ﻿#include "Combat/HealthComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 
 UHealthComponent::UHealthComponent()
 {
@@ -28,6 +30,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	*/
 	DOREPLIFETIME_CONDITION_NOTIFY(UHealthComponent, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME(UHealthComponent, bDead);
+	DOREPLIFETIME(UHealthComponent, Boost);
 }
 
 void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor* DamageCauser, const FVector& ShotDirection)
@@ -52,6 +55,55 @@ void UHealthComponent::ApplyDamage(float Amount, AController* Instigator, AActor
 	{
 		OnHit.Broadcast(Instigator, DamageCauser, ShotDirection);
 	}
+}
+
+void UHealthComponent::Heal(float Amount, float Cap)
+{
+	if (bDead || Amount <= 0.f || !GetOwner() || !GetOwner()->HasAuthority())
+	{
+		return;
+	}
+	const float Limit = FMath::Min(Cap, MaxHealth);
+	if (Health >= Limit)
+	{
+		return;
+	}
+	Health = FMath::Min(Health + Amount, Limit);
+	OnHealthChanged.Broadcast(Health, MaxHealth);
+}
+
+void UHealthComponent::AddBoost(float Amount)
+{
+	if (bDead || Amount <= 0.f || !GetOwner() || !GetOwner()->HasAuthority())
+	{
+		return;
+	}
+	Boost = FMath::Clamp(Boost + Amount, 0.f, MaxBoost);
+	OnBoostChanged.Broadcast(Boost);
+	FTimerManager& TM = GetWorld()->GetTimerManager();
+	if (!TM.IsTimerActive(BoostTimer))
+	{
+		TM.SetTimer(BoostTimer, this, &UHealthComponent::TickBoost, BoostTickInterval, true);
+	}
+}
+
+void UHealthComponent::TickBoost()
+{
+	if (bDead || Boost <= 0.f)
+	{
+		Boost = 0.f;
+		GetWorld()->GetTimerManager().ClearTimer(BoostTimer);
+		OnBoostChanged.Broadcast(Boost);
+		return;
+	}
+	Boost = FMath::Max(0.f, Boost - BoostDecayPerTick);
+	Heal(BoostHealPerTick, MaxHealth);
+	OnBoostChanged.Broadcast(Boost);
+}
+
+void UHealthComponent::OnRep_Boost()
+{
+	OnBoostChanged.Broadcast(Boost);
 }
 
 void UHealthComponent::OnRep_Health()

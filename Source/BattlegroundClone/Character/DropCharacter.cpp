@@ -274,6 +274,7 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ADropCharacter::OnJumpPressed()
 {
+	RequestCancelUseItem();
 	Jump();
 }
 
@@ -296,6 +297,7 @@ void ADropCharacter::Move(const FInputActionValue& Value)
 	{
 		return;
 	}
+	RequestCancelUseItem();
 
 	const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
 	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -852,6 +854,7 @@ void ADropCharacter::StartFire()
 	{
 		return;
 	}
+	RequestCancelUseItem();
 	if (DropState != EDropState::Ground)
 	{
 		return;
@@ -991,12 +994,11 @@ bool ADropCharacter::TryPickup(AItemPickupActor* Pickup)
 
 	if (Row->ItemType == EBGItemType::Weapon)
 	{
-		if (!WeaponInventory || !WeaponInventory->TryEquipToEmptySlot(Row->AllowedSlots, Row->WeaponClass))
+		if (WeaponInventory && WeaponInventory->TryEquipToEmptySlot(Row->AllowedSlots, Row->WeaponClass))
 		{
 			Pickup->Destroy();
 			return true;
 		}
-		
 	}
 
 	if (!BagComp)
@@ -1011,6 +1013,122 @@ bool ADropCharacter::TryPickup(AItemPickupActor* Pickup)
 	if (Left > 0) Pickup->SetQuantity(Left);
 	else          Pickup->Destroy();
 	return true;
+}
+
+void ADropCharacter::RequestUseItem(FName RowName)
+{
+	if (bIsDead || RowName.IsNone())
+	{
+		return;
+	}
+	ServerUseItem(RowName);
+}
+
+void ADropCharacter::ServerUseItem_Implementation(FName RowName)
+{
+	if (bIsDead || DropState != EDropState::Ground || IsUsingItem() || !BagComp || BagComp->GetItemCount(RowName) <= 0)
+	{
+		return;
+	}
+	const FItemRow* Row = BagComp->FindItemRow(RowName);
+	if (!Row || (Row->ItemType != EBGItemType::Heal && Row->ItemType != EBGItemType::Boost))
+	{
+		return;
+	}
+	if (Row->ItemType == EBGItemType::Heal && HealthComp
+		&& HealthComp->GetHealth() >= FMath::Min(Row->HealCap, HealthComp->GetMaxHealth()))
+	{
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
+		{
+			PC->ClientShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("체력이 충분합니다")), FLinearColor(1.f, 0.3f, 0.1f));
+		}
+		return;
+	}
+
+	StopFire();
+	UsingItemRow = RowName;
+	const float Duration = FMath::Max(Row->UseDuration, 0.1f);
+	GetWorldTimerManager().SetTimer(UseItemTimer, this, &ADropCharacter::FinishUseItem, Duration, false);
+
+	MulticastPlayUseMontage(Row->UseMontage, Duration);
+	ClientItemUseStarted(Row->DisplayName, Duration);
+}
+
+void ADropCharacter::FinishUseItem()
+{
+	const FName RowName = UsingItemRow;
+	UsingItemRow = NAME_None;
+
+	const FItemRow* Row = BagComp ? BagComp->FindItemRow(RowName) : nullptr;
+	if (Row && !bIsDead && HealthComp && BagComp->RemoveItem(RowName, 1))
+	{
+		if (Row->ItemType == EBGItemType::Heal)
+		{
+			HealthComp->Heal(Row->HealAmount, Row->HealCap);
+		}
+		else if (Row->ItemType == EBGItemType::Boost)
+		{
+			HealthComp->AddBoost(Row->BoostGainAmount);
+		}
+	}
+	ClientItemUseEnded(true);
+}
+
+void ADropCharacter::RequestCancelUseItem()
+{
+	if (!IsUsingItem())
+	{
+		return;
+	}
+	ServerCancelUseItem();
+	UsingItemRow = NAME_None;
+}
+
+void ADropCharacter::ServerCancelUseItem_Implementation()
+{
+	CancelUseItem();
+}
+
+void ADropCharacter::CancelUseItem()
+{
+	if (!HasAuthority() || !IsUsingItem())
+	{
+		return;
+	}
+	GetWorldTimerManager().ClearTimer(UseItemTimer);
+	const FItemRow* Row = BagComp ? BagComp->FindItemRow(UsingItemRow) : nullptr;
+	UsingItemRow = NAME_None;
+
+	MulticastStopUseMontage(Row ? Row->UseMontage.Get() : nullptr);
+	ClientItemUseEnded(false);
+}
+
+void ADropCharacter::MulticastPlayUseMontage_Implementation(UAnimMontage* Montage, float Duration)
+{
+	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (Anim && Montage && Duration > 0.f)
+	{
+		Anim->Montage_Play(Montage, Montage->GetPlayLength() / Duration);
+	}
+}
+
+void ADropCharacter::MulticastStopUseMontage_Implementation(UAnimMontage* Montage)
+{
+	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (Anim && Montage)
+	{
+		Anim->Montage_Stop(0.2f, Montage);
+	}
+}
+
+void ADropCharacter::ClientItemUseStarted_Implementation(const FText& ItemName, float Duration)
+{
+	OnItemUseStarted.Broadcast(ItemName, Duration);
+}
+
+void ADropCharacter::ClientItemUseEnded_Implementation(bool bCompleted)
+{
+	OnItemUseEnded.Broadcast(bCompleted);
 }
 
 
@@ -1065,6 +1183,7 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
 	DOREPLIFETIME(ADropCharacter, DropState);
+	DOREPLIFETIME_CONDITION(ADropCharacter, UsingItemRow, COND_OwnerOnly);
 }
 
 void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
@@ -1228,6 +1347,7 @@ float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 {
+	CancelUseItem();
 	if (!HasAuthority() || !Killer)
 	{
 		return;
