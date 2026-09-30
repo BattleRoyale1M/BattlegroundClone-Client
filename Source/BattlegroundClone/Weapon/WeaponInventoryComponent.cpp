@@ -106,6 +106,7 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 		EquippedWeapon = nullptr;
 		if (!WeaponSlots.IsValidIndex(Index) || !WeaponSlots[Index])
 		{
+			OnInventoryChanged.Broadcast();
 			return;
 		}
 	}
@@ -139,6 +140,7 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 		EquippedWeapon->SetFireMode(CurrentFireMode);
 		MulticastPlayEquipMontage();
 	}
+	OnInventoryChanged.Broadcast();
 }
 
 void UWeaponInventoryComponent::SwitchWeaponSlot(int32 Index)
@@ -209,6 +211,7 @@ void UWeaponInventoryComponent::EquipWeaponClassAtSlot(int32 Index, TSubclassOf<
 
 	CurrentWeaponIndex = -1; // 강제로 재장착되게 가드 우회
 	EquipWeaponSlot(Index);
+	OnInventoryChanged.Broadcast();
 }
 
 void UWeaponInventoryComponent::EquipWeaponClassInSlots(const TArray<int32>& AllowedSlots, TSubclassOf<AWeaponBase> NewWeaponClass)
