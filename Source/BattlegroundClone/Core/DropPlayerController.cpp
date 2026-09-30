@@ -18,6 +18,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/DamageEvents.h"
 
 #include "Core/DropPlayerState.h"
 #include "Core/DropMapLibrary.h"
@@ -25,6 +26,17 @@
 
 ADropPlayerController::ADropPlayerController()
 {
+}
+
+void ADropPlayerController::Cheat_Damage()
+{
+	if (ADropCharacter* MyChar = Cast<ADropCharacter>(GetPawn()))
+	{
+		FDamageEvent DEvent;
+		MyChar->TakeDamage(50.f, DEvent, this, MyChar);
+        
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("Controller Cheat: HP Damaged!"));
+	}
 }
 
 void ADropPlayerController::EnsureBounds() const

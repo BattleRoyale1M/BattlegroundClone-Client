@@ -118,7 +118,7 @@ void UHealthComponent::OnRep_Health()
 
 void UHealthComponent::OnRep_Dead()
 {
-	// 다음 단계에서 사망 연출 트리거용
+	// TODO : 다음 단계에서 사망 연출 트리거용
 }
 
 /*
