@@ -12,7 +12,8 @@ enum class EBGItemType : uint8
 	Weapon,
 	Heal,
 	Boost,
-	Ammo
+	Ammo,
+	Equipment,
 };
 USTRUCT(BlueprintType)
 struct FItemRow : public FTableRowBase

@@ -993,10 +993,10 @@ bool ADropCharacter::TryPickup(AItemPickupActor* Pickup)
 	{
 		if (!WeaponInventory || !WeaponInventory->TryEquipToEmptySlot(Row->AllowedSlots, Row->WeaponClass))
 		{
-			return false;
+			Pickup->Destroy();
+			return true;
 		}
-		Pickup->Destroy();
-		return true;
+		
 	}
 
 	if (!BagComp)
