@@ -234,6 +234,11 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EIC->BindAction(JumpAction, ETriggerEvent::Started,   this, &ADropCharacter::OnJumpPressed);
 		EIC->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	}
+	if (FastFallAction)
+	{
+		EIC->BindAction(FastFallAction, ETriggerEvent::Started, this, &ADropCharacter::OnFastFallPressed);
+		EIC->BindAction(FastFallAction, ETriggerEvent::Completed, this, &ADropCharacter::OnFastFallReleased);
+	}
 	if (ParachuteAction)
 	{
 		EIC->BindAction(ParachuteAction, ETriggerEvent::Started, this, &ADropCharacter::OnParachutePressed);
@@ -288,6 +293,19 @@ void ADropCharacter::OnParachutePressed()
 	{
 		ServerDeployParachute();
 	}
+}
+
+void ADropCharacter::OnFastFallPressed()
+{
+	if (DropState == EDropState::Freefall)
+	{
+		bIsFastFalling = true;
+	}
+}
+
+void ADropCharacter::OnFastFallReleased()
+{
+	bIsFastFalling = false;
 }
 
 void ADropCharacter::Move(const FInputActionValue& Value)
@@ -535,11 +553,13 @@ void ADropCharacter::RefreshPreviewShowList()
 */
 void ADropCharacter::UpdateFreefall(float Dt)
 {
+	float TargetSpeed = bIsFastFalling ? FreefallMaxSpeed : FreefallMinSpeed;
+	
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	if (!M) return;
 
 	FVector Desired = GetControlRotation().Vector() * 800.f; // 조작감용 약간의 활강
-	Desired.Z = -FreefallMaxSpeed;                            // 항상 빠르게 수직 낙하
+	Desired.Z = -TargetSpeed;
 	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel); // 바람저항
 }
 

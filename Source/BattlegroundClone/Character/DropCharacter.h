@@ -232,6 +232,9 @@ protected:
 	TObjectPtr<UInputAction> JumpAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> FastFallAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> ParachuteAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -387,6 +390,13 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	TSubclassOf<UUserWidget> ParachutePromptWidgetClass;
+	
+	// --- 수직 낙하 --------------------------------------------
+	UPROPERTY(BlueprintReadOnly, Category = "Drop")
+	bool bIsFastFalling = false;
+
+	void OnFastFallPressed();
+	void OnFastFallReleased();
 	
 	// --- 낙하산 캐노피 연출 --------------------------------------------
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
