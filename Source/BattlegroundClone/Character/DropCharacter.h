@@ -80,6 +80,15 @@ public:
 	float GroundDistance() const;
 	void  UpdateFreefall(float Dt);
 	void  UpdateParachute(float Dt);
+	
+	/*
+	포복
+	*/
+	UFUNCTION(BlueprintPure, Category = "Movement")
+	bool IsProne() const
+	{
+		return bIsCrouched;
+	}
 
 	UFUNCTION(BlueprintPure, Category="Combat")
 	UHealthComponent* GetHealthComp() const
@@ -257,6 +266,16 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> CrawlAction;
+	
+	void OnPronePressed(const FInputActionValue& Value);
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float ProneSpeed = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float ProneCapsuleHalfHeight = 40.f;
 	
 
 	UPROPERTY()

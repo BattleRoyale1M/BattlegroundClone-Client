@@ -121,6 +121,12 @@ ADropCharacter::ADropCharacter()
 void ADropCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	UCharacterMovementComponent* Move = GetCharacterMovement();
+	Move->GetNavAgentPropertiesRef().bCanCrouch = true;
+	Move->SetCrouchedHalfHeight(ProneCapsuleHalfHeight);
+	Move->MaxWalkSpeedCrouched = ProneSpeed;
+
 	if (WeaponInventory)
 	{
 		WeaponInventory->InitialEquip();
@@ -274,6 +280,10 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (InteractAction)
 	{
 		EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ADropCharacter::OnInteractPressed);
+	}
+	if (CrawlAction)
+	{
+		EIC->BindAction(CrawlAction, ETriggerEvent::Started, this, &ADropCharacter::OnPronePressed);
 	}
 }
 
@@ -738,6 +748,22 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 	if (!HasAuthority())
 	{
 		ServerSetAimMode(NewMode);
+	}
+}
+
+void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
+{
+	if (bIsDead || DropState != EDropState::Ground || IsUsingItem())
+	{
+		return;
+	}
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
 	}
 }
 
