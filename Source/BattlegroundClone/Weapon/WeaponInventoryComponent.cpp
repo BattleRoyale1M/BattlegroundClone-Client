@@ -43,8 +43,24 @@ void UWeaponInventoryComponent::OnRep_EquippedWeapon()
 	if (ACharacter* OwnerChar = GetOwnerCharacter())
 	{
 		EquippedWeapon->AttachToComponent(
-			OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
+			OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetCurrentAttachSocket());
 	}
+}
+
+FName UWeaponInventoryComponent::GetCurrentAttachSocket() const
+{
+	const ACharacter* OwnerChar = GetOwnerCharacter();
+	return (OwnerChar && OwnerChar->bIsCrouched) ? ProneAttachSocket : WeaponAttachSocket;
+}
+
+void UWeaponInventoryComponent::RefreshWeaponAttach()
+{
+	ACharacter* OwnerChar = GetOwnerCharacter();
+	if (!EquippedWeapon || !OwnerChar || EquippedWeapon->GetRootComponent()->GetAttachParent() != OwnerChar->GetMesh())
+	{
+		return;
+	}
+	EquippedWeapon->AttachToComponent(OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetCurrentAttachSocket());
 }
 
 void UWeaponInventoryComponent::OnRep_WeaponSlotClasses()
@@ -135,7 +151,7 @@ void UWeaponInventoryComponent::EquipWeaponSlot(int32 Index)
 		EquippedWeapon->SetActorHiddenInGame(false);
 		if (ACharacter* OwnerChar = GetOwnerCharacter())
 		{
-			EquippedWeapon->AttachToComponent(OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocket);
+			EquippedWeapon->AttachToComponent(OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetCurrentAttachSocket());
 		}
 		EquippedWeapon->SetFireMode(CurrentFireMode);
 		MulticastPlayEquipMontage();

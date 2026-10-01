@@ -91,6 +91,9 @@ public:
 		return WeaponAttachSocket;
 	}
 
+	FName GetCurrentAttachSocket() const;
+	void RefreshWeaponAttach();
+
 	UPROPERTY(BlueprintAssignable, Category = "Weapon|Events")
 	FOnFireModeChanged OnFireModeChanged;
 	
@@ -151,6 +154,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponAttachSocket = TEXT("hand_r");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FName ProneAttachSocket = TEXT("HandGrip_R_Prone");
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	EFireMode CurrentFireMode = EFireMode::Single;

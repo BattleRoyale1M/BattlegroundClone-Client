@@ -351,7 +351,7 @@ void ADropCharacter::EndScopedWeapon()
 		return;
 	}
 	Weapon->SetScopeCaptureActive(false);
-	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponInventory->GetWeaponAttachSocket());
+	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponInventory->GetCurrentAttachSocket());
 	Weapon->SetActorRelativeLocation(FVector::ZeroVector);
 	Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
 }
@@ -764,6 +764,24 @@ void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
 	else
 	{
 		Crouch();
+	}
+}
+
+void ADropCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	if (WeaponInventory)
+	{
+		WeaponInventory->RefreshWeaponAttach();
+	}
+}
+
+void ADropCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	if (WeaponInventory)
+	{
+		WeaponInventory->RefreshWeaponAttach();
 	}
 }
 
