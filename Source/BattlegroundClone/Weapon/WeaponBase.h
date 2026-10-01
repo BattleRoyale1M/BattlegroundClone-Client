@@ -107,6 +107,11 @@ public:
 	{
 		return WeaponDisplayName;
 	}
+	
+	// 반동
+	float GetRecoilPitch() const { return RecoilPitch; }
+	float GetRecoilYawRange() const { return RecoilYawRange; }
+	float GetRecoilRecoverySpeed() const { return RecoilRecoverySpeed; }
 
 	// 툴팁 UI용 스탯 getter
 	UFUNCTION(BlueprintPure, Category = "Weapon|Stats")
@@ -153,19 +158,24 @@ protected:
 	float Damage = 25.f;
 	UPROPERTY(EditDefaultsOnly, Replicated)
 	int32 ReserveAmmo = 90;
+	
+	// 반동
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0"))
+	float RecoilPitch = 0.5f;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0"))
+	float RecoilYawRange = 0.2f;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0"))
+	float RecoilRecoverySpeed = 9.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName = TEXT("Muzzle");
-
-	// --- FX : 무기별로 지정 -----------------------------------
-	// 총구 소켓(MuzzleSocketName)에 붙여 원샷 재생. NS_MuzzleFlash 지정.
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
 	TObjectPtr<UNiagaraSystem> MuzzleFlashFX;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
 	TObjectPtr<USoundBase> FireSound;
 
-	// 총구 섬광 라이트(0이면 스폰 안 함)
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
 	float MuzzleLightIntensity = 1500.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")

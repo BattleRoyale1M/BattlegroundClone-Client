@@ -767,6 +767,19 @@ void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
 	}
 }
 
+void ADropCharacter::AddRecoil(float Pitch, float YawRange, float RecoverySpeed)
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	AddControllerPitchInput(-Pitch);
+	AddControllerYawInput(FMath::RandRange(-YawRange, YawRange));
+	RecoilAccumPitch += Pitch;
+	RecoilRecoverySpeed = RecoverySpeed;
+	LastRecoilTime = GetWorld()->GetTimeSeconds();
+}
+
 void ADropCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
 	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);

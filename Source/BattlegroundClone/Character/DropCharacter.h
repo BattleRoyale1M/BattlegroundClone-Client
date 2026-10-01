@@ -89,6 +89,11 @@ public:
 	{
 		return bIsCrouched;
 	}
+	
+	/*
+	반동
+	*/
+	void AddRecoil(float Pitch, float YawRange, float RecoverySpeed);
 
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
@@ -609,4 +614,10 @@ protected:
 	void ShowParachute();
 	void HideParachute();
 	void UpdateParachuteVisual(float Dt);
+	
+private:
+	
+	float RecoilAccumPitch = 0.f;
+	float RecoilRecoverySpeed = 0.f;
+	float LastRecoilTime = -1.f;
 };
