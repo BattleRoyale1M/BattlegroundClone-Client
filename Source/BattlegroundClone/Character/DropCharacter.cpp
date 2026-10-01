@@ -1018,6 +1018,12 @@ void ADropCharacter::RequestEquipFromBag(int32 BagIndex, int32 TargetSlot)
 	ServerEquipFromBag(BagIndex, TargetSlot);
 }
 
+void ADropCharacter::RequestUnequipToBag(int32 SlotIndex)
+{
+	if (bIsDead) return;
+	ServerUnequipToBag(SlotIndex);
+}
+
 void ADropCharacter::ServerEquipFromBag_Implementation(int32 BagIndex, int32 TargetSlot)
 {
 	if (bIsDead || !BagComp || !WeaponInventory)
@@ -1041,6 +1047,29 @@ void ADropCharacter::ServerEquipFromBag_Implementation(int32 BagIndex, int32 Tar
 		const FName OldRow = BagComp->FindWeaponRowName(OldClass);
 		if (!OldRow.IsNone()) BagComp->AddItem(OldRow, 1);
 	}
+}
+
+void ADropCharacter::ServerUnequipToBag_Implementation(int32 SlotIndex)
+{
+	if (bIsDead || !BagComp || !WeaponInventory)
+	{
+		return;
+	}
+	const TSubclassOf<AWeaponBase> OldClass = WeaponInventory->GetSlotWeaponClass(SlotIndex);
+	if (!OldClass)
+	{
+		return;
+	}
+	const FName RowName = BagComp->FindWeaponRowName(OldClass);
+	if (RowName.IsNone())
+	{
+		return;
+	}
+	if (BagComp->AddItem(RowName, 1) > 0)
+	{
+		return;
+	}
+	WeaponInventory->ClearSlot(SlotIndex);
 }
 
 void ADropCharacter::ServerPickup_Implementation(AItemPickupActor* Pickup)

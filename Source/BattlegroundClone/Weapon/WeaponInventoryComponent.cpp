@@ -262,6 +262,27 @@ bool UWeaponInventoryComponent::TryEquipToEmptySlot(const TArray<int32>& Allowed
 }
 
 
+void UWeaponInventoryComponent::ClearSlot(int32 Index)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !Owner->HasAuthority() || !WeaponSlotClasses.IsValidIndex(Index))
+	{
+		return;
+	}
+	WeaponSlotClasses[Index] = nullptr;
+	if (WeaponSlots.IsValidIndex(Index) && WeaponSlots[Index])
+	{
+		if (WeaponSlots[Index] == EquippedWeapon)
+		{
+			EquippedWeapon = nullptr;
+			CurrentWeaponIndex = -1;
+		}
+		WeaponSlots[Index]->Destroy();
+		WeaponSlots[Index] = nullptr;
+	}
+	OnInventoryChanged.Broadcast();
+}
+
 void UWeaponInventoryComponent::SwapWeaponSlots(int32 IndexA, int32 IndexB)
 {
 	AActor* Owner = GetOwner();

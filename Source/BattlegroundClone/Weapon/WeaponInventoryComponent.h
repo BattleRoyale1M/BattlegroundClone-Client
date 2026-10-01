@@ -110,6 +110,7 @@ public:
 	{
 		return WeaponSlotClasses.IsValidIndex(Index) ? WeaponSlotClasses[Index] : nullptr;
 	}
+	void ClearSlot(int32 Index);
 	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwapWeaponSlots(int32 IndexA, int32 IndexB);
