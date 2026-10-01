@@ -168,6 +168,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestPickup(AItemPickupActor* Pickup);
+	
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestEquipFromBag(int32 BagIndex, int32 TargetSlot);
 
 	bool TryPickup(AItemPickupActor* Pickup);   // 서버 전용
 
@@ -298,6 +301,9 @@ protected:
 	
 	UFUNCTION(Server, Reliable)
 	void ServerPickup(AItemPickupActor* Pickup);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerEquipFromBag(int32 BagIndex, int32 TargetSlot);
 	
 	//--
 	UFUNCTION(Server, Reliable)

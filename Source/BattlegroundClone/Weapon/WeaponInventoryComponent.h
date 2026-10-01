@@ -106,6 +106,11 @@ public:
 		return WeaponSlots.IsValidIndex(Index) ? WeaponSlots[Index] : nullptr;
 	}
 	
+	TSubclassOf<AWeaponBase> GetSlotWeaponClass(int32 Index) const
+	{
+		return WeaponSlotClasses.IsValidIndex(Index) ? WeaponSlotClasses[Index] : nullptr;
+	}
+	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwapWeaponSlots(int32 IndexA, int32 IndexB);
 	

@@ -1012,6 +1012,37 @@ void ADropCharacter::RequestPickup(AItemPickupActor* Pickup)
 	ServerPickup(Pickup);
 }
 
+void ADropCharacter::RequestEquipFromBag(int32 BagIndex, int32 TargetSlot)
+{
+	if (bIsDead) return;
+	ServerEquipFromBag(BagIndex, TargetSlot);
+}
+
+void ADropCharacter::ServerEquipFromBag_Implementation(int32 BagIndex, int32 TargetSlot)
+{
+	if (bIsDead || !BagComp || !WeaponInventory)
+	{
+		return;
+	}
+	const TArray<FBagEntry>& Items = BagComp->GetItems();
+	if (!Items.IsValidIndex(BagIndex))
+	{
+		return;
+	}
+	const FName RowName = Items[BagIndex].ItemRowName;
+	const FItemRow* Row = BagComp->FindItemRow(RowName);
+	if (!Row || Row->ItemType != EBGItemType::Weapon || !Row->WeaponClass) return;
+	if (Row->AllowedSlots.Num() > 0 && !Row->AllowedSlots.Contains(TargetSlot)) return;
+	const TSubclassOf<AWeaponBase> OldClass = WeaponInventory->GetSlotWeaponClass(TargetSlot);
+	if (!BagComp->RemoveItem(RowName, 1)) return;
+	WeaponInventory->EquipWeaponClassAtSlot(TargetSlot, Row->WeaponClass);
+	if (OldClass)
+	{
+		const FName OldRow = BagComp->FindWeaponRowName(OldClass);
+		if (!OldRow.IsNone()) BagComp->AddItem(OldRow, 1);
+	}
+}
+
 void ADropCharacter::ServerPickup_Implementation(AItemPickupActor* Pickup)
 {
 	TryPickup(Pickup);

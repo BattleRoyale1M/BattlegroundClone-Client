@@ -1,4 +1,5 @@
 ﻿#include "Inventory/BagComponent.h"
+#include "Weapon/WeaponBase.h"
 #include "Interaction/Item/ItemTypes.h"
 #include "Engine/DataTable.h"
 #include "Net/UnrealNetwork.h"
@@ -19,6 +20,24 @@ const FItemRow* UBagComponent::FindItemRow(FName RowName) const
 {
 	return ItemTable ? ItemTable->FindRow<FItemRow>(RowName, TEXT("BagComponent")) : nullptr;
 }
+
+FName UBagComponent::FindWeaponRowName(TSubclassOf<AWeaponBase> WeaponClass) const
+{
+	if (!ItemTable || !WeaponClass)
+	{
+		return NAME_None;
+	}
+	for (const TPair<FName, uint8*>& Pair : ItemTable->GetRowMap())
+	{
+		const FItemRow* Row = reinterpret_cast<const FItemRow*>(Pair.Value);
+		if (Row && Row->WeaponClass == WeaponClass)
+		{
+			return Pair.Key;
+		}
+	}
+	return NAME_None;
+}
+
 
 int32 UBagComponent::AddItem(FName RowName, int32 Count)
 {
