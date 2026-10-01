@@ -1,7 +1,6 @@
 #include "Weapon/WeaponBase.h"
 
 #include "Net/UnrealNetwork.h"
-#include "Core/DropPlayerController.h"
 #include "Engine/DamageEvents.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "GameFramework/DamageType.h"
@@ -9,8 +8,7 @@
 
 #include "Combat/ProjectilePoolSubsystem.h"
 
-#include "Character/DropCharacter.h"
-#include "Weapon/WeaponInventoryComponent.h"
+#include "Weapon/WeaponUserInterface.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
@@ -82,24 +80,18 @@ void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 {
 	PlayFireFX();
 
-	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
 	{
-		C->AddRecoil(RecoilPitch, RecoilYawRange, RecoilRecoverySpeed);
-		if (UWeaponInventoryComponent* Inv = C->GetWeaponInventory())
-		{
-			Inv->PlayFireMontage();
-		}
+		IWeaponUserInterface::Execute_ReceiveWeaponRecoil(Owner, RecoilPitch, RecoilYawRange, RecoilRecoverySpeed);
+		IWeaponUserInterface::Execute_NotifyWeaponFired(Owner);
 	}
 }
 
 void AWeaponBase::MulticastReloadFX_Implementation(float Duration)
 {
-	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
 	{
-		if (UWeaponInventoryComponent* Inv = C->GetWeaponInventory())
-		{
-			Inv->HandleReloadStarted(Duration);
-		}
+		IWeaponUserInterface::Execute_NotifyWeaponReloadStarted(Owner, Duration);
 	}
 }
 
@@ -112,9 +104,9 @@ void AWeaponBase::StartFire()
 	}
 	if (WeaponType == EWeaponType::Melee)
 	{
-		if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+		if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
 		{
-			C->MeleeAttack(AttackMontage);
+			IWeaponUserInterface::Execute_RequestMeleeAttack(Owner, AttackMontage);
 		}
 		MeleeTrace();
 		return;
@@ -172,12 +164,9 @@ void AWeaponBase::SetScopeCaptureActive(bool bActive)
 
 void AWeaponBase::ClientShowAmmoEmpty_Implementation()
 {
-	if (ADropCharacter* C = Cast<ADropCharacter>(GetOwner()))
+	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
 	{
-		if (ADropPlayerController* PC = Cast<ADropPlayerController>(C->GetController()))
-		{
-			PC->ShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("탄약 없음")), FLinearColor(1.f, 0.3f, 0.1f));
-		}
+		IWeaponUserInterface::Execute_NotifyAmmoEmpty(Owner);
 	}
 }
 

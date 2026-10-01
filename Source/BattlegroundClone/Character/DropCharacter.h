@@ -5,6 +5,7 @@
 #include "Combat/HealthComponent.h"
 #include "Core/Enums/DropTypes.h"
 #include "Core/Enums/EFireMode.h"
+#include "Weapon/WeaponUserInterface.h"
 
 #include "DropCharacter.generated.h"
 
@@ -33,12 +34,19 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUseStarted, FText, ItemName,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUseEnded, bool, bCompleted);
 
 UCLASS()
-class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter
+class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter, public IWeaponUserInterface
 {
 	GENERATED_BODY()
 
 public:
 	ADropCharacter();
+
+	// --- IWeaponUserInterface : 무기가 캐릭터(카메라/애니메이션 제어권 보유자)에게 알리는 콜백 ---
+	virtual void ReceiveWeaponRecoil_Implementation(float Pitch, float YawRange, float RecoverySpeed) override;
+	virtual void NotifyWeaponFired_Implementation() override;
+	virtual void NotifyWeaponReloadStarted_Implementation(float Duration) override;
+	virtual void RequestMeleeAttack_Implementation(UAnimMontage* AttackMontage) override;
+	virtual void NotifyAmmoEmpty_Implementation() override;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
