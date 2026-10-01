@@ -207,6 +207,10 @@ void ADropCharacter::Tick(float DeltaTime)
 	default:
 		break;
 	}
+	if (IsLocallyControlled())
+	{
+		UpdateRecoilRecovery(DeltaTime);
+	}
 	if (ParachuteDeployElapsed >= 0.f)
 	{
 		UpdateParachuteVisual(DeltaTime);
@@ -394,6 +398,13 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	const FVector2D Axis = Value.Get<FVector2D>();
 	AddControllerYawInput(Axis.X);
 	AddControllerPitchInput(Axis.Y);
+	
+	const bool bIsPullingDown = (Axis.Y > 0.0f);
+	const bool bHasAccumulatedRecoil = (RecoilAccumPitch > 0.0f);
+	if (bIsPullingDown && bHasAccumulatedRecoil)
+	{
+		RecoilAccumPitch = FMath::Max(0.f, RecoilAccumPitch - Axis.Y);
+	}
 }
 
 void ADropCharacter::SetDropState(EDropState NewState)
@@ -778,6 +789,21 @@ void ADropCharacter::AddRecoil(float Pitch, float YawRange, float RecoverySpeed)
 	RecoilAccumPitch += Pitch;
 	RecoilRecoverySpeed = RecoverySpeed;
 	LastRecoilTime = GetWorld()->GetTimeSeconds();
+}
+
+void ADropCharacter::UpdateRecoilRecovery(float DeltaTime)
+{
+	if (RecoilAccumPitch <= 0.f)
+	{
+		return;
+	}
+	if (GetWorld()->GetTimeSeconds() - LastRecoilTime < RecoilRecoveryDelay)
+	{
+		return;
+	}
+	const float NewAccum = FMath::FInterpTo(RecoilAccumPitch, 0.f, DeltaTime, RecoilRecoverySpeed);
+	AddControllerPitchInput(RecoilAccumPitch - NewAccum);
+	RecoilAccumPitch = NewAccum < 0.01f ? 0.f : NewAccum;
 }
 
 void ADropCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)

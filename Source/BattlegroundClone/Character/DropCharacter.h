@@ -94,6 +94,7 @@ public:
 	반동
 	*/
 	void AddRecoil(float Pitch, float YawRange, float RecoverySpeed);
+	void UpdateRecoilRecovery(float DeltaTime);
 
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
@@ -620,4 +621,7 @@ private:
 	float RecoilAccumPitch = 0.f;
 	float RecoilRecoverySpeed = 0.f;
 	float LastRecoilTime = -1.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Recoil")
+	float RecoilRecoveryDelay = 0.15f;
 };
