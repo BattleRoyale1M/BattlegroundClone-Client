@@ -4,7 +4,6 @@
 #include "Weapon/WeaponBase.h"
 #include "Weapon/WeaponInventoryComponent.h"
 #include "Weapon/WeaponUserInterface.h"
-#include "Interaction/Interactable/InteractableInterface.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
@@ -21,8 +20,6 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
-#include "Interaction/Item/ItemPickupActor.h"
-#include "Interaction/Item/ItemTypes.h"
 #include "Inventory/BagComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -117,6 +114,7 @@ ADropCharacter::ADropCharacter()
 
 	WeaponInventory = CreateDefaultSubobject<UWeaponInventoryComponent>(TEXT("WeaponInventory"));
 	BagComp = CreateDefaultSubobject<UBagComponent>(TEXT("BagComp"));
+	InteractionComp = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComp"));
 }
 
 void ADropCharacter::BeginPlay()
@@ -133,8 +131,13 @@ void ADropCharacter::BeginPlay()
 		WeaponInventory->InitialEquip();
 	}
 
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ADropCharacter::OnInteractableBeginOverlap);
-	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ADropCharacter::OnInteractableEndOverlap);
+	if (InteractionComp)
+	{
+		InteractionComp->OnNearbyPickupsChanged.AddDynamic(this, &ADropCharacter::RelayNearbyPickupsChanged);
+		InteractionComp->OnItemUseStarted.AddDynamic(this, &ADropCharacter::RelayItemUseStarted);
+		InteractionComp->OnItemUseEnded.AddDynamic(this, &ADropCharacter::RelayItemUseEnded);
+		InteractionComp->OnInteractableChanged.AddDynamic(this, &ADropCharacter::RelayInteractableChanged);
+	}
 }
 
 void ADropCharacter::PawnClientRestart()
@@ -308,9 +311,9 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			}
 		}
 	}
-	if (InteractAction)
+	if (InteractAction && InteractionComp)
 	{
-		EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ADropCharacter::OnInteractPressed);
+		EIC->BindAction(InteractAction, ETriggerEvent::Started, InteractionComp.Get(), &UInteractionComponent::OnInteractPressed);
 	}
 	if (CrawlAction)
 	{
@@ -320,7 +323,7 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ADropCharacter::OnJumpPressed()
 {
-	RequestCancelUseItem();
+	if (InteractionComp) InteractionComp->RequestCancelUseItem();
 	Jump();
 }
 
@@ -410,7 +413,7 @@ void ADropCharacter::Move(const FInputActionValue& Value)
 	{
 		return;
 	}
-	RequestCancelUseItem();
+	if (InteractionComp) InteractionComp->RequestCancelUseItem();
 
 	const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
 	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -1005,7 +1008,7 @@ void ADropCharacter::StartFire()
 	{
 		return;
 	}
-	RequestCancelUseItem();
+	if (InteractionComp) InteractionComp->RequestCancelUseItem();
 	if (DropState != EDropState::Ground)
 	{
 		return;
@@ -1042,306 +1045,6 @@ void ADropCharacter::OnReloadPressed()
 		WeaponInventory->OnReloadPressed();
 	}
 }
-
-void ADropCharacter::OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (!OtherActor || !OtherActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
-	{
-		return;
-	}
-	NearbyInteractables.AddUnique(OtherActor);
-	UpdateCurrentInteractable();
-	if (IsLocallyControlled()) OnNearbyPickupsChanged.Broadcast();
-}
-
-void ADropCharacter::OnInteractableEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	NearbyInteractables.Remove(OtherActor);
-	UpdateCurrentInteractable();
-	if (IsLocallyControlled()) OnNearbyPickupsChanged.Broadcast();
-}
-
-void ADropCharacter::UpdateCurrentInteractable()
-{
-	AActor* Best = NearbyInteractables.Num() > 0 ? NearbyInteractables[0] : nullptr;
-	if (Best == CurrentInteractable)
-	{
-		return;
-	}
-	CurrentInteractable = Best;
-
-	if (IsLocallyControlled())
-	{
-		const FText Prompt = CurrentInteractable
-			? IInteractableInterface::Execute_GetInteractionPromptText(CurrentInteractable)
-			: FText::GetEmpty();
-		OnInteractableChanged.Broadcast(Prompt);
-	}
-}
-
-void ADropCharacter::OnInteractPressed()
-{
-	if (bIsDead)
-	{
-		return;
-	}
-	if (DropState != EDropState::Ground || !CurrentInteractable)
-	{
-		return;
-	}
-	ServerInteract(CurrentInteractable);
-}
-
-void ADropCharacter::ServerInteract_Implementation(AActor* InteractActor)
-{
-	if (InteractActor && InteractActor->GetClass()->ImplementsInterface(UInteractableInterface::StaticClass()))
-	{
-		IInteractableInterface::Execute_Interact(InteractActor, this);
-	}
-}
-
-TArray<AItemPickupActor*> ADropCharacter::GetNearbyPickups() const
-{
-	TArray<AItemPickupActor*> Result;
-	for (AActor* Actor : NearbyInteractables)
-	{
-		if (AItemPickupActor* Pickup = Cast<AItemPickupActor>(Actor); IsValid(Pickup))
-		{
-			Result.Add(Pickup);
-		}
-	}
-	return Result;
-}
-
-void ADropCharacter::RequestPickup(AItemPickupActor* Pickup)
-{
-	if (!Pickup || bIsDead)
-	{
-		return;
-	}
-	ServerPickup(Pickup);
-}
-
-void ADropCharacter::RequestEquipFromBag(int32 BagIndex, int32 TargetSlot)
-{
-	if (bIsDead) return;
-	ServerEquipFromBag(BagIndex, TargetSlot);
-}
-
-void ADropCharacter::RequestUnequipToBag(int32 SlotIndex)
-{
-	if (bIsDead) return;
-	ServerUnequipToBag(SlotIndex);
-}
-
-void ADropCharacter::ServerEquipFromBag_Implementation(int32 BagIndex, int32 TargetSlot)
-{
-	if (bIsDead || !BagComp || !WeaponInventory)
-	{
-		return;
-	}
-	const TArray<FBagEntry>& Items = BagComp->GetItems();
-	if (!Items.IsValidIndex(BagIndex))
-	{
-		return;
-	}
-	const FName RowName = Items[BagIndex].ItemRowName;
-	const FItemRow* Row = BagComp->FindItemRow(RowName);
-	if (!Row || Row->ItemType != EBGItemType::Weapon || !Row->WeaponClass) return;
-	if (Row->AllowedSlots.Num() > 0 && !Row->AllowedSlots.Contains(TargetSlot)) return;
-	const TSubclassOf<AWeaponBase> OldClass = WeaponInventory->GetSlotWeaponClass(TargetSlot);
-	if (!BagComp->RemoveItem(RowName, 1)) return;
-	WeaponInventory->EquipWeaponClassAtSlot(TargetSlot, Row->WeaponClass);
-	if (OldClass)
-	{
-		const FName OldRow = BagComp->FindWeaponRowName(OldClass);
-		if (!OldRow.IsNone()) BagComp->AddItem(OldRow, 1);
-	}
-}
-
-void ADropCharacter::ServerUnequipToBag_Implementation(int32 SlotIndex)
-{
-	if (bIsDead || !BagComp || !WeaponInventory)
-	{
-		return;
-	}
-	const TSubclassOf<AWeaponBase> OldClass = WeaponInventory->GetSlotWeaponClass(SlotIndex);
-	if (!OldClass)
-	{
-		return;
-	}
-	const FName RowName = BagComp->FindWeaponRowName(OldClass);
-	if (RowName.IsNone())
-	{
-		return;
-	}
-	if (BagComp->AddItem(RowName, 1) > 0)
-	{
-		return;
-	}
-	WeaponInventory->ClearSlot(SlotIndex);
-}
-
-void ADropCharacter::ServerPickup_Implementation(AItemPickupActor* Pickup)
-{
-	TryPickup(Pickup);
-}
-
-bool ADropCharacter::TryPickup(AItemPickupActor* Pickup)
-{
-	if (!HasAuthority() || bIsDead || !IsValid(Pickup))
-	{
-		return false;
-	}
-	if (FVector::Dist(GetActorLocation(), Pickup->GetActorLocation()) > MaxPickupDistance)
-	{
-		return false;
-	}
-	const FItemRow* Row = Pickup->GetItemRow();
-	if (!Row)
-	{
-		return false;
-	}
-
-	if (Row->ItemType == EBGItemType::Weapon)
-	{
-		if (WeaponInventory && WeaponInventory->TryEquipToEmptySlot(Row->AllowedSlots, Row->WeaponClass))
-		{
-			Pickup->Destroy();
-			return true;
-		}
-	}
-
-	if (!BagComp)
-	{
-		return false;
-	}
-	const int32 Left = BagComp->AddItem(Pickup->GetItemRowName(), Pickup->GetQuantity());
-	if (Left == Pickup->GetQuantity())
-	{
-		return false;
-	}
-	if (Left > 0) Pickup->SetQuantity(Left);
-	else          Pickup->Destroy();
-	return true;
-}
-
-void ADropCharacter::RequestUseItem(FName RowName)
-{
-	if (bIsDead || RowName.IsNone())
-	{
-		return;
-	}
-	ServerUseItem(RowName);
-}
-
-void ADropCharacter::ServerUseItem_Implementation(FName RowName)
-{
-	if (bIsDead || DropState != EDropState::Ground || IsUsingItem() || !BagComp || BagComp->GetItemCount(RowName) <= 0)
-	{
-		return;
-	}
-	const FItemRow* Row = BagComp->FindItemRow(RowName);
-	if (!Row || (Row->ItemType != EBGItemType::Heal && Row->ItemType != EBGItemType::Boost))
-	{
-		return;
-	}
-	if (Row->ItemType == EBGItemType::Heal && HealthComp
-		&& HealthComp->GetHealth() >= FMath::Min(Row->HealCap, HealthComp->GetMaxHealth()))
-	{
-		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
-		{
-			PC->ClientShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("체력이 충분합니다")), FLinearColor(1.f, 0.3f, 0.1f));
-		}
-		return;
-	}
-
-	StopFire();
-	UsingItemRow = RowName;
-	const float Duration = FMath::Max(Row->UseDuration, 0.1f);
-	GetWorldTimerManager().SetTimer(UseItemTimer, this, &ADropCharacter::FinishUseItem, Duration, false);
-
-	MulticastPlayUseMontage(Row->UseMontage, Duration);
-	ClientItemUseStarted(Row->DisplayName, Duration);
-}
-
-void ADropCharacter::FinishUseItem()
-{
-	const FName RowName = UsingItemRow;
-	UsingItemRow = NAME_None;
-
-	const FItemRow* Row = BagComp ? BagComp->FindItemRow(RowName) : nullptr;
-	if (Row && !bIsDead && HealthComp && BagComp->RemoveItem(RowName, 1))
-	{
-		if (Row->ItemType == EBGItemType::Heal)
-		{
-			HealthComp->Heal(Row->HealAmount, Row->HealCap);
-		}
-		else if (Row->ItemType == EBGItemType::Boost)
-		{
-			HealthComp->AddBoost(Row->BoostGainAmount);
-		}
-	}
-	ClientItemUseEnded(true);
-}
-
-void ADropCharacter::RequestCancelUseItem()
-{
-	if (!IsUsingItem())
-	{
-		return;
-	}
-	ServerCancelUseItem();
-	UsingItemRow = NAME_None;
-}
-
-void ADropCharacter::ServerCancelUseItem_Implementation()
-{
-	CancelUseItem();
-}
-
-void ADropCharacter::CancelUseItem()
-{
-	if (!HasAuthority() || !IsUsingItem())
-	{
-		return;
-	}
-	GetWorldTimerManager().ClearTimer(UseItemTimer);
-	const FItemRow* Row = BagComp ? BagComp->FindItemRow(UsingItemRow) : nullptr;
-	UsingItemRow = NAME_None;
-
-	MulticastStopUseMontage(Row ? Row->UseMontage.Get() : nullptr);
-	ClientItemUseEnded(false);
-}
-
-void ADropCharacter::MulticastPlayUseMontage_Implementation(UAnimMontage* Montage, float Duration)
-{
-	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (Anim && Montage && Duration > 0.f)
-	{
-		Anim->Montage_Play(Montage, Montage->GetPlayLength() / Duration);
-	}
-}
-
-void ADropCharacter::MulticastStopUseMontage_Implementation(UAnimMontage* Montage)
-{
-	UAnimInstance* Anim = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (Anim && Montage)
-	{
-		Anim->Montage_Stop(0.2f, Montage);
-	}
-}
-
-void ADropCharacter::ClientItemUseStarted_Implementation(const FText& ItemName, float Duration)
-{
-	OnItemUseStarted.Broadcast(ItemName, Duration);
-}
-
-void ADropCharacter::ClientItemUseEnded_Implementation(bool bCompleted)
-{
-	OnItemUseEnded.Broadcast(bCompleted);
-}
-
 
 AWeaponBase* ADropCharacter::GetEquippedWeapon() const
 {
@@ -1394,7 +1097,6 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
 	DOREPLIFETIME(ADropCharacter, DropState);
-	DOREPLIFETIME_CONDITION(ADropCharacter, UsingItemRow, COND_OwnerOnly);
 }
 
 void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
@@ -1558,7 +1260,7 @@ float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 {
-	CancelUseItem();
+	if (InteractionComp) InteractionComp->CancelUseItem();
 	if (!HasAuthority() || !Killer)
 	{
 		return;

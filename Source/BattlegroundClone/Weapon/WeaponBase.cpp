@@ -80,18 +80,18 @@ void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 {
 	PlayFireFX();
 
-	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
+	if (AActor* OwnerActor = GetOwner(); OwnerActor && OwnerActor->Implements<UWeaponUserInterface>())
 	{
-		IWeaponUserInterface::Execute_ReceiveWeaponRecoil(Owner, RecoilPitch, RecoilYawRange, RecoilRecoverySpeed);
-		IWeaponUserInterface::Execute_NotifyWeaponFired(Owner);
+		IWeaponUserInterface::Execute_ReceiveWeaponRecoil(OwnerActor, RecoilPitch, RecoilYawRange, RecoilRecoverySpeed);
+		IWeaponUserInterface::Execute_NotifyWeaponFired(OwnerActor);
 	}
 }
 
 void AWeaponBase::MulticastReloadFX_Implementation(float Duration)
 {
-	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
+	if (AActor* OwnerActor = GetOwner(); OwnerActor && OwnerActor->Implements<UWeaponUserInterface>())
 	{
-		IWeaponUserInterface::Execute_NotifyWeaponReloadStarted(Owner, Duration);
+		IWeaponUserInterface::Execute_NotifyWeaponReloadStarted(OwnerActor, Duration);
 	}
 }
 
@@ -104,9 +104,9 @@ void AWeaponBase::StartFire()
 	}
 	if (WeaponType == EWeaponType::Melee)
 	{
-		if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
+		if (AActor* OwnerActor = GetOwner(); OwnerActor && OwnerActor->Implements<UWeaponUserInterface>())
 		{
-			IWeaponUserInterface::Execute_RequestMeleeAttack(Owner, AttackMontage);
+			IWeaponUserInterface::Execute_RequestMeleeAttack(OwnerActor, AttackMontage);
 		}
 		MeleeTrace();
 		return;
@@ -164,9 +164,9 @@ void AWeaponBase::SetScopeCaptureActive(bool bActive)
 
 void AWeaponBase::ClientShowAmmoEmpty_Implementation()
 {
-	if (AActor* Owner = GetOwner(); Owner && Owner->Implements<UWeaponUserInterface>())
+	if (AActor* OwnerActor = GetOwner(); OwnerActor && OwnerActor->Implements<UWeaponUserInterface>())
 	{
-		IWeaponUserInterface::Execute_NotifyAmmoEmpty(Owner);
+		IWeaponUserInterface::Execute_NotifyAmmoEmpty(OwnerActor);
 	}
 }
 

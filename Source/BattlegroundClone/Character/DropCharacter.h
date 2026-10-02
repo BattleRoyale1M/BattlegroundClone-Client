@@ -6,6 +6,7 @@
 #include "Core/Enums/DropTypes.h"
 #include "Core/Enums/EFireMode.h"
 #include "Weapon/WeaponUserInterface.h"
+#include "Interaction/InteractionComponent.h"
 
 #include "DropCharacter.generated.h"
 
@@ -28,10 +29,6 @@ class UMaterialInstanceDynamic;
 class UImage;
 class AItemPickupActor;
 class UBagComponent;
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNearbyPickupsChanged);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUseStarted, FText, ItemName, float, Duration);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUseEnded, bool, bCompleted);
 
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter, public IWeaponUserInterface
@@ -189,35 +186,55 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UBagComponent> BagComp;
 
+	// --- 인터랙션/줍기/가방/소모품 사용 (UInteractionComponent로 위임) ---
+	// 아래 함수·델리게이트는 위젯(WBP)이 캐릭터를 직접 캐스팅해서 쓰고 있어
+	// 기존 호출부가 깨지지 않도록 얇은 포워딩 래퍼로 유지. 실제 상태/로직은 InteractionComp에 있음.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TObjectPtr<UInteractionComponent> InteractionComp;
+
+	UFUNCTION(BlueprintPure, Category = "Interaction")
+	AActor* GetCurrentInteractable() const { return InteractionComp ? InteractionComp->GetCurrentInteractable() : nullptr; }
+
 	UFUNCTION(BlueprintPure, Category = "Inventory")
-	TArray<AItemPickupActor*> GetNearbyPickups() const;
+	TArray<AItemPickupActor*> GetNearbyPickups() const { return InteractionComp ? InteractionComp->GetNearbyPickups() : TArray<AItemPickupActor*>(); }
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestPickup(AItemPickupActor* Pickup);
-	
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestEquipFromBag(int32 BagIndex, int32 TargetSlot);
-	
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestUnequipToBag(int32 SlotIndex);
+	void RequestPickup(AItemPickupActor* Pickup) { if (InteractionComp) InteractionComp->RequestPickup(Pickup); }
 
-	bool TryPickup(AItemPickupActor* Pickup);   // 서버 전용
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestEquipFromBag(int32 BagIndex, int32 TargetSlot) { if (InteractionComp) InteractionComp->RequestEquipFromBag(BagIndex, TargetSlot); }
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestUnequipToBag(int32 SlotIndex) { if (InteractionComp) InteractionComp->RequestUnequipToBag(SlotIndex); }
+
+	bool TryPickup(AItemPickupActor* Pickup) { return InteractionComp && InteractionComp->TryPickup(Pickup); }   // 서버 전용
 
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnNearbyPickupsChanged OnNearbyPickupsChanged;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestUseItem(FName RowName);
+	void RequestUseItem(FName RowName) { if (InteractionComp) InteractionComp->RequestUseItem(RowName); }
 
 	UFUNCTION(BlueprintPure, Category = "Inventory")
-	bool IsUsingItem() const { return !UsingItemRow.IsNone(); }
+	bool IsUsingItem() const { return InteractionComp && InteractionComp->IsUsingItem(); }
 
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnItemUseStarted OnItemUseStarted; 
+	FOnItemUseStarted OnItemUseStarted;
 
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnItemUseEnded OnItemUseEnded;
 
+	UPROPERTY(BlueprintAssignable, Category = "Interaction")
+	FOnInteractableChanged OnInteractableChanged;
+
+	UFUNCTION()
+	void RelayNearbyPickupsChanged() { OnNearbyPickupsChanged.Broadcast(); }
+	UFUNCTION()
+	void RelayItemUseStarted(FText ItemName, float Duration) { OnItemUseStarted.Broadcast(ItemName, Duration); }
+	UFUNCTION()
+	void RelayItemUseEnded(bool bCompleted) { OnItemUseEnded.Broadcast(bCompleted); }
+	UFUNCTION()
+	void RelayInteractableChanged(FText PromptText) { OnInteractableChanged.Broadcast(PromptText); }
 
 protected:
 	virtual void BeginPlay() override;
@@ -295,16 +312,6 @@ protected:
 	float ProneCapsuleHalfHeight = 40.f;
 	
 
-	UPROPERTY()
-	TArray<TObjectPtr<AActor>> NearbyInteractables;
-	
-	UPROPERTY()
-	TObjectPtr<AActor> CurrentInteractable;
-
-	UFUNCTION(BlueprintPure, Category = "Interaction")
-	AActor* GetCurrentInteractable() const { return CurrentInteractable; }
-
-
 	UPROPERTY(ReplicatedUsing = OnRep_AimMode, BlueprintReadOnly, Category="Combat")
 	EDropAimMode AimMode = EDropAimMode::Hip;
 	EDropAimMode PrevAimMode = EDropAimMode::Hip;
@@ -330,60 +337,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float AimTapThreshold = 0.18f;
 	
-	/*
-	Interaction
-	*/
-	void OnInteractPressed();
-	
-	UFUNCTION(Server, Reliable)
-	void ServerInteract(AActor* InteractActor);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerPickup(AItemPickupActor* Pickup);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerEquipFromBag(int32 BagIndex, int32 TargetSlot);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerUnequipToBag(int32 SlotIndex);
-	
-	//--
-	UFUNCTION(Server, Reliable)
-	void ServerUseItem(FName RowName);
-	UFUNCTION(Server, Reliable)
-	void ServerCancelUseItem();
-
-	void CancelUseItem();
-	void FinishUseItem();
-	void RequestCancelUseItem();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayUseMontage(UAnimMontage* Montage, float Duration);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStopUseMontage(UAnimMontage* Montage);
-
-	UFUNCTION(Client, Reliable)
-	void ClientItemUseStarted(const FText& ItemName, float Duration);
-	UFUNCTION(Client, Reliable)
-	void ClientItemUseEnded(bool bCompleted);
-
-	UPROPERTY(Replicated)
-	FName UsingItemRow;
-
-	FTimerHandle UseItemTimer;
-	//--
-
-	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
-	float MaxPickupDistance = 300.f;
-	
-	UFUNCTION()
-	void OnInteractableBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnInteractableEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
-	void UpdateCurrentInteractable();
-	
-	
 	float AimPressTime = 0.f;
 	
 	void OnAimPressed();
@@ -394,12 +347,7 @@ protected:
 	void StartFire();
 	void StopFire();
 	void OnReloadPressed();
-	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableChanged, FText, PromptText);
 
-	UPROPERTY(BlueprintAssignable, Category = "Interaction")
-	FOnInteractableChanged OnInteractableChanged;
-	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TArray<TObjectPtr<UInputAction>> WeaponSlotActions;
 
