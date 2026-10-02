@@ -26,6 +26,16 @@
 
 ---
 
+## 🛠️ 핵심 기술 요약
+
+> * **네트워크 동기화**: 서버 권위(Server Authority) 기반의 멀티플레이어 리플리케이션 적용
+> * **모듈식 구조**: 낙하, 전투, 인벤토리 도메인을 컴포넌트 단위로 분리하여 독립적인 관리 및 확장 구현
+> * **유연한 프레임워크**: 컴포넌트와 인터페이스 중심의 설계로 높은 재사용성과 확장성 확보
+
+
+---
+
+
 ## 🗺️ Architecture
 
 ```mermaid
@@ -36,15 +46,15 @@ flowchart TD
     classDef domain fill:#16192B,stroke:#555,stroke-width:1px,color:#ccc;
 
     %% 노드 배치
-    UI["UI<br/>HUD / MiniMap / Widgets"]:::ui
-    Core["⚙️Core<br/>GameMode / Controller / State"]:::core
+    UI["🖥 UI<br/>HUD / MiniMap / Widgets"]:::ui
+    Core["⚙️ Core<br/>GameMode / Controller / State"]:::core
     
-    Drop["Drop<br/>AAirPlane"]:::domain
-    Character["👤Character<br/>ADropCharacter"]:::core
+    Drop["✈️ Drop<br/>AAirPlane"]:::domain
+    Character["👤 Character<br/>ADropCharacter"]:::core
     
-    Combat["Combat<br/>UHealthComponent"]:::domain
-    Weapon["Weapon<br/>WeaponBase / Inventory"]:::domain
-    Interaction["Interaction<br/>Interface / Pickup"]:::domain
+    Combat["❤️ Combat<br/>UHealthComponent"]:::domain
+    Weapon["🔫 Weapon<br/>WeaponBase / Inventory"]:::domain
+    Interaction["📦 Interaction<br/>Interface / Pickup"]:::domain
 
     %% 연결 관계
     UI -->|데이터 공급 / 입력| Core
@@ -54,11 +64,3 @@ flowchart TD
     Character -->|IInteractableInterface 호환| Interaction
     Character -->|owns HealthComponent| Combat
     Character -->|owns InventoryComponent| Weapon
-
----
-
-## 🛠️ 핵심 기술 요약
-
-> * **네트워크 동기화**: 서버 권위(Server Authority) 기반의 멀티플레이어 리플리케이션 적용
-> * **모듈식 구조**: 낙하, 전투, 인벤토리 도메인을 컴포넌트 단위로 분리하여 독립적인 관리 및 확장 구현
-> * **유연한 프레임워크**: 컴포넌트와 인터페이스 중심의 설계로 높은 재사용성과 확장성 확보
