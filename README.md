@@ -1,5 +1,9 @@
 # 🎮 BattlegroundClone
 
+<img width="1916" height="1025" alt="ReadMe" src="https://github.com/user-attachments/assets/089046f1-45ed-4d80-8c43-cecf686312ce" />
+
+---
+
 <p>
   <img src="https://img.shields.io/badge/Unreal%20Engine-5.8-0E1128?logo=unrealengine&logoColor=white" alt="Unreal Engine 5.8" />
   <img src="https://img.shields.io/badge/Genre-Battle%20Royale-F9A825" alt="Battle Royale" />
@@ -11,10 +15,10 @@
 
 ---
 
-## 🌟 주요 게임 특징
+## 주요 게임 특징
 
 - **비행기 탑승 및 낙하 시퀀스**
-  - 상공을 가르는 비행기에서 자유낙하와 낙하산 개방을 거쳐 전장에 착지하는 배틀로얄의 상징적인 시작구현했습니다.
+  - 상공을 가르는 비행기에서 자유낙하와 낙하산 개방을 거쳐 전장에 착지하는 배틀로얄의 상징적인 시작을 구현했습니다.
 - **파밍 및 무기 인벤토리**
   - 필드 곳곳의 상자와 아이템을 뒤져 주무기와 보조무기를 획득하고 슬롯에 장착하여 실시간으로 전황에 맞는 장비를 갖출 수 있습니다.
 - **멀티플레이 생존**
