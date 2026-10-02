@@ -105,7 +105,7 @@ ADropCharacter::ADropCharacter()
 	ParachuteMesh->SetGenerateOverlapEvents(false);
 	ParachuteMesh->SetVisibility(false);
 	ParachuteMesh->SetHiddenInGame(true);
-	
+
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleOwnDeath);
@@ -117,10 +117,13 @@ ADropCharacter::ADropCharacter()
 	InputBindingComp = CreateDefaultSubobject<UInputBindingComponent>(TEXT("InputBindingComp"));
 }
 
+/*
+엔진 오버라이드
+*/
 void ADropCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	UCharacterMovementComponent* Move = GetCharacterMovement();
 	Move->GetNavAgentPropertiesRef().bCanCrouch = true;
 	Move->SetCrouchedHalfHeight(ProneCapsuleHalfHeight);
@@ -146,56 +149,6 @@ void ADropCharacter::PawnClientRestart()
 		{
 			InputBindingComp->AddMappingContext(PC);
 		}
-	}
-}
-
-/*
-IWeaponUserInterface
-*/
-void ADropCharacter::ReceiveWeaponRecoil_Implementation(float Pitch, float YawRange, float RecoverySpeed)
-{
-	AddRecoil(Pitch, YawRange, RecoverySpeed);
-}
-void ADropCharacter::NotifyWeaponFired_Implementation()
-{
-	if (WeaponInventory) WeaponInventory->PlayFireMontage();
-}
-void ADropCharacter::NotifyWeaponReloadStarted_Implementation(float Duration)
-{
-	if (WeaponInventory) WeaponInventory->HandleReloadStarted(Duration);
-}
-void ADropCharacter::RequestMeleeAttack_Implementation(UAnimMontage* AttackMontage)
-{
-	MeleeAttack(AttackMontage);
-}
-void ADropCharacter::NotifyAmmoEmpty_Implementation()
-{
-	if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
-		PC->ShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("탄약 없음")), FLinearColor(1.f, 0.3f, 0.1f));
-}
-
-
-/*
-낙하산
-*/
-void ADropCharacter::BeginFreefall()
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-	if (DropState != EDropState::InPlane) return;
-
-	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
-	BoardedPlane = nullptr;
-
-	SetDropState(EDropState::Freefall);
-
-	if (UCharacterMovementComponent* M = GetCharacterMovement())
-	{
-		FVector Dir = GetControlRotation().Vector();
-		Dir.Z = FMath::Min(Dir.Z, -0.4f);
-		M->Velocity = Dir.GetSafeNormal() * FreefallMinSpeed;
 	}
 }
 
@@ -245,91 +198,57 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	}
 }
 
-void ADropCharacter::OnJumpPressed()
+void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (InteractionComp) InteractionComp->RequestCancelUseItem();
-	Jump();
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
+	DOREPLIFETIME(ADropCharacter, DropState);
 }
 
-void ADropCharacter::OnParachutePressed()
+float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (DropState == EDropState::InPlane)
+	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	FVector ShotDirection = GetActorForwardVector();
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
-		ServerBeginFreefall();
+		const FPointDamageEvent& PointDamageEvent = static_cast<const FPointDamageEvent&>(DamageEvent);
+		ShotDirection = PointDamageEvent.ShotDirection;
 	}
-	else if (DropState == EDropState::Freefall)
+	if (HealthComp)
 	{
-		ServerDeployParachute();
+		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser, ShotDirection);
 	}
+	return Applied;
 }
 
-void ADropCharacter::OnFastFallPressed()
+/*
+IWeaponUserInterface
+*/
+void ADropCharacter::ReceiveWeaponRecoil_Implementation(float Pitch, float YawRange, float RecoverySpeed)
 {
-	if (DropState == EDropState::Freefall)
-	{
-		bIsFastFalling = true;
-	}
+	AddRecoil(Pitch, YawRange, RecoverySpeed);
+}
+void ADropCharacter::NotifyWeaponFired_Implementation()
+{
+	if (WeaponInventory) WeaponInventory->PlayFireMontage();
+}
+void ADropCharacter::NotifyWeaponReloadStarted_Implementation(float Duration)
+{
+	if (WeaponInventory) WeaponInventory->HandleReloadStarted(Duration);
+}
+void ADropCharacter::RequestMeleeAttack_Implementation(UAnimMontage* AttackMontage)
+{
+	MeleeAttack(AttackMontage);
+}
+void ADropCharacter::NotifyAmmoEmpty_Implementation()
+{
+	if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
+		PC->ShowCenterNotification(FText::GetEmpty(), FText::FromString(TEXT("탄약 없음")), FLinearColor(1.f, 0.3f, 0.1f));
 }
 
-void ADropCharacter::OnFastFallReleased()
-{
-	bIsFastFalling = false;
-}
-
-void ADropCharacter::BeginScopedWeapon(AWeaponBase* Weapon)
-{
-	if (!Weapon || ScopedWeapon == Weapon)
-	{
-		return;
-	}
-	ScopedWeapon = Weapon;
-	ScopeAlpha = 0.f;
-	ScopeFromArm = CameraBoom->TargetArmLength;
-	ScopeFromOffset = CameraBoom->SocketOffset;
-	ScopeFromFOV = FollowCamera->FieldOfView;
-	Weapon->AttachToComponent(FollowCamera, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	Weapon->SetScopeCaptureActive(true);
-	if (GetMesh())
-	{
-		GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
-	}
-}
-
-void ADropCharacter::EndScopedWeapon()
-{
-	AWeaponBase* Weapon = ScopedWeapon.Get();
-	ScopedWeapon = nullptr;
-	ScopeAlpha = 0.f;
-	if (GetMesh())
-	{
-		GetMesh()->UnHideBoneByName(TEXT("head"));
-	}
-	if (!Weapon)
-	{
-		return;
-	}
-	Weapon->SetScopeCaptureActive(false);
-	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponInventory->GetCurrentAttachSocket());
-	Weapon->SetActorRelativeLocation(FVector::ZeroVector);
-	Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
-}
-
-FTransform ADropCharacter::GetScopedWeaponTransform(const AWeaponBase* Weapon) const
-{
-	if (Weapon->UsesScopedLens())
-	{
-		return FTransform(ScopedWeaponRotation, ScopedWeaponOffset);
-	}
-	const UStaticMeshComponent* WM = Weapon->GetWeaponMesh();
-	if (WM && WM->DoesSocketExist(TEXT("Aim")))
-	{
-		FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
-		Inv.ConcatenateRotation(Weapon->GetAimCameraRotationOffset().Quaternion());
-		return FTransform(Inv.GetRotation(), Inv.GetLocation());
-	}
-	return FTransform::Identity;
-}
-
+/*
+입력 - 이동/점프
+*/
 void ADropCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D Axis = Value.Get<FVector2D>();
@@ -352,7 +271,7 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	const FVector2D Axis = Value.Get<FVector2D>();
 	AddControllerYawInput(Axis.X);
 	AddControllerPitchInput(Axis.Y);
-	
+
 	const bool bIsPullingDown = (Axis.Y > 0.0f);
 	const bool bHasAccumulatedRecoil = (RecoilAccumPitch > 0.0f);
 	if (bIsPullingDown && bHasAccumulatedRecoil)
@@ -361,6 +280,83 @@ void ADropCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ADropCharacter::OnJumpPressed()
+{
+	if (InteractionComp) InteractionComp->RequestCancelUseItem();
+	Jump();
+}
+
+/*
+포복
+*/
+void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
+{
+	if (!CanActOnGround() || (InteractionComp && InteractionComp->IsUsingItem()))
+	{
+		return;
+	}
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
+	}
+}
+
+void ADropCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	if (WeaponInventory)
+	{
+		WeaponInventory->RefreshWeaponAttach();
+	}
+}
+
+void ADropCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+	if (WeaponInventory)
+	{
+		WeaponInventory->RefreshWeaponAttach();
+	}
+}
+
+/*
+반동
+*/
+void ADropCharacter::AddRecoil(float Pitch, float YawRange, float RecoverySpeed)
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	AddControllerPitchInput(-Pitch);
+	AddControllerYawInput(FMath::RandRange(-YawRange, YawRange));
+	RecoilAccumPitch += Pitch;
+	RecoilRecoverySpeed = RecoverySpeed;
+	LastRecoilTime = GetWorld()->GetTimeSeconds();
+}
+
+void ADropCharacter::UpdateRecoilRecovery(float DeltaTime)
+{
+	if (RecoilAccumPitch <= 0.f)
+	{
+		return;
+	}
+	if (GetWorld()->GetTimeSeconds() - LastRecoilTime < RecoilRecoveryDelay)
+	{
+		return;
+	}
+	const float NewAccum = FMath::FInterpTo(RecoilAccumPitch, 0.f, DeltaTime, RecoilRecoverySpeed);
+	AddControllerPitchInput(RecoilAccumPitch - NewAccum);
+	RecoilAccumPitch = NewAccum < 0.01f ? 0.f : NewAccum;
+}
+
+/*
+Drop 상태 머신
+*/
 void ADropCharacter::SetDropState(EDropState NewState)
 {
 	if (DropState == NewState)
@@ -369,7 +365,7 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	}
 	const EDropState Old = DropState;
 	DropState = NewState; // ★ 서버에서만 호출됨 → 복제 → 클라 OnRep_DropState
-	
+
 	if (NewState != EDropState::Ground && AimMode != EDropAimMode::Hip)
 	{
 		SetAimMode(EDropAimMode::Hip);
@@ -379,218 +375,163 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	PrevDropState = NewState;
 }
 
-void ADropCharacter::ShowParachutePrompt()
+void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 {
-	if (!ParachutePromptWidgetClass || ParachutePromptWidget) return;
-	if (!IsLocallyControlled()) return; // network
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	if (IsLocallyControlled())
 	{
-		ParachutePromptWidget = CreateWidget<UUserWidget>(PC, ParachutePromptWidgetClass);
-		if (ParachutePromptWidget)
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
 		{
-			ParachutePromptWidget->AddToViewport();
+			bool bIsOnGround = (NewState == EDropState::Ground);
+			PC->SetGameplayHUDVisible(bIsOnGround);
 		}
 	}
+
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
+	{
+		switch (NewState)
+		{
+		case EDropState::InPlane:
+			M->DisableMovement();
+			break;
+
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
+			M->GravityScale = 0.f;
+			M->AirControl = 1.f;
+			M->bOrientRotationToMovement = false;
+			bUseControllerRotationYaw = true;
+			break;
+
+		case EDropState::Ground:
+		default:
+			M->GravityScale = 1.f;
+			M->AirControl = 0.35f;
+			M->bOrientRotationToMovement = true;
+			bUseControllerRotationYaw = false;
+			M->SetMovementMode(MOVE_Walking);
+			break;
+		}
+	}
+
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetVisibility(NewState != EDropState::InPlane);
+	}
+
+	if (IsLocallyControlled() && CameraBoom)
+	{
+		switch (NewState)
+		{
+		case EDropState::InPlane:
+			CameraBoom->TargetArmLength  = InPlaneArmLength;
+			CameraBoom->SocketOffset     = InPlaneSocketOffset;
+			CameraBoom->bDoCollisionTest = false;
+			break;
+		case EDropState::Freefall:
+		case EDropState::Parachuting:
+			CameraBoom->TargetArmLength  = DescentArmLength;
+			CameraBoom->SocketOffset     = DescentSocketOffset;
+			CameraBoom->bDoCollisionTest = false;
+			break;
+		case EDropState::Ground:
+			CameraBoom->TargetArmLength  = DefaultArmLength;
+			CameraBoom->SocketOffset     = FVector::ZeroVector;
+			CameraBoom->bDoCollisionTest = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (NewState == EDropState::Freefall)
+	{
+		ShowParachutePrompt();
+	}
+	else
+	{
+		HideParachutePrompt();
+	}
+	if (NewState == EDropState::Parachuting)
+	{
+		ShowParachute();
+	}
+	else if (OldState == EDropState::Parachuting)
+	{
+		HideParachute();
+	}
+
+	OnDropStateChanged(NewState, OldState);
 }
 
-void ADropCharacter::HideParachutePrompt()
+void ADropCharacter::OnRep_DropState()
 {
-	if (!ParachutePromptWidget) return;
-	ParachutePromptWidget->RemoveFromParent();
-	ParachutePromptWidget = nullptr;
+	ApplyDropState(PrevDropState, DropState);
+	PrevDropState = DropState;
 }
 
-/*
-스코프
-*/
-
-void ADropCharacter::ShowScopeOverlay()
+void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
 {
-	if (!IsLocallyControlled())
-	{
-		return;
-	}
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		if (!ScopeOverlayClass) // 클래스가 지정되어있지 않았을때
-		{
-			return;
-		}
-		if (!ScopeOverlayWidget) // 위젯이 없을때
-		{
-			ScopeOverlayWidget = CreateWidget<UUserWidget>(PC, ScopeOverlayClass);
-			if (ScopeOverlayWidget)
-			{
-				ScopeOverlayWidget ->AddToViewport();
-			}
-		}
-		if (ScopeOverlayWidget) // 위젯이 있을때
-		{
-			ScopeOverlayWidget -> SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
-	}
-}
+	if (!HasAuthority()) return;
+	if (!Plane || !Seat) return;
 
-void ADropCharacter::HideScopeOverlay()
-{
-	if (ScopeOverlayWidget)
-	{
-		ScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
-	}
-}
+	BoardedPlane = Plane;
+	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	SetDropState(EDropState::InPlane);
 
-/*
-저격 스코프 렌즈: SceneCapture로 좁은 FOV를 렌더타겟에 찍고, 원형 마스크 머티리얼로 화면 중앙에 표시.
-메인 카메라는 줌하지 않고, 화면 전체가 아니라 렌즈 원 안에서만 확대되어 보임.
-*/
-void ADropCharacter::ShowSniperScope()
-{
-	if (!IsLocallyControlled() || !ScopeCapture)
+	if (AController* C = GetController())
 	{
-		return;
-	}
-
-	if (!ScopeRenderTarget)
-	{
-		ScopeRenderTarget = NewObject<UTextureRenderTarget2D>(this);
-		ScopeRenderTarget->InitAutoFormat(ScopeRenderTargetSize, ScopeRenderTargetSize);
-		ScopeRenderTarget->UpdateResourceImmediate(true);
-		ScopeCapture->TextureTarget = ScopeRenderTarget;
-	}
-
-	if (const AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr)
-	{
-		ScopeCapture->FOVAngle = Weapon->GetScopedFOV();
-	}
-	ScopeCapture->bCaptureEveryFrame = true;
-	ScopeCapture->SetActive(true);
-
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		if (!SniperScopeOverlayClass)
-		{
-			return;
-		}
-		if (!SniperScopeOverlayWidget)
-		{
-			SniperScopeOverlayWidget = CreateWidget<UUserWidget>(PC, SniperScopeOverlayClass);
-			if (SniperScopeOverlayWidget)
-			{
-				SniperScopeOverlayWidget->AddToViewport(10); // 크로스헤어보다 위에
-			}
-		}
-		if (SniperScopeOverlayWidget)
-		{
-			if (!ScopeLensMID && ScopeLensMaterial)
-			{
-				ScopeLensMID = UMaterialInstanceDynamic::Create(ScopeLensMaterial, this);
-			}
-			if (ScopeLensMID)
-			{
-				ScopeLensMID->SetTextureParameterValue(TEXT("ScopeTexture"), ScopeRenderTarget);
-				if (UImage* LensImage = Cast<UImage>(SniperScopeOverlayWidget->GetWidgetFromName(TEXT("LensImage"))))
-				{
-					LensImage->SetBrushFromMaterial(ScopeLensMID);
-
-					const FVector2D LensSize = LensImage->GetCachedGeometry().GetLocalSize();
-					if (LensSize.Y > 0.f)
-					{
-						ScopeLensMID->SetScalarParameterValue(TEXT("AspectRatio"), LensSize.X / LensSize.Y);
-					}
-				}
-			}
-			SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
-	}
-}
-
-void ADropCharacter::HideSniperScope()
-{
-	if (ScopeCapture)
-	{
-		ScopeCapture->SetActive(false);
-		ScopeCapture->bCaptureEveryFrame = false;
-	}
-	if (SniperScopeOverlayWidget)
-	{
-		SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw() + InPlaneYawOffset, 0.f));
 	}
 }
 
 /*
-인벤토리 캐릭터 프리뷰 (자신 + 부착 무기만 캡처, 배경 투명)
+낙하산 - 자유낙하/전개
 */
-void ADropCharacter::StartInventoryPreview(UImage* TargetImage)
+void ADropCharacter::BeginFreefall()
 {
-	if (!IsLocallyControlled() || !PreviewCapture)
+	if (!HasAuthority())
 	{
 		return;
 	}
+	if (DropState != EDropState::InPlane) return;
 
-	if (!PreviewRenderTarget)
-	{
-		PreviewRenderTarget = NewObject<UTextureRenderTarget2D>(this);
-		PreviewRenderTarget->ClearColor = FLinearColor(0.f, 0.f, 0.f, 1.f); // 알파 1 = 빈 배경
-		PreviewRenderTarget->InitCustomFormat(PreviewRenderTargetSize.X, PreviewRenderTargetSize.Y, PF_FloatRGBA, true);
-		PreviewRenderTarget->UpdateResourceImmediate(true);
-		PreviewCapture->TextureTarget = PreviewRenderTarget;
-	}
+	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	BoardedPlane = nullptr;
 
-	PreviewCapture->SetRelativeLocationAndRotation(PreviewCaptureOffset, FRotator(0.f, 180.f, 0.f));
-	PreviewCapture->FOVAngle = PreviewFOV;
-	RefreshPreviewShowList();
-	PreviewCapture->bCaptureEveryFrame = true;
-	PreviewCapture->SetActive(true);
+	SetDropState(EDropState::Freefall);
 
-	if (!TargetImage || !PreviewMaterial)
+	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
-		return;
-	}
-	if (!PreviewMID)
-	{
-		PreviewMID = UMaterialInstanceDynamic::Create(PreviewMaterial, this);
-	}
-	PreviewMID->SetTextureParameterValue(TEXT("PreviewTexture"), PreviewRenderTarget);
-	PreviewMID->SetScalarParameterValue(TEXT("Brightness"), PreviewBrightness);
-	TargetImage->SetBrushFromMaterial(PreviewMID);
-	TargetImage->SetColorAndOpacity(FLinearColor::White); // WBP 기본 알파 0
-}
-
-void ADropCharacter::StopInventoryPreview()
-{
-	if (PreviewCapture)
-	{
-		PreviewCapture->SetActive(false);
-		PreviewCapture->bCaptureEveryFrame = false;
+		FVector Dir = GetControlRotation().Vector();
+		Dir.Z = FMath::Min(Dir.Z, -0.4f);
+		M->Velocity = Dir.GetSafeNormal() * FreefallMinSpeed;
 	}
 }
 
-void ADropCharacter::RefreshPreviewShowList()
-{
-	PreviewCapture->ShowOnlyActors.Reset();
-	PreviewCapture->ShowOnlyActors.Add(this);
-
-	TArray<AActor*> Attached;
-	GetAttachedActors(Attached, true, true);
-	for (AActor* Actor : Attached)
-	{
-		PreviewCapture->ShowOnlyActors.Add(Actor);
-	}
-}
-
-/*
-활강속도
-*/
 void ADropCharacter::UpdateFreefall(float Dt)
 {
 	float TargetSpeed = bIsFastFalling ? FreefallMaxSpeed : FreefallMinSpeed;
-	
+
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	if (!M) return;
 
 	FVector Desired = GetControlRotation().Vector() * 800.f; // 조작감용 약간의 활강
 	Desired.Z = -TargetSpeed;
 	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel); // 바람저항
+}
+
+void ADropCharacter::DeployParachute()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	if (DropState != EDropState::Freefall)
+	{
+		return;
+	}
+	SetDropState(EDropState::Parachuting);
 }
 
 void ADropCharacter::UpdateParachute(float Dt)
@@ -631,6 +572,44 @@ float ADropCharacter::GroundDistance() const
 	return TNumericLimits<float>::Max();
 }
 
+void ADropCharacter::OnFastFallPressed()
+{
+	if (DropState == EDropState::Freefall)
+	{
+		bIsFastFalling = true;
+	}
+}
+
+void ADropCharacter::OnFastFallReleased()
+{
+	bIsFastFalling = false;
+}
+
+void ADropCharacter::OnParachutePressed()
+{
+	if (DropState == EDropState::InPlane)
+	{
+		ServerBeginFreefall();
+	}
+	else if (DropState == EDropState::Freefall)
+	{
+		ServerDeployParachute();
+	}
+}
+
+void ADropCharacter::ServerBeginFreefall_Implementation()
+{
+	BeginFreefall();
+}
+
+void ADropCharacter::ServerDeployParachute_Implementation()
+{
+	DeployParachute();
+}
+
+/*
+낙하산 - 비주얼
+*/
 void ADropCharacter::ShowParachute()
 {
 	if (!ParachuteMesh) return;
@@ -651,32 +630,84 @@ void ADropCharacter::HideParachute()
 	ParachuteMesh->SetHiddenInGame(true, true);
 }
 
-void ADropCharacter::OnRep_AimMode()
+void ADropCharacter::UpdateParachuteVisual(float Dt)
 {
-	const EDropAimMode OldMode = PrevAimMode;
-	bIsAiming = (AimMode != EDropAimMode::Hip);
-	ApplyAimVisuals(OldMode, AimMode);
-	PrevAimMode = AimMode;
+	if (!ParachuteMesh) return;
+
+	/*
+	펼침 : 0 -> ParachuteOpenScale 로 ParachuteDeployTime 동안 ease-out
+	*/
+	ParachuteDeployElapsed += Dt;
+	const float OpenAlpha = (ParachuteDeployTime > 0.f)
+		? FMath::Clamp(ParachuteDeployElapsed / ParachuteDeployTime, 0.f, 1.f)
+		:1.f;
+	const float Eased = 1.f -FMath::Square(1.f - OpenAlpha);
+	const float Scale = FMath::Max(ParachuteOpenScale*Eased, 0.01f);
+	ParachuteMesh -> SetRelativeScale3D(FVector(Scale));
+
+	// 단위 시간당 회전하는 각도의 크기
+	const float Yaw = GetActorRotation().Yaw;
+	const float YawRate = FMath::FindDeltaAngleDegrees(LastYawForLean, Yaw) // -180°~180° 경계 영역에서의 회전각 오차방지
+		/ FMath::Max(Dt, KINDA_SMALL_NUMBER);
+	LastYawForLean = Yaw;
+
+	FRotator Rot = ParachuteRelativeRotation;
+	const float SwayBlend = FMath::Clamp((OpenAlpha - 0.5f) * 2.f, 0.f, 1.f);
+	if (SwayBlend > 0.f)
+	{
+		const float T = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+		// FMath::Sin(...) * ParachuteSwayAngle : 바람 흔들림
+		Rot.Pitch += FMath::Sin(T*ParachuteSwaySpeed)*ParachuteSwayAngle*SwayBlend;
+		Rot.Roll += FMath::Sin(T * ParachuteSwaySpeed * 0.73f + 1.3f)
+			* ParachuteSwayAngle * 0.6f * SwayBlend;
+		if (const UCharacterMovementComponent* M = GetCharacterMovement())
+		{
+			const FVector LocalVel =
+				GetActorTransform().InverseTransformVectorNoScale(M->Velocity);
+			const float Denom = FMath::Max(ParachuteForwardSpeed, 1.f);
+			const float LeanPitch = FMath::Clamp(
+				-LocalVel.X / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
+			const float LeanRoll = FMath::Clamp(
+				 LocalVel.Y / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
+			Rot.Pitch += LeanPitch * SwayBlend;
+			Rot.Roll  += LeanRoll  * SwayBlend;
+		}
+		Rot.Roll += FMath::Clamp(
+			YawRate * ParachuteTurnLeanScale, -ParachuteMaxLean, ParachuteMaxLean) * SwayBlend;
+	}
+	ParachuteMesh->SetRelativeRotation(Rot);
 }
 
-void ADropCharacter::ServerSetAimMode_Implementation(EDropAimMode NewMode)
+void ADropCharacter::ShowParachutePrompt()
 {
-	if (AimMode == NewMode) return;
-	const EDropAimMode OldMode = AimMode;
-	AimMode   = NewMode;
-	bIsAiming = (AimMode != EDropAimMode::Hip);
-	ApplyAimVisuals(OldMode, NewMode);
+	if (!ParachutePromptWidgetClass || ParachutePromptWidget) return;
+	if (!IsLocallyControlled()) return; // network
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		ParachutePromptWidget = CreateWidget<UUserWidget>(PC, ParachutePromptWidgetClass);
+		if (ParachutePromptWidget)
+		{
+			ParachutePromptWidget->AddToViewport();
+		}
+	}
+}
+
+void ADropCharacter::HideParachutePrompt()
+{
+	if (!ParachutePromptWidget) return;
+	ParachutePromptWidget->RemoveFromParent();
+	ParachutePromptWidget = nullptr;
 }
 
 /*
-Aim
+Aim 상태
 */
 void ADropCharacter::OnAimPressed()
 {
 	if (!CanActOnGround()) return;
 	AimPressTime = GetWorld()->GetTimeSeconds();
 	if (AimMode == EDropAimMode::Scoped) return; // 스코프 중 다시 누름
-	SetAimMode(EDropAimMode::Shoulder); 
+	SetAimMode(EDropAimMode::Shoulder);
 }
 
 // aim 해제
@@ -701,13 +732,13 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 	{
 		NewMode = EDropAimMode::Hip;
 	}
-	
+
 	// ★ 스코프 상태일때는 카메라의 YAW에 따라 캐릭터도 움직여야함 ★
 	if (AimMode == NewMode) return;
 	const EDropAimMode OldMode = AimMode;
 	AimMode = NewMode;
 	bIsAiming = (AimMode != EDropAimMode::Hip);
-	
+
 	ApplyAimVisuals(OldMode, NewMode);
 	if (!HasAuthority())
 	{
@@ -715,66 +746,21 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 	}
 }
 
-void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
+void ADropCharacter::OnRep_AimMode()
 {
-	if (!CanActOnGround() || (InteractionComp && InteractionComp->IsUsingItem()))
-	{
-		return;
-	}
-	if (bIsCrouched)
-	{
-		UnCrouch();
-	}
-	else
-	{
-		Crouch();
-	}
+	const EDropAimMode OldMode = PrevAimMode;
+	bIsAiming = (AimMode != EDropAimMode::Hip);
+	ApplyAimVisuals(OldMode, AimMode);
+	PrevAimMode = AimMode;
 }
 
-void ADropCharacter::AddRecoil(float Pitch, float YawRange, float RecoverySpeed)
+void ADropCharacter::ServerSetAimMode_Implementation(EDropAimMode NewMode)
 {
-	if (!IsLocallyControlled())
-	{
-		return;
-	}
-	AddControllerPitchInput(-Pitch);
-	AddControllerYawInput(FMath::RandRange(-YawRange, YawRange));
-	RecoilAccumPitch += Pitch;
-	RecoilRecoverySpeed = RecoverySpeed;
-	LastRecoilTime = GetWorld()->GetTimeSeconds();
-}
-
-void ADropCharacter::UpdateRecoilRecovery(float DeltaTime)
-{
-	if (RecoilAccumPitch <= 0.f)
-	{
-		return;
-	}
-	if (GetWorld()->GetTimeSeconds() - LastRecoilTime < RecoilRecoveryDelay)
-	{
-		return;
-	}
-	const float NewAccum = FMath::FInterpTo(RecoilAccumPitch, 0.f, DeltaTime, RecoilRecoverySpeed);
-	AddControllerPitchInput(RecoilAccumPitch - NewAccum);
-	RecoilAccumPitch = NewAccum < 0.01f ? 0.f : NewAccum;
-}
-
-void ADropCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
-{
-	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-	if (WeaponInventory)
-	{
-		WeaponInventory->RefreshWeaponAttach();
-	}
-}
-
-void ADropCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
-{
-	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-	if (WeaponInventory)
-	{
-		WeaponInventory->RefreshWeaponAttach();
-	}
+	if (AimMode == NewMode) return;
+	const EDropAimMode OldMode = AimMode;
+	AimMode   = NewMode;
+	bIsAiming = (AimMode != EDropAimMode::Hip);
+	ApplyAimVisuals(OldMode, NewMode);
 }
 
 void ADropCharacter::ApplyAimVisuals(EDropAimMode OldMode, EDropAimMode NewMode)
@@ -877,54 +863,9 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 	Weapon->SetActorRelativeRotation((ScopedRaiseRotation * (1.f - Spring)).Quaternion() * Aimed.GetRotation());
 }
 
-void ADropCharacter::UpdateParachuteVisual(float Dt)
-{
-	if (!ParachuteMesh) return;
-	
-	/*
-	펼침 : 0 -> ParachuteOpenScale 로 ParachuteDeployTime 동안 ease-out
-	*/
-	ParachuteDeployElapsed += Dt;
-	const float OpenAlpha = (ParachuteDeployTime > 0.f)
-		? FMath::Clamp(ParachuteDeployElapsed / ParachuteDeployTime, 0.f, 1.f)
-		:1.f;
-	const float Eased = 1.f -FMath::Square(1.f - OpenAlpha);
-	const float Scale = FMath::Max(ParachuteOpenScale*Eased, 0.01f);
-	ParachuteMesh -> SetRelativeScale3D(FVector(Scale));
-	
-	// 단위 시간당 회전하는 각도의 크기
-	const float Yaw = GetActorRotation().Yaw;
-	const float YawRate = FMath::FindDeltaAngleDegrees(LastYawForLean, Yaw) // -180°~180° 경계 영역에서의 회전각 오차방지
-		/ FMath::Max(Dt, KINDA_SMALL_NUMBER);
-	LastYawForLean = Yaw;
-	
-	FRotator Rot = ParachuteRelativeRotation;
-	const float SwayBlend = FMath::Clamp((OpenAlpha - 0.5f) * 2.f, 0.f, 1.f);
-	if (SwayBlend > 0.f)
-	{
-		const float T = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
-		// FMath::Sin(...) * ParachuteSwayAngle : 바람 흔들림
-		Rot.Pitch += FMath::Sin(T*ParachuteSwaySpeed)*ParachuteSwayAngle*SwayBlend;
-		Rot.Roll += FMath::Sin(T * ParachuteSwaySpeed * 0.73f + 1.3f)
-			* ParachuteSwayAngle * 0.6f * SwayBlend;
-		if (const UCharacterMovementComponent* M = GetCharacterMovement())
-		{
-			const FVector LocalVel =
-				GetActorTransform().InverseTransformVectorNoScale(M->Velocity);
-			const float Denom = FMath::Max(ParachuteForwardSpeed, 1.f);
-			const float LeanPitch = FMath::Clamp(
-				-LocalVel.X / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
-			const float LeanRoll = FMath::Clamp(
-				 LocalVel.Y / Denom * ParachuteLeanScale, -ParachuteMaxLean, ParachuteMaxLean);
-			Rot.Pitch += LeanPitch * SwayBlend;
-			Rot.Roll  += LeanRoll  * SwayBlend;
-		}
-		Rot.Roll += FMath::Clamp(
-			YawRate * ParachuteTurnLeanScale, -ParachuteMaxLean, ParachuteMaxLean) * SwayBlend;
-	}
-	ParachuteMesh->SetRelativeRotation(Rot);
-}
-
+/*
+무기 발사/재장전 입력
+*/
 void ADropCharacter::StartFire()
 {
 	if (!CanAct())
@@ -942,7 +883,7 @@ void ADropCharacter::StartFire()
 	{
 		return;
 	}
-	
+
 	if (WeaponInventory)
 	{
 		WeaponInventory->StartFire();
@@ -969,6 +910,179 @@ void ADropCharacter::OnReloadPressed()
 	}
 }
 
+/*
+스코프 - 숄더 크로스헤어
+*/
+void ADropCharacter::ShowScopeOverlay()
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (!ScopeOverlayClass) // 클래스가 지정되어있지 않았을때
+		{
+			return;
+		}
+		if (!ScopeOverlayWidget) // 위젯이 없을때
+		{
+			ScopeOverlayWidget = CreateWidget<UUserWidget>(PC, ScopeOverlayClass);
+			if (ScopeOverlayWidget)
+			{
+				ScopeOverlayWidget ->AddToViewport();
+			}
+		}
+		if (ScopeOverlayWidget) // 위젯이 있을때
+		{
+			ScopeOverlayWidget -> SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+	}
+}
+
+void ADropCharacter::HideScopeOverlay()
+{
+	if (ScopeOverlayWidget)
+	{
+		ScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void ADropCharacter::BeginScopedWeapon(AWeaponBase* Weapon)
+{
+	if (!Weapon || ScopedWeapon == Weapon)
+	{
+		return;
+	}
+	ScopedWeapon = Weapon;
+	ScopeAlpha = 0.f;
+	ScopeFromArm = CameraBoom->TargetArmLength;
+	ScopeFromOffset = CameraBoom->SocketOffset;
+	ScopeFromFOV = FollowCamera->FieldOfView;
+	Weapon->AttachToComponent(FollowCamera, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	Weapon->SetScopeCaptureActive(true);
+	if (GetMesh())
+	{
+		GetMesh()->HideBoneByName(TEXT("head"), PBO_None);
+	}
+}
+
+void ADropCharacter::EndScopedWeapon()
+{
+	AWeaponBase* Weapon = ScopedWeapon.Get();
+	ScopedWeapon = nullptr;
+	ScopeAlpha = 0.f;
+	if (GetMesh())
+	{
+		GetMesh()->UnHideBoneByName(TEXT("head"));
+	}
+	if (!Weapon)
+	{
+		return;
+	}
+	Weapon->SetScopeCaptureActive(false);
+	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponInventory->GetCurrentAttachSocket());
+	Weapon->SetActorRelativeLocation(FVector::ZeroVector);
+	Weapon->SetActorRelativeRotation(FRotator::ZeroRotator);
+}
+
+FTransform ADropCharacter::GetScopedWeaponTransform(const AWeaponBase* Weapon) const
+{
+	if (Weapon->UsesScopedLens())
+	{
+		return FTransform(ScopedWeaponRotation, ScopedWeaponOffset);
+	}
+	const UStaticMeshComponent* WM = Weapon->GetWeaponMesh();
+	if (WM && WM->DoesSocketExist(TEXT("Aim")))
+	{
+		FTransform Inv = WM->GetSocketTransform(TEXT("Aim"), RTS_Actor).Inverse();
+		Inv.ConcatenateRotation(Weapon->GetAimCameraRotationOffset().Quaternion());
+		return FTransform(Inv.GetRotation(), Inv.GetLocation());
+	}
+	return FTransform::Identity;
+}
+
+/*
+스코프 - 저격 렌즈: SceneCapture로 좁은 FOV를 렌더타겟에 찍고, 원형 마스크 머티리얼로 화면 중앙에 표시.
+메인 카메라는 줌하지 않고, 화면 전체가 아니라 렌즈 원 안에서만 확대되어 보임.
+*/
+void ADropCharacter::ShowSniperScope()
+{
+	if (!IsLocallyControlled() || !ScopeCapture)
+	{
+		return;
+	}
+
+	if (!ScopeRenderTarget)
+	{
+		ScopeRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+		ScopeRenderTarget->InitAutoFormat(ScopeRenderTargetSize, ScopeRenderTargetSize);
+		ScopeRenderTarget->UpdateResourceImmediate(true);
+		ScopeCapture->TextureTarget = ScopeRenderTarget;
+	}
+
+	if (const AWeaponBase* Weapon = WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr)
+	{
+		ScopeCapture->FOVAngle = Weapon->GetScopedFOV();
+	}
+	ScopeCapture->bCaptureEveryFrame = true;
+	ScopeCapture->SetActive(true);
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (!SniperScopeOverlayClass)
+		{
+			return;
+		}
+		if (!SniperScopeOverlayWidget)
+		{
+			SniperScopeOverlayWidget = CreateWidget<UUserWidget>(PC, SniperScopeOverlayClass);
+			if (SniperScopeOverlayWidget)
+			{
+				SniperScopeOverlayWidget->AddToViewport(10); // 크로스헤어보다 위에
+			}
+		}
+		if (SniperScopeOverlayWidget)
+		{
+			if (!ScopeLensMID && ScopeLensMaterial)
+			{
+				ScopeLensMID = UMaterialInstanceDynamic::Create(ScopeLensMaterial, this);
+			}
+			if (ScopeLensMID)
+			{
+				ScopeLensMID->SetTextureParameterValue(TEXT("ScopeTexture"), ScopeRenderTarget);
+				if (UImage* LensImage = Cast<UImage>(SniperScopeOverlayWidget->GetWidgetFromName(TEXT("LensImage"))))
+				{
+					LensImage->SetBrushFromMaterial(ScopeLensMID);
+
+					const FVector2D LensSize = LensImage->GetCachedGeometry().GetLocalSize();
+					if (LensSize.Y > 0.f)
+					{
+						ScopeLensMID->SetScalarParameterValue(TEXT("AspectRatio"), LensSize.X / LensSize.Y);
+					}
+				}
+			}
+			SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+	}
+}
+
+void ADropCharacter::HideSniperScope()
+{
+	if (ScopeCapture)
+	{
+		ScopeCapture->SetActive(false);
+		ScopeCapture->bCaptureEveryFrame = false;
+	}
+	if (SniperScopeOverlayWidget)
+	{
+		SniperScopeOverlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+/*
+무기
+*/
 AWeaponBase* ADropCharacter::GetEquippedWeapon() const
 {
 	return WeaponInventory ? WeaponInventory->GetEquippedWeapon() : nullptr;
@@ -991,7 +1105,7 @@ void ADropCharacter::MeleeAttack(UAnimMontage* AttackMontage)
 	}
 	else
 	{
-		ServerMeleeAttack(AttackMontage); 
+		ServerMeleeAttack(AttackMontage);
 	}
 }
 
@@ -1013,171 +1127,8 @@ void ADropCharacter::ServerMeleeAttack_Implementation(UAnimMontage* AttackMontag
 }
 
 /*
-RPC Server
+사망/피격
 */
-void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
-	DOREPLIFETIME(ADropCharacter, DropState);
-}
-
-void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
-{
-	if (IsLocallyControlled())
-	{
-		if (ADropPlayerController* PC = Cast<ADropPlayerController>(GetController()))
-		{
-			bool bIsOnGround = (NewState == EDropState::Ground);
-			PC->SetGameplayHUDVisible(bIsOnGround);
-		}
-	}
-
-	if (UCharacterMovementComponent* M = GetCharacterMovement())
-	{
-		switch (NewState)
-		{
-		case EDropState::InPlane:
-			M->DisableMovement();
-			break;
-
-		case EDropState::Freefall:
-		case EDropState::Parachuting:
-			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
-			M->GravityScale = 0.f;
-			M->AirControl = 1.f;
-			M->bOrientRotationToMovement = false;
-			bUseControllerRotationYaw = true;
-			break;
-
-		case EDropState::Ground:
-		default:
-			M->GravityScale = 1.f;
-			M->AirControl = 0.35f;
-			M->bOrientRotationToMovement = true;
-			bUseControllerRotationYaw = false;
-			M->SetMovementMode(MOVE_Walking);
-			break;
-		}
-	}
-	
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
-	{
-		MeshComp->SetVisibility(NewState != EDropState::InPlane);
-	}
-	
-	if (IsLocallyControlled() && CameraBoom)
-	{
-		switch (NewState)
-		{
-		case EDropState::InPlane:
-			CameraBoom->TargetArmLength  = InPlaneArmLength;
-			CameraBoom->SocketOffset     = InPlaneSocketOffset;
-			CameraBoom->bDoCollisionTest = false;
-			break;
-		case EDropState::Freefall:
-		case EDropState::Parachuting:
-			CameraBoom->TargetArmLength  = DescentArmLength;
-			CameraBoom->SocketOffset     = DescentSocketOffset;
-			CameraBoom->bDoCollisionTest = false;
-			break;
-		case EDropState::Ground:
-			CameraBoom->TargetArmLength  = DefaultArmLength;
-			CameraBoom->SocketOffset     = FVector::ZeroVector;
-			CameraBoom->bDoCollisionTest = true;
-			break;
-		default:
-			break;
-		}
-	}
-	
-	if (NewState == EDropState::Freefall)
-	{
-		ShowParachutePrompt();
-	}
-	else
-	{
-		HideParachutePrompt();
-	}
-	if (NewState == EDropState::Parachuting)
-	{
-		ShowParachute();
-	}
-	else if (OldState == EDropState::Parachuting)
-	{
-		HideParachute();
-	}
-
-	OnDropStateChanged(NewState, OldState);
-}
-
-void ADropCharacter::EnterPlane(AAirPlane* Plane, USceneComponent* Seat)
-{
-	if (!HasAuthority()) return;
-	if (!Plane || !Seat) return;
-
-	BoardedPlane = Plane;
-	AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	SetDropState(EDropState::InPlane);
-
-	if (AController* C = GetController())
-	{
-		C->SetControlRotation(FRotator(InPlaneCameraPitch, Plane->GetHeadingYaw() + InPlaneYawOffset, 0.f));
-	}
-}
-
-
-/*
-낙하산
-*/
-void ADropCharacter::DeployParachute()
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-	if (DropState != EDropState::Freefall)
-	{
-		return;
-	}
-	SetDropState(EDropState::Parachuting);
-}
-
-void ADropCharacter::OnRep_DropState()
-{
-	ApplyDropState(PrevDropState, DropState);
-	PrevDropState = DropState;
-}
-
-void ADropCharacter::ServerBeginFreefall_Implementation()
-{
-	BeginFreefall();
-}
-
-void ADropCharacter::ServerDeployParachute_Implementation()
-{
-	DeployParachute();
-}
-
-/*
-HP
-*/
-float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	FVector ShotDirection = GetActorForwardVector();
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	{
-		const FPointDamageEvent& PointDamageEvent = static_cast<const FPointDamageEvent&>(DamageEvent);
-		ShotDirection = PointDamageEvent.ShotDirection;
-	}
-	if (HealthComp)
-	{
-		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser, ShotDirection);
-	}
-	return Applied;
-}
-
 void ADropCharacter::HandleDeath(AController* Killer, AActor* DamageCauser)
 {
 	if (InteractionComp) InteractionComp->CancelUseItem();
@@ -1277,7 +1228,7 @@ int32 ADropCharacter::GetHitDirectionIndex(const FVector& ShotDirection) const
 	const float RightDot = FVector::DotProduct(GetActorRightVector(), ToAttacker);
 	if (FMath::Abs(ForwardDot) >= FMath::Abs(RightDot))
 	{
-		return ForwardDot >= 0.f ? 0 : 1; 
+		return ForwardDot >= 0.f ? 0 : 1;
 	}
 	return RightDot >= 0.f ? 3 : 2;
 }
@@ -1290,7 +1241,7 @@ void ADropCharacter::Multicast_Die_Implementation()
 	}
 	bIsDead = true;
 	ForceStopAim();
-	
+
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
@@ -1313,3 +1264,63 @@ void ADropCharacter::Multicast_Die_Implementation()
 	}
 }
 
+/*
+인벤토리 캐릭터 프리뷰 (자신 + 부착 무기만 캡처, 배경 투명)
+*/
+void ADropCharacter::StartInventoryPreview(UImage* TargetImage)
+{
+	if (!IsLocallyControlled() || !PreviewCapture)
+	{
+		return;
+	}
+
+	if (!PreviewRenderTarget)
+	{
+		PreviewRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+		PreviewRenderTarget->ClearColor = FLinearColor(0.f, 0.f, 0.f, 1.f); // 알파 1 = 빈 배경
+		PreviewRenderTarget->InitCustomFormat(PreviewRenderTargetSize.X, PreviewRenderTargetSize.Y, PF_FloatRGBA, true);
+		PreviewRenderTarget->UpdateResourceImmediate(true);
+		PreviewCapture->TextureTarget = PreviewRenderTarget;
+	}
+
+	PreviewCapture->SetRelativeLocationAndRotation(PreviewCaptureOffset, FRotator(0.f, 180.f, 0.f));
+	PreviewCapture->FOVAngle = PreviewFOV;
+	RefreshPreviewShowList();
+	PreviewCapture->bCaptureEveryFrame = true;
+	PreviewCapture->SetActive(true);
+
+	if (!TargetImage || !PreviewMaterial)
+	{
+		return;
+	}
+	if (!PreviewMID)
+	{
+		PreviewMID = UMaterialInstanceDynamic::Create(PreviewMaterial, this);
+	}
+	PreviewMID->SetTextureParameterValue(TEXT("PreviewTexture"), PreviewRenderTarget);
+	PreviewMID->SetScalarParameterValue(TEXT("Brightness"), PreviewBrightness);
+	TargetImage->SetBrushFromMaterial(PreviewMID);
+	TargetImage->SetColorAndOpacity(FLinearColor::White); // WBP 기본 알파 0
+}
+
+void ADropCharacter::StopInventoryPreview()
+{
+	if (PreviewCapture)
+	{
+		PreviewCapture->SetActive(false);
+		PreviewCapture->bCaptureEveryFrame = false;
+	}
+}
+
+void ADropCharacter::RefreshPreviewShowList()
+{
+	PreviewCapture->ShowOnlyActors.Reset();
+	PreviewCapture->ShowOnlyActors.Add(this);
+
+	TArray<AActor*> Attached;
+	GetAttachedActors(Attached, true, true);
+	for (AActor* Actor : Attached)
+	{
+		PreviewCapture->ShowOnlyActors.Add(Actor);
+	}
+}
