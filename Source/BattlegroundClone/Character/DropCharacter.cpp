@@ -21,10 +21,9 @@
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Inventory/BagComponent.h"
+#include "Input/InputBindingComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/LocalPlayer.h"
@@ -115,6 +114,7 @@ ADropCharacter::ADropCharacter()
 	WeaponInventory = CreateDefaultSubobject<UWeaponInventoryComponent>(TEXT("WeaponInventory"));
 	BagComp = CreateDefaultSubobject<UBagComponent>(TEXT("BagComp"));
 	InteractionComp = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComp"));
+	InputBindingComp = CreateDefaultSubobject<UInputBindingComponent>(TEXT("InputBindingComp"));
 }
 
 void ADropCharacter::BeginPlay()
@@ -142,13 +142,9 @@ void ADropCharacter::PawnClientRestart()
 			PC->SetInputMode(FInputModeGameOnly());
 			PC->SetShowMouseCursor(false);
 		}
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		if (InputBindingComp)
 		{
-			if (DefaultMappingContext)
-			{
-				Subsystem->AddMappingContext(DefaultMappingContext, 0);
-			}
+			InputBindingComp->AddMappingContext(PC);
 		}
 	}
 }
@@ -243,73 +239,9 @@ void ADropCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-	if (!EIC)
+	if (InputBindingComp)
 	{
-		return;
-	}
-
-	if (MoveAction)
-	{
-		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADropCharacter::Move);
-	}
-	if (LookAction)
-	{
-		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADropCharacter::Look);
-	}
-	if (MouseLookAction)
-	{
-		EIC->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &ADropCharacter::Look);
-	}
-	if (JumpAction)
-	{
-		EIC->BindAction(JumpAction, ETriggerEvent::Started,   this, &ADropCharacter::OnJumpPressed);
-		EIC->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-	}
-	if (FastFallAction)
-	{
-		EIC->BindAction(FastFallAction, ETriggerEvent::Started, this, &ADropCharacter::OnFastFallPressed);
-		EIC->BindAction(FastFallAction, ETriggerEvent::Completed, this, &ADropCharacter::OnFastFallReleased);
-	}
-	if (ParachuteAction)
-	{
-		EIC->BindAction(ParachuteAction, ETriggerEvent::Started, this, &ADropCharacter::OnParachutePressed);
-	}
-	if (FireAction)
-	{
-		EIC->BindAction(FireAction, ETriggerEvent::Started, this, &ADropCharacter::StartFire);
-		EIC->BindAction(FireAction, ETriggerEvent::Completed, this, &ADropCharacter::StopFire);
-	}
-	if (ReloadAction)
-	{
-		EIC->BindAction(ReloadAction, ETriggerEvent::Started, this, &ADropCharacter::OnReloadPressed);
-	}
-	if (AimAction)
-	{
-		EIC->BindAction(AimAction, ETriggerEvent::Started,   this, &ADropCharacter::OnAimPressed);
-		EIC->BindAction(AimAction, ETriggerEvent::Completed, this, &ADropCharacter::OnAimReleased);
-	}
-	if (ChangeFireModeAction && WeaponInventory)
-	{
-		EIC->BindAction(ChangeFireModeAction, ETriggerEvent::Started, WeaponInventory.Get(), &UWeaponInventoryComponent::ChangeFireMode);
-	}
-	if (WeaponInventory)
-	{
-		for (int32 i = 0; i < WeaponSlotActions.Num(); ++i)
-		{
-			if (WeaponSlotActions[i])
-			{
-				EIC->BindAction(WeaponSlotActions[i], ETriggerEvent::Started, WeaponInventory.Get(), &UWeaponInventoryComponent::SwitchWeaponSlot, i);
-			}
-		}
-	}
-	if (InteractAction && InteractionComp)
-	{
-		EIC->BindAction(InteractAction, ETriggerEvent::Started, InteractionComp.Get(), &UInteractionComponent::OnInteractPressed);
-	}
-	if (CrawlAction)
-	{
-		EIC->BindAction(CrawlAction, ETriggerEvent::Started, this, &ADropCharacter::OnPronePressed);
+		InputBindingComp->SetupInput(PlayerInputComponent);
 	}
 }
 

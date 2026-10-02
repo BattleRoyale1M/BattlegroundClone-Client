@@ -13,9 +13,8 @@
 class USpringArmComponent;
 class UCameraComponent;
 class UStaticMeshComponent;
-class UInputMappingContext;
-class UInputAction;
 struct FInputActionValue;
+class UInputBindingComponent;
 class AAirPlane;
 class AWeaponBase;
 class USceneComponent;
@@ -34,6 +33,8 @@ UCLASS()
 class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter, public IWeaponUserInterface
 {
 	GENERATED_BODY()
+
+	friend class UInputBindingComponent;
 
 public:
 	ADropCharacter();
@@ -192,6 +193,10 @@ public:
 
 	bool TryPickup(AItemPickupActor* Pickup) { return InteractionComp && InteractionComp->TryPickup(Pickup); }   // 서버 전용
 
+	// --- 입력 매핑/바인딩 (UInputBindingComponent로 위임) ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputBindingComponent> InputBindingComp;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PawnClientRestart() override;
@@ -220,46 +225,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|InPlane")
 	float InPlaneYawOffset = -30.f;
 
-	// --- Input (assign these in BP_DropCharacter defaults) --------------
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> MoveAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> LookAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> MouseLookAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> JumpAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> FastFallAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> ParachuteAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> FireAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> ReloadAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> AimAction;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<UInputAction> ChangeFireModeAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> InteractAction;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> CrawlAction;
-	
 	void OnPronePressed(const FInputActionValue& Value);
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float ProneSpeed = 120.f;
@@ -303,9 +268,6 @@ protected:
 	void StartFire();
 	void StopFire();
 	void OnReloadPressed();
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TArray<TObjectPtr<UInputAction>> WeaponSlotActions;
 
 	/*
 	현재 탑승 중인 비행기

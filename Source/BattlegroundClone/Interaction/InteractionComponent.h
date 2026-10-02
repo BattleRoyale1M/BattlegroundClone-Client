@@ -15,11 +15,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemUseStarted, FText, ItemName,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUseEnded, bool, bCompleted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractableChanged, FText, PromptText);
 
-/*
-ADropCharacter 전용 컴포넌트. 근처 상호작용 대상 추적, 아이템 줍기, 가방<->무기 슬롯 교체,
-소모품(힐/부스트) 사용을 담당. bIsDead/DropState 등 캐릭터 상태를 직접 참조하므로
-다른 폰에서는 재사용을 가정하지 않음.
-*/
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BATTLEGROUNDCLONE_API UInteractionComponent : public UActorComponent
 {
