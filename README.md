@@ -46,7 +46,7 @@ flowchart TD
     classDef domain fill:#16192B,stroke:#555,stroke-width:1px,color:#ccc;
 
     %% 노드 배치
-    UI["🖥 UI<br/>HUD / MiniMap / Widgets"]:::ui
+    UI["UI<br/>HUD / MiniMap / Widgets"]:::ui
     Core["⚙️Core<br/>GameMode / Controller / State"]:::core
     
     Drop["Drop<br/>AAirPlane"]:::domain
