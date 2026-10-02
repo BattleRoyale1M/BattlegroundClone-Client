@@ -1,15 +1,21 @@
 #include "Core/GameModes/LobbyGameMode.h"
+#include "Core/GameModes/LobbyGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
 	bUseSeamlessTravel = true;
+	GameStateClass = ALobbyGameState::StaticClass();
 }
 
 void ALobbyGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	if (ALobbyGameState* LobbyState = GetGameState<ALobbyGameState>())
+	{
+		LobbyState->StartCountdown(CountdownSeconds);
+	}
 	GetWorldTimerManager().SetTimer(CountdownHandle, this,
 		&ALobbyGameMode::TravelToMatch, CountdownSeconds, false);
 }
