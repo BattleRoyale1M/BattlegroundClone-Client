@@ -47,14 +47,14 @@ flowchart TD
 
     %% 노드 배치
     UI["🖥 UI<br/>HUD / MiniMap / Widgets"]:::ui
-    Core["⚙️ Core<br/>GameMode / Controller / State"]:::core
+    Core["⚙️Core<br/>GameMode / Controller / State"]:::core
     
-    Drop["✈️ Drop<br/>AAirPlane"]:::domain
-    Character["👤 Character<br/>ADropCharacter"]:::core
+    Drop["Drop<br/>AAirPlane"]:::domain
+    Character["👤Character<br/>ADropCharacter"]:::core
     
-    Combat["❤️ Combat<br/>UHealthComponent"]:::domain
-    Weapon["🔫 Weapon<br/>WeaponBase / Inventory"]:::domain
-    Interaction["📦 Interaction<br/>Interface / Pickup"]:::domain
+    Combat["Combat<br/>UHealthComponent"]:::domain
+    Weapon["Weapon<br/>WeaponBase / Inventory"]:::domain
+    Interaction["Interaction<br/>Interface / Pickup"]:::domain
 
     %% 연결 관계
     UI -->|데이터 공급 / 입력| Core
