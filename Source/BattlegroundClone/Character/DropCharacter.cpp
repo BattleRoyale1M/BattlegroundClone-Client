@@ -1003,8 +1003,7 @@ FTransform ADropCharacter::GetScopedWeaponTransform(const AWeaponBase* Weapon) c
 }
 
 /*
-스코프 - 저격 렌즈: SceneCapture로 좁은 FOV를 렌더타겟에 찍고, 원형 마스크 머티리얼로 화면 중앙에 표시.
-메인 카메라는 줌하지 않고, 화면 전체가 아니라 렌즈 원 안에서만 확대되어 보임.
+스코프 - 저격 렌즈
 */
 void ADropCharacter::ShowSniperScope()
 {

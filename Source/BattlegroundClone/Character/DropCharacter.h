@@ -49,7 +49,7 @@ public:
 		AController* EventInstigator, AActor* DamageCauser) override;
 
 	/*
-	IWeaponUserInterface : 무기가 캐릭터(카메라/애니메이션 제어권 보유자)에게 알리는 콜백
+	IWeaponUserInterface
 	*/
 	virtual void ReceiveWeaponRecoil_Implementation(float Pitch, float YawRange, float RecoverySpeed) override;
 	virtual void NotifyWeaponFired_Implementation() override;
@@ -184,7 +184,7 @@ public:
 	void DestroySelf();
 
 	/*
-	인벤토리 캐릭터 프리뷰 (로컬 전용, 컨트롤러가 호출)
+	인벤토리 캐릭터 프리뷰
 	*/
 	void StartInventoryPreview(UImage* TargetImage);
 	void StopInventoryPreview();
@@ -193,7 +193,7 @@ public:
 	TObjectPtr<UBagComponent> BagComp;
 
 	/*
-	인터랙션/줍기/가방/소모품 사용 (UInteractionComponent로 위임)
+	인터랙션/줍기/가방/소모품 사용
 	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UInteractionComponent> InteractionComp;
@@ -201,7 +201,7 @@ public:
 	bool TryPickup(AItemPickupActor* Pickup) { return InteractionComp && InteractionComp->TryPickup(Pickup); }   // 서버 전용
 
 	/*
-	입력 매핑/바인딩 (UInputBindingComponent로 위임)
+	입력 매핑/바인딩
 	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputBindingComponent> InputBindingComp;
@@ -226,7 +226,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
 
-	// 스코프 렌즈용 별도 카메라. 좁은 FOV로 렌더타겟에 찍어서 원형 UI에 씌움 (메인 카메라는 줌 안 함)
+	// 스코프 렌즈용 별도 카메라
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Scope", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USceneCaptureComponent2D> ScopeCapture;
 
@@ -416,8 +416,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ShoulderFOV = 72.f;
-
-	// Scoped
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ScopedArmLength = 0.f;
 
@@ -470,8 +469,7 @@ protected:
 	void HideScopeOverlay();
 
 	/*
-	스코프 - 저격 렌즈: SceneCapture로 좁은 FOV를 렌더타겟에 찍고, 원형 마스크 머티리얼로 화면 중앙에 표시.
-	메인 카메라는 줌하지 않고, 화면 전체가 아니라 렌즈 원 안에서만 확대되어 보임.
+	스코프 - 저격 렌즈
 	*/
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Scope")
 	TSubclassOf<UUserWidget> SniperScopeOverlayClass;
