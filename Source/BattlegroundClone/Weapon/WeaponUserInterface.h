@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include "WeaponUserInterface.generated.h"
+
 UINTERFACE(MinimalAPI, Blueprintable)
 class UWeaponUserInterface : public UInterface
 {
