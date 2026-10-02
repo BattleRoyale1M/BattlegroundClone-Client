@@ -39,15 +39,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory")
 	TArray<AItemPickupActor*> GetNearbyPickups() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestPickup(AItemPickupActor* Pickup);
 	bool TryPickup(AItemPickupActor* Pickup);   // 서버 전용
 
 	// --- 가방 <-> 무기 슬롯 ---
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestEquipFromBag(int32 BagIndex, int32 TargetSlot);
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestUnequipToBag(int32 SlotIndex);
 
 	// --- 소모품 사용 ---
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestUseItem(FName RowName);
+	UFUNCTION(BlueprintPure, Category = "Inventory")
 	bool IsUsingItem() const { return !UsingItemRow.IsNone(); }
 	void RequestCancelUseItem();
 	void CancelUseItem();
