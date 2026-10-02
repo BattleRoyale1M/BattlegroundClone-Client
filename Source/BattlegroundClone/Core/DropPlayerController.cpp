@@ -217,7 +217,7 @@ void ADropPlayerController::ClearMarker()
 void ADropPlayerController::ToggleWorldMap()
 {
 	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
-	if (Char && Char->bIsDead)
+	if (Char && !Char->CanAct())
 	{
 		return;
 	}
@@ -245,7 +245,7 @@ void ADropPlayerController::ToggleWorldMap()
 void ADropPlayerController::ToggleInventory()
 {
 	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
-	if (Char && Char->bIsDead)
+	if (Char && !Char->CanAct())
 	{
 		return;
 	}
@@ -268,7 +268,7 @@ void ADropPlayerController::OpenLootScreen(ALootContainer* Container)
 	}
 
 	const ADropCharacter* Char = Cast<ADropCharacter>(GetPawn());
-	if (Char && Char->bIsDead)
+	if (Char && !Char->CanAct())
 	{
 		return;
 	}

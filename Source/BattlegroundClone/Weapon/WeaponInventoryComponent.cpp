@@ -168,13 +168,13 @@ void UWeaponInventoryComponent::SwitchWeaponSlot(int32 Index)
 	}
 	if (!Owner->HasAuthority())
 	{
-		ServerSwtichWeaponSlot(Index);
+		ServerSwitchWeaponSlot(Index);
 		return;
 	}
 	EquipWeaponSlot(Index);
 }
 
-void UWeaponInventoryComponent::ServerSwtichWeaponSlot_Implementation(int32 Index)
+void UWeaponInventoryComponent::ServerSwitchWeaponSlot_Implementation(int32 Index)
 {
 	EquipWeaponSlot(Index);
 }

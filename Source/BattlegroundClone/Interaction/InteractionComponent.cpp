@@ -96,11 +96,7 @@ void UInteractionComponent::UpdateCurrentInteractable()
 void UInteractionComponent::OnInteractPressed()
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead)
-	{
-		return;
-	}
-	if (Character->DropState != EDropState::Ground || !CurrentInteractable)
+	if (!Character || !Character->CanActOnGround() || !CurrentInteractable)
 	{
 		return;
 	}
@@ -132,7 +128,7 @@ TArray<AItemPickupActor*> UInteractionComponent::GetNearbyPickups() const
 void UInteractionComponent::RequestPickup(AItemPickupActor* Pickup)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Pickup || !Character || Character->bIsDead)
+	if (!Pickup || !Character || !Character->CanAct())
 	{
 		return;
 	}
@@ -142,21 +138,21 @@ void UInteractionComponent::RequestPickup(AItemPickupActor* Pickup)
 void UInteractionComponent::RequestEquipFromBag(int32 BagIndex, int32 TargetSlot)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead) return;
+	if (!Character || !Character->CanAct()) return;
 	ServerEquipFromBag(BagIndex, TargetSlot);
 }
 
 void UInteractionComponent::RequestUnequipToBag(int32 SlotIndex)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead) return;
+	if (!Character || !Character->CanAct()) return;
 	ServerUnequipToBag(SlotIndex);
 }
 
 void UInteractionComponent::ServerEquipFromBag_Implementation(int32 BagIndex, int32 TargetSlot)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead || !Character->BagComp || !Character->WeaponInventory)
+	if (!Character || !Character->CanAct() || !Character->BagComp || !Character->WeaponInventory)
 	{
 		return;
 	}
@@ -185,7 +181,7 @@ void UInteractionComponent::ServerEquipFromBag_Implementation(int32 BagIndex, in
 void UInteractionComponent::ServerUnequipToBag_Implementation(int32 SlotIndex)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead || !Character->BagComp || !Character->WeaponInventory)
+	if (!Character || !Character->CanAct() || !Character->BagComp || !Character->WeaponInventory)
 	{
 		return;
 	}
@@ -217,7 +213,7 @@ void UInteractionComponent::ServerPickup_Implementation(AItemPickupActor* Pickup
 bool UInteractionComponent::TryPickup(AItemPickupActor* Pickup)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || !Character->HasAuthority() || Character->bIsDead || !IsValid(Pickup))
+	if (!Character || !Character->HasAuthority() || !Character->CanAct() || !IsValid(Pickup))
 	{
 		return false;
 	}
@@ -257,7 +253,7 @@ bool UInteractionComponent::TryPickup(AItemPickupActor* Pickup)
 void UInteractionComponent::RequestUseItem(FName RowName)
 {
 	ADropCharacter* Character = GetOwnerDropCharacter();
-	if (!Character || Character->bIsDead || RowName.IsNone())
+	if (!Character || !Character->CanAct() || RowName.IsNone())
 	{
 		return;
 	}
@@ -270,7 +266,7 @@ void UInteractionComponent::ServerUseItem_Implementation(FName RowName)
 	UBagComponent* BagComp = Character ? Character->BagComp.Get() : nullptr;
 	UHealthComponent* HealthComp = Character ? Character->GetHealthComp() : nullptr;
 
-	if (!Character || Character->bIsDead || Character->DropState != EDropState::Ground || IsUsingItem()
+	if (!Character || !Character->CanActOnGround() || IsUsingItem()
 		|| !BagComp || BagComp->GetItemCount(RowName) <= 0)
 	{
 		return;
@@ -312,7 +308,7 @@ void UInteractionComponent::FinishUseItem()
 	UsingItemRow = NAME_None;
 
 	const FItemRow* Row = BagComp ? BagComp->FindItemRow(RowName) : nullptr;
-	if (Row && Character && !Character->bIsDead && HealthComp && BagComp->RemoveItem(RowName, 1))
+	if (Row && Character && Character->CanAct() && HealthComp && BagComp->RemoveItem(RowName, 1))
 	{
 		if (Row->ItemType == EBGItemType::Heal)
 		{

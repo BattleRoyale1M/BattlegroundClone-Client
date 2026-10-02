@@ -161,6 +161,9 @@ public:
 	TArray<UAnimMontage*> DeathMontages;
 	bool bIsDead = false;
 	
+	bool CanAct() const { return !bIsDead; }
+	bool CanActOnGround() const { return CanAct() && DropState == EDropState::Ground; }
+	
 	/*
 	Death and Destroy()
 	*/

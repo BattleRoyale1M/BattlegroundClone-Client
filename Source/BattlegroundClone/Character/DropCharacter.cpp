@@ -673,8 +673,7 @@ Aim
 */
 void ADropCharacter::OnAimPressed()
 {
-	if (bIsDead) return;
-	if (DropState != EDropState::Ground) return;
+	if (!CanActOnGround()) return;
 	AimPressTime = GetWorld()->GetTimeSeconds();
 	if (AimMode == EDropAimMode::Scoped) return; // 스코프 중 다시 누름
 	SetAimMode(EDropAimMode::Shoulder); 
@@ -718,7 +717,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 
 void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
 {
-	if (bIsDead || DropState != EDropState::Ground || (InteractionComp && InteractionComp->IsUsingItem()))
+	if (!CanActOnGround() || (InteractionComp && InteractionComp->IsUsingItem()))
 	{
 		return;
 	}
@@ -928,7 +927,7 @@ void ADropCharacter::UpdateParachuteVisual(float Dt)
 
 void ADropCharacter::StartFire()
 {
-	if (bIsDead)
+	if (!CanAct())
 	{
 		return;
 	}
@@ -960,7 +959,7 @@ void ADropCharacter::StopFire()
 
 void ADropCharacter::OnReloadPressed()
 {
-	if (bIsDead)
+	if (!CanAct())
 	{
 		return;
 	}
@@ -1243,7 +1242,7 @@ void ADropCharacter::DestroySelf()
 
 void ADropCharacter::HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection)
 {
-	if (!HasAuthority() || bIsDead)
+	if (!HasAuthority() || !CanAct())
 	{
 		return;
 	}
@@ -1254,7 +1253,7 @@ void ADropCharacter::HandleHit(AController* InstigatorController, AActor* Damage
 
 void ADropCharacter::Multicast_HitReact_Implementation(FVector ShotDirection)
 {
-	if (bIsDead || HitReactMontages.Num() == 0)
+	if (!CanAct() || HitReactMontages.Num() == 0)
 	{
 		return;
 	}

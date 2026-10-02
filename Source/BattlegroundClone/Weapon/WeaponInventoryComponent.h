@@ -122,7 +122,7 @@ protected:
 	void EquipWeaponSlot(int32 Index);
 
 	UFUNCTION(Server, Reliable)
-	void ServerSwtichWeaponSlot(int32 Index);
+	void ServerSwitchWeaponSlot(int32 Index);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayEquipMontage();
