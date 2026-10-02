@@ -134,6 +134,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|UI")
 	TSubclassOf<UUserWidget> DeathUIWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Lobby|UI")
+	TSubclassOf<UUserWidget> LobbyWidgetClass;
+
 private:
 	AAirPlane* FindPlane() const;
 
@@ -157,6 +160,9 @@ private:
 	
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> DeathUIWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> LobbyWidget;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float DeathFadeDuration = 2.f;

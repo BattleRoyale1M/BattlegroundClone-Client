@@ -4,6 +4,7 @@
 #include "UI/DropMapLabelWidget.h"
 
 #include "Core/GameModes/DropGameMode.h"
+#include "Core/GameModes/LobbyGameMode.h"
 #include "Drop/AirPlane.h"
 #include "Character/DropCharacter.h"
 #include "Interaction/Item/LootContainer.h"
@@ -121,6 +122,15 @@ void ADropPlayerController::BeginPlay()
 	}
 	
 	const AGameStateBase* GS = GetWorld()->GetGameState();
+	if (GS && GS->GameModeClass && GS->GameModeClass->IsChildOf(ALobbyGameMode::StaticClass()))
+	{
+		if (LobbyWidgetClass)
+		{
+			LobbyWidget = CreateWidget<UUserWidget>(this, LobbyWidgetClass);
+			if (LobbyWidget) LobbyWidget->AddToViewport(20);
+		}
+		return;
+	}
 	if (!GS || !GS->GameModeClass || !GS->GameModeClass->IsChildOf(ADropGameMode::StaticClass()))
 	{
 		return; // 로비 등 매치맵이 아니면 HUD 생성 스킵
