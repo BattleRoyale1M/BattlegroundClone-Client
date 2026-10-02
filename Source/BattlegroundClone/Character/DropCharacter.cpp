@@ -1062,12 +1062,11 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 		}
 	}
 	
-	// 메시 가시성 (전원)
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
 		MeshComp->SetVisibility(NewState != EDropState::InPlane);
 	}
-	// 카메라 (내 화면 전용)
+	
 	if (IsLocallyControlled() && CameraBoom)
 	{
 		switch (NewState)
@@ -1092,8 +1091,7 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 			break;
 		}
 	}
-
-	// 낙하산 프롬프트 (내부에서 이미 IsLocallyControlled 체크)
+	
 	if (NewState == EDropState::Freefall)
 	{
 		ShowParachutePrompt();
@@ -1102,7 +1100,6 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 	{
 		HideParachutePrompt();
 	}
-	// 낙하산 생김새 분기
 	if (NewState == EDropState::Parachuting)
 	{
 		ShowParachute();

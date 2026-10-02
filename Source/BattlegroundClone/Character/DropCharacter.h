@@ -39,7 +39,9 @@ class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter, public IWeaponUs
 public:
 	ADropCharacter();
 
-	// --- IWeaponUserInterface : 무기가 캐릭터(카메라/애니메이션 제어권 보유자)에게 알리는 콜백 ---
+	/*
+	IWeaponUserInterface : 무기가 캐릭터(카메라/애니메이션 제어권 보유자)에게 알리는 콜백
+	*/
 	virtual void ReceiveWeaponRecoil_Implementation(float Pitch, float YawRange, float RecoverySpeed) override;
 	virtual void NotifyWeaponFired_Implementation() override;
 	virtual void NotifyWeaponReloadStarted_Implementation(float Duration) override;
@@ -178,22 +180,26 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DbgHurt(float Amt);
 
-	// --- 인벤토리 캐릭터 프리뷰 (로컬 전용, 컨트롤러가 호출) ----------------
-
+	/*
+	인벤토리 캐릭터 프리뷰 (로컬 전용, 컨트롤러가 호출)
+	*/
 	void StartInventoryPreview(UImage* TargetImage);
 	void StopInventoryPreview();
-	
-	// --- 줍기 / 가방 ---
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UBagComponent> BagComp;
 
-	// --- 인터랙션/줍기/가방/소모품 사용 (UInteractionComponent로 위임) ---
+	/*
+	인터랙션/줍기/가방/소모품 사용 (UInteractionComponent로 위임)
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UInteractionComponent> InteractionComp;
 
 	bool TryPickup(AItemPickupActor* Pickup) { return InteractionComp && InteractionComp->TryPickup(Pickup); }   // 서버 전용
 
-	// --- 입력 매핑/바인딩 (UInputBindingComponent로 위임) ---
+	/*
+	입력 매핑/바인딩 (UInputBindingComponent로 위임)
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputBindingComponent> InputBindingComp;
 
@@ -201,7 +207,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PawnClientRestart() override;
 
-	// --- Components -------------------------------------------------------
 	/** Third person camera boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
@@ -305,25 +310,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	TSubclassOf<UUserWidget> ParachutePromptWidgetClass;
 	
-	// --- 수직 낙하 --------------------------------------------
 	UPROPERTY(BlueprintReadOnly, Category = "Drop")
 	bool bIsFastFalling = false;
 
 	void OnFastFallPressed();
 	void OnFastFallReleased();
 	
-	// --- 낙하산 캐노피 연출 --------------------------------------------
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	FName ParachuteAttachSocket = TEXT("spine_05");
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	FVector ParachuteRelativeLocation = FVector(0.f, 0.f, 50.f);
-
-	// Blender에서 정렬하면 추가로 건드리기x
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	FRotator ParachuteRelativeRotation = FRotator(0.f, 90.f, 0.f);
 
-	// SM_Parachute는 Blender에서 실측(~9m) 크기로 맞춰둠 → 1 기준. 크면 0.8, 작으면 1.3
+	// 1 기준. 크면 0.8, 작으면 1.3
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Parachute")
 	float ParachuteOpenScale = 1.f;
 	
@@ -380,8 +382,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	float ScopedFOV = 45.f;
-
-	// AWP 전용 하드코딩 : BP 디폴트에서 PIE 보며 튜닝
+	
 	UPROPERTY(EditAnywhere, Category = "Camera|Aim")
 	FVector ScopedWeaponOffset = FVector(40.f, 0.f, -18.4f);   // 카메라 기준 (앞, 오른쪽, 아래)
 
@@ -416,23 +417,23 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Aim")
 	TSubclassOf<UUserWidget> ScopeOverlayClass;
 
-	// --- Input handlers ------------------------------------------------
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
-	
-	// --- Parachute prompt widget ----------------------------------------
+
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> ParachutePromptWidget;
 	void ShowParachutePrompt();
 	void HideParachutePrompt();
-	
-	// --- Scope (Shoulder 크로스헤어) ----------------------------------------
+
+	// Scope (Shoulder 크로스헤어)
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> ScopeOverlayWidget;
 	void ShowScopeOverlay();
 	void HideScopeOverlay();
 
-	// --- 저격 스코프 렌즈 (Scoped, SceneCapture 렌더타겟) --------------------
+	/*
+	저격 스코프 렌즈 (Scoped, SceneCapture 렌더타겟)
+	*/
 	UPROPERTY(EditDefaultsOnly, Category = "Camera|Scope")
 	TSubclassOf<UUserWidget> SniperScopeOverlayClass;
 	
@@ -454,8 +455,9 @@ protected:
 	void ShowSniperScope();
 	void HideSniperScope();
 
-	// --- 인벤토리 캐릭터 프리뷰 (SceneCapture 렌더타겟) ---------------------
-
+	/*
+	인벤토리 캐릭터 프리뷰 (SceneCapture 렌더타겟)
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Preview", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USceneCaptureComponent2D> PreviewCapture;
 
@@ -481,8 +483,6 @@ protected:
 	TObjectPtr<UMaterialInstanceDynamic> PreviewMID;
 
 	void RefreshPreviewShowList();
-	
-	// --- 낙하산 캐노피 상태 ------------------------------------------
 	
 	float ParachuteDeployElapsed = -1.f;
 	float LastYawForLean = 0.f;
