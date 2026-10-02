@@ -173,15 +173,6 @@ public:
 	FTimerHandle DeathDestroyTimerHandle;
 
 	void DestroySelf();
-	
-	/*
-	 DEBUG
-	*/
-	UFUNCTION(Exec)
-	void DbgHurt(float Amt = 20.f);
-	
-	UFUNCTION(Server, Reliable)
-	void Server_DbgHurt(float Amt);
 
 	/*
 	인벤토리 캐릭터 프리뷰 (로컬 전용, 컨트롤러가 호출)

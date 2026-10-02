@@ -1313,23 +1313,3 @@ void ADropCharacter::Multicast_Die_Implementation()
 	}
 }
 
-/*
- DEBUG
-*/
-void ADropCharacter::DbgHurt(float Amt)
-{
-	if (HasAuthority())
-	{
-		if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr, FVector::ZeroVector);
-	}
-	else
-	{
-		Server_DbgHurt(Amt);
-	}
-}
-
-void ADropCharacter::Server_DbgHurt_Implementation(float Amt)
-{
-	if (HealthComp) HealthComp->ApplyDamage(Amt, nullptr, nullptr, FVector::ZeroVector);
-}
-

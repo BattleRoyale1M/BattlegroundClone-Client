@@ -116,11 +116,6 @@ void UHealthComponent::OnRep_Health()
 	}
 }
 
-void UHealthComponent::OnRep_Dead()
-{
-	// TODO : 다음 단계에서 사망 연출 트리거용
-}
-
 /*
 첫 번째 함수와 두 번째 함수의 로직이 거의 똑같은 이유는 
 멀티플레이어 네트워크 복제(Replication) 구조 때문

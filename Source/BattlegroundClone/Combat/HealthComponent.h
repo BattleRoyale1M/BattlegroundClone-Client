@@ -46,16 +46,13 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_Health)
 	float Health = 100.f;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_Dead)
+	UPROPERTY(Replicated)
 	bool bDead = false;
-	
+
 	UFUNCTION()
 	void OnRep_Health();
-	
-	UFUNCTION()
-	void OnRep_Dead();
-	
-	
+
+
 	UPROPERTY(ReplicatedUsing = OnRep_Boost)
 	float Boost = 0.f;
 
