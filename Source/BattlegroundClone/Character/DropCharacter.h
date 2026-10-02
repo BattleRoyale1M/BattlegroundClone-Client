@@ -187,54 +187,10 @@ public:
 	TObjectPtr<UBagComponent> BagComp;
 
 	// --- 인터랙션/줍기/가방/소모품 사용 (UInteractionComponent로 위임) ---
-	// 아래 함수·델리게이트는 위젯(WBP)이 캐릭터를 직접 캐스팅해서 쓰고 있어
-	// 기존 호출부가 깨지지 않도록 얇은 포워딩 래퍼로 유지. 실제 상태/로직은 InteractionComp에 있음.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UInteractionComponent> InteractionComp;
 
-	UFUNCTION(BlueprintPure, Category = "Interaction")
-	AActor* GetCurrentInteractable() const { return InteractionComp ? InteractionComp->GetCurrentInteractable() : nullptr; }
-
-	UFUNCTION(BlueprintPure, Category = "Inventory")
-	TArray<AItemPickupActor*> GetNearbyPickups() const { return InteractionComp ? InteractionComp->GetNearbyPickups() : TArray<AItemPickupActor*>(); }
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestPickup(AItemPickupActor* Pickup) { if (InteractionComp) InteractionComp->RequestPickup(Pickup); }
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestEquipFromBag(int32 BagIndex, int32 TargetSlot) { if (InteractionComp) InteractionComp->RequestEquipFromBag(BagIndex, TargetSlot); }
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestUnequipToBag(int32 SlotIndex) { if (InteractionComp) InteractionComp->RequestUnequipToBag(SlotIndex); }
-
 	bool TryPickup(AItemPickupActor* Pickup) { return InteractionComp && InteractionComp->TryPickup(Pickup); }   // 서버 전용
-
-	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnNearbyPickupsChanged OnNearbyPickupsChanged;
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestUseItem(FName RowName) { if (InteractionComp) InteractionComp->RequestUseItem(RowName); }
-
-	UFUNCTION(BlueprintPure, Category = "Inventory")
-	bool IsUsingItem() const { return InteractionComp && InteractionComp->IsUsingItem(); }
-
-	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnItemUseStarted OnItemUseStarted;
-
-	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnItemUseEnded OnItemUseEnded;
-
-	UPROPERTY(BlueprintAssignable, Category = "Interaction")
-	FOnInteractableChanged OnInteractableChanged;
-
-	UFUNCTION()
-	void RelayNearbyPickupsChanged() { OnNearbyPickupsChanged.Broadcast(); }
-	UFUNCTION()
-	void RelayItemUseStarted(FText ItemName, float Duration) { OnItemUseStarted.Broadcast(ItemName, Duration); }
-	UFUNCTION()
-	void RelayItemUseEnded(bool bCompleted) { OnItemUseEnded.Broadcast(bCompleted); }
-	UFUNCTION()
-	void RelayInteractableChanged(FText PromptText) { OnInteractableChanged.Broadcast(PromptText); }
 
 protected:
 	virtual void BeginPlay() override;

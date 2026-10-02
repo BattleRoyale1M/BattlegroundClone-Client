@@ -130,14 +130,6 @@ void ADropCharacter::BeginPlay()
 	{
 		WeaponInventory->InitialEquip();
 	}
-
-	if (InteractionComp)
-	{
-		InteractionComp->OnNearbyPickupsChanged.AddDynamic(this, &ADropCharacter::RelayNearbyPickupsChanged);
-		InteractionComp->OnItemUseStarted.AddDynamic(this, &ADropCharacter::RelayItemUseStarted);
-		InteractionComp->OnItemUseEnded.AddDynamic(this, &ADropCharacter::RelayItemUseEnded);
-		InteractionComp->OnInteractableChanged.AddDynamic(this, &ADropCharacter::RelayInteractableChanged);
-	}
 }
 
 void ADropCharacter::PawnClientRestart()
@@ -794,7 +786,7 @@ void ADropCharacter::SetAimMode(EDropAimMode NewMode)
 
 void ADropCharacter::OnPronePressed(const FInputActionValue& Value)
 {
-	if (bIsDead || DropState != EDropState::Ground || IsUsingItem())
+	if (bIsDead || DropState != EDropState::Ground || (InteractionComp && InteractionComp->IsUsingItem()))
 	{
 		return;
 	}
