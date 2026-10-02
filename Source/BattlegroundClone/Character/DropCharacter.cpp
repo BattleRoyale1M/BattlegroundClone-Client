@@ -316,7 +316,7 @@ void ADropCharacter::EndScopedWeapon()
 
 FTransform ADropCharacter::GetScopedWeaponTransform(const AWeaponBase* Weapon) const
 {
-	if (Weapon->GetClass()->GetName().Contains(TEXT("AWP")))
+	if (Weapon->UsesScopedLens())
 	{
 		return FTransform(ScopedWeaponRotation, ScopedWeaponOffset);
 	}
@@ -831,7 +831,7 @@ void ADropCharacter::UpdateAimCamera(float Dt)
 		Weapon = nullptr;
 	}
 
-	const bool bSniper = Weapon && Weapon->GetClass()->GetName().Contains(TEXT("AWP"));
+	const bool bSniper = Weapon && Weapon->UsesScopedLens();
 	if (!bSniper)
 	{
 		CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, Dt, AimInterpSpeed);

@@ -82,6 +82,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	float GetScopedFOV() const { return ScopedFOV; }
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Scope")
+	bool bUsesScopedLens = false;
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	bool UsesScopedLens() const { return bUsesScopedLens; }
 
 	/*
 	RPC Server
