@@ -1,8 +1,66 @@
 # BattlegroundClone
 
-Unreal Engine 5 기반 배틀로얄(PUBG류) 클론 프로젝트. 낙하(Drop) 시퀀스, 전투(Combat), 루팅·인벤토리의 멀티플레이 리플리케이션에 집중해서 만든 C++ 게임플레이 프레임워크.
+<p>
+  <img src="https://img.shields.io/badge/Unreal%20Engine-5.8-0E1128?logo=unrealengine&logoColor=white" alt="Unreal Engine 5.8" />
+  <img src="https://img.shields.io/badge/Language-C%2B%2B-00599C?logo=cplusplus&logoColor=white" alt="C++" />
+  <img src="https://img.shields.io/badge/Platform-Win64-555555?logo=windows&logoColor=white" alt="Win64" />
+  <img src="https://img.shields.io/badge/Status-In%20Development-F9A825" alt="Status: In Development" />
+</p>
+<p>
+  <img src="https://img.shields.io/badge/Multiplayer-Replicated-2E8B57" alt="Multiplayer" />
+  <img src="https://img.shields.io/badge/Server-Listen%20%2F%20Dedicated-6A4C93" alt="Server: Listen / Dedicated" />
+  <img src="https://img.shields.io/badge/Release-v0.1--alpha-0366D6" alt="Release v0.1-alpha" />
+</p>
+
+Unreal Engine 5 기반 배틀로얄(PUBG류) 클론 프로젝트. **낙하(Drop) 시퀀스, 전투(Combat), 루팅·인벤토리**의 멀티플레이 리플리케이션에 집중해서 만든 C++ 게임플레이 프레임워크.
+
+---
+
+## 목차
+
+- [아키텍처](#아키텍처)
+- [게임 흐름](#게임-흐름)
+- [폴더 구조](#폴더-구조)
+- ["Drop"이 의미하는 것](#drop이-의미하는-것)
+- [Combat을 별도 도메인으로 분리한 이유](#combat을-별도-도메인으로-분리한-이유)
+- [Weapon — 무기 액터와 슬롯 인벤토리](#weapon--무기-액터와-슬롯-인벤토리)
+- [Interaction — 인터페이스 기반 상호작용](#interaction--인터페이스-기반-상호작용)
+- [UI](#ui)
+- [설계 원칙](#설계-원칙-포트폴리오-관점-요약)
+- [개발 로그](#개발-로그)
+- [향후 확장 방향](#향후-확장-방향)
+
+---
+
+## 아키텍처
+
+> 📌 다이어그램은 draw.io로 작성 중입니다. 완성되면 아래 이미지를 교체하세요.
+>
+> ```md
+> ![Architecture](docs/architecture.png)
+> ```
+
+## 게임 흐름
+
+```mermaid
+flowchart LR
+    A[메인메뉴<br/>Host / Join] --> B[로비<br/>카운트다운]
+    B -->|ServerTravel| C[매치 시작]
+    C --> D[비행기 탑승]
+    D --> E[자유낙하]
+    E --> F[낙하산]
+    F --> G[착지]
+    G --> H[루팅 / 전투]
+    H --> I[사망]
+```
+
+- `UMainMenuWidget` — Host(리슨 서버로 로비 오픈) / Join(IP 입력 후 접속).
+- `ALobbyGameMode` — `CountdownSeconds` 후 `TargetLevel`로 ServerTravel. 쿡된(패키지드) 빌드에서도 동작하도록 맵 경로를 SoftObjectPtr로 관리.
 
 ## 폴더 구조
+
+<details>
+<summary>펼쳐서 보기</summary>
 
 ```
 Source/BattlegroundClone/
@@ -21,25 +79,19 @@ Source/BattlegroundClone/
 
 각 폴더는 하나의 책임 영역(도메인)을 나타낸다. Unreal은 폴더 구조를 강제하지 않지만, 나중에 플러그인/모듈로 쪼갤 때 폴더 경계가 그대로 모듈 경계가 되도록 처음부터 도메인 단위로 나눠둔 것.
 
-## 게임 흐름
-
-```
-메인메뉴(Host/Join) → 로비(카운트다운) → ServerTravel → 매치
-  → 비행기 탑승 → 자유낙하 → 낙하산 → 착지 → 루팅/전투 → 사망
-```
-
-- `UMainMenuWidget` — Host(리슨 서버로 로비 오픈) / Join(IP 입력 후 접속).
-- `ALobbyGameMode` — `CountdownSeconds` 후 `TargetLevel`로 ServerTravel. 쿡된(패키지드) 빌드에서도 동작하도록 맵 경로를 SoftObjectPtr로 관리.
+</details>
 
 ## "Drop"이 의미하는 것
 
 배틀로얄 장르 특유의 **비행기 탑승 → 자유낙하 → 낙하산 → 착지** 흐름을 가리키는 이름. `EDropState`(Ground/InPlane/Freefall/Parachuting) enum으로 상태를 표현하고, `ADropCharacter::DropState`가 이 상태를 Replicated 프로퍼티로 들고 있다. GameMode/Character/PlayerController 이름 전부에 Drop이 붙은 이유는, 이 낙하 시스템이 이 프로젝트의 핵심 게임플레이 루프임을 명시하기 위함이다.
 
-- `ADropGameMode` — 매치 시작 시 비행기 런타임 스폰, 항로(낙하 경로) 주입, 맵 경계값 소유
-- `ADropCharacter` — 상태별(Ground/InPlane/Freefall/Parachuting) 이동 로직 + 카메라 전환
-- `AAirPlane` — 항로 이동, 탑승 좌석 관리, `FlightAlpha` 서버 권위 계산 + 클라 보간
-- `ADropPlayerController` — 미니맵/월드맵 좌표 변환, 낙하 마커, 비행 경로 라인, 지역 라벨(위젯에 데이터만 공급) + HUD/인벤토리/사망 UI 전환
-- `ADropPlayerState` — 맵 마커 색상(`MarkerColor`), 킬 수(`KillCount`) 복제
+| 클래스 | 역할 |
+| --- | --- |
+| `ADropGameMode` | 매치 시작 시 비행기 런타임 스폰, 항로(낙하 경로) 주입, 맵 경계값 소유 |
+| `ADropCharacter` | 상태별(Ground/InPlane/Freefall/Parachuting) 이동 로직 + 카메라 전환 |
+| `AAirPlane` | 항로 이동, 탑승 좌석 관리, `FlightAlpha` 서버 권위 계산 + 클라 보간 |
+| `ADropPlayerController` | 미니맵/월드맵 좌표 변환, 낙하 마커, 비행 경로 라인, 지역 라벨(위젯에 데이터만 공급) + HUD/인벤토리/사망 UI 전환 |
+| `ADropPlayerState` | 맵 마커 색상(`MarkerColor`), 킬 수(`KillCount`) 복제 |
 
 월드맵 지역 이름은 `FMapLocationRow`(DataTable Row) 기반이라, 지역 추가/수정은 C++ 재빌드 없이 DataTable 편집만으로 끝난다.
 
@@ -56,24 +108,30 @@ Source/BattlegroundClone/
 
 ## Weapon — 무기 액터와 슬롯 인벤토리
 
-- `AWeaponBase` — 총기/근접/투척(`EWeaponType`) 공용 베이스. 스탯(탄창, RPM, 사거리, 데미지)·FX·아이콘은 `EditDefaultsOnly`로 노출해 `BP_AR4`, `BP_KA47` 같은 자식 BP에서 값만 바꿔 무기를 만든다. 사격 판정은 서버에서 카메라 기준 트레이스, 총구 섬광/트레이서는 `NetMulticast`로 연출만. 단발/연사(`EFireMode`) 전환도 서버 권위.
-- `UWeaponInventoryComponent` — 5슬롯(주무기1·2 / 보조 / 근접 / 투척) 관리. 슬롯 클래스·인스턴스·장착 무기를 복제하고, 변경 시 `OnInventoryChanged`로 UI에 알린다. 드래그&드롭 슬롯 교체(`SwapWeaponSlots`)도 Server RPC로 처리.
+| 클래스 | 역할 |
+| --- | --- |
+| `AWeaponBase` | 총기/근접/투척(`EWeaponType`) 공용 베이스. 스탯(탄창, RPM, 사거리, 데미지)·FX·아이콘은 `EditDefaultsOnly`로 노출해 `BP_AR4`, `BP_KA47` 같은 자식 BP에서 값만 바꿔 무기를 만든다. 사격 판정은 서버에서 카메라 기준 트레이스, 총구 섬광/트레이서는 `NetMulticast`로 연출만. 단발/연사(`EFireMode`) 전환도 서버 권위. |
+| `UWeaponInventoryComponent` | 5슬롯(주무기1·2 / 보조 / 근접 / 투척) 관리. 슬롯 클래스·인스턴스·장착 무기를 복제하고, 변경 시 `OnInventoryChanged`로 UI에 알린다. 드래그&드롭 슬롯 교체(`SwapWeaponSlots`)도 Server RPC로 처리. |
 
 ## Interaction — 인터페이스 기반 상호작용
 
 `IInteractableInterface`(`Interact`, `GetInteractionPromptText`)만 구현하면 무엇이든 상호작용 대상이 된다. 캐릭터는 오버랩으로 주변 후보를 모아 가장 적합한 대상을 고르고, 프롬프트 텍스트를 델리게이트로 HUD에 넘긴 뒤, 입력 시 `ServerInteract` RPC로 서버에서 실행한다. 캐릭터는 대상의 구체 타입을 모른다.
 
-- `AItemPickupActor` — 단일 무기 픽업. 허용 슬롯(`AllowedSlots`) 중 빈 곳에 장착.
-- `ALootContainer` — 다중 아이템 루팅 상자. `LootItems`를 복제하고, 다 털리면 스스로 정리. 컨트롤러의 `OpenLootScreen`으로 인벤토리 UI와 연결.
+| 클래스 | 역할 |
+| --- | --- |
+| `AItemPickupActor` | 단일 무기 픽업. 허용 슬롯(`AllowedSlots`) 중 빈 곳에 장착. |
+| `ALootContainer` | 다중 아이템 루팅 상자. `LootItems`를 복제하고, 다 털리면 스스로 정리. 컨트롤러의 `OpenLootScreen`으로 인벤토리 UI와 연결. |
 
 ## UI
 
 위젯 로직은 가능한 한 C++(컨트롤러/컴포넌트)에서 데이터로 만들어 넘기고, UMG는 표시만 담당한다.
 
-- `UDropHUDWidget` — 체력·탄약·아이템 슬롯·나침반·미니맵 HUD. 게임플레이/내비게이션 그룹 단위로 표시 토글(비행기 탑승·인벤토리·사망 시), 중앙 알림
-- `UMapGridWidget` — 월드맵 격자 그리기(`UWidget` 직접 상속)
-- `UDropMapLabelWidget` — 월드맵 지역 이름 라벨
-- 인벤토리(BP) — 배틀그라운드식 3단 레이아웃(루팅 / 장비·캐릭터 프리뷰 / 무기·부착물 슬롯), 슬롯 드래그&드롭, SceneCapture2D 기반 캐릭터 3D 실시간 프리뷰
+| 요소 | 역할 |
+| --- | --- |
+| `UDropHUDWidget` | 체력·탄약·아이템 슬롯·나침반·미니맵 HUD. 게임플레이/내비게이션 그룹 단위로 표시 토글(비행기 탑승·인벤토리·사망 시), 중앙 알림 |
+| `UMapGridWidget` | 월드맵 격자 그리기(`UWidget` 직접 상속) |
+| `UDropMapLabelWidget` | 월드맵 지역 이름 라벨 |
+| 인벤토리(BP) | 배틀그라운드식 3단 레이아웃(루팅 / 장비·캐릭터 프리뷰 / 무기·부착물 슬롯), 슬롯 드래그&드롭, SceneCapture2D 기반 캐릭터 3D 실시간 프리뷰 |
 
 ## 설계 원칙 (포트폴리오 관점 요약)
 
@@ -88,15 +146,19 @@ Source/BattlegroundClone/
 
 작업 중 겪은 이슈와 해결 과정은 [`docs/`](docs/)에 날짜별로 정리.
 
-- 레벨 트래블 최적화 / 심리스 트래블, 맵 다이어트
-- Bundled PSO 캐시 설정
-- 총구 섬광 VFX
-- 멀티플레이 리플리케이션 교훈
+| 날짜 | 내용 |
+| --- | --- |
+| 2026-09-01 | 프로젝트 셋업 및 초기 진행 |
+| 2026-09-02 | 레벨 트래블 최적화 |
+| 2026-09-03 | 심리스 트래블 결과 / 맵 다이어트 |
+| 2026-09-03 | Bundled PSO 캐시 설정 |
+| 2026-09-08 | 총구 섬광 VFX |
+| 2026-09-10 | 멀티플레이 리플리케이션 교훈 |
 
 ## 향후 확장 방향
 
-- `Combat/`, `Drop/`, `Interaction/`을 별도 Runtime 플러그인 모듈로 승격 → 다른 프로젝트에서도 재사용 가능한 게임플레이 킷으로.
-- `DropTypes.h`의 enum들을 GameplayTag로 옮겨 데이터 기반 확장 (새 상태 추가 시 재컴파일 불필요).
-- 무기/투사체 스탯을 자식 BP 기본값에서 DataAsset/DataTable로 이전해 한 곳에서 밸런싱.
-- 루팅 아이템을 무기 외(탄약·회복·방어구·부착물)로 확장 — 현재 `FLootItemEntry`는 무기 클래스 전용.
-- 자기장(블루존)·순위/승리 판정 등 매치 진행 로직.
+- [ ] `Combat/`, `Drop/`, `Interaction/`을 별도 Runtime 플러그인 모듈로 승격 → 다른 프로젝트에서도 재사용 가능한 게임플레이 킷으로.
+- [ ] `DropTypes.h`의 enum들을 GameplayTag로 옮겨 데이터 기반 확장 (새 상태 추가 시 재컴파일 불필요).
+- [ ] 무기/투사체 스탯을 자식 BP 기본값에서 DataAsset/DataTable로 이전해 한 곳에서 밸런싱.
+- [ ] 루팅 아이템을 무기 외(탄약·회복·방어구·부착물)로 확장 — 현재 `FLootItemEntry`는 무기 클래스 전용.
+- [ ] 자기장(블루존)·순위/승리 판정 등 매치 진행 로직.
