@@ -79,7 +79,7 @@ private:
 	static FString GetLocalIp();
 
 	UPROPERTY(Config)
-	FString BaseUrl = TEXT("http://localhost:8080");
+	FString BaseUrl;
 
 	FString CurrentSessionId;
 };
