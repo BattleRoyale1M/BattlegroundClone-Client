@@ -18,7 +18,7 @@ public class BattlegroundClone : ModuleRules
 			"Niagara"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "HTTP", "Json", "JsonUtilities", "Sockets" });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"BattlegroundClone"

@@ -10,10 +10,13 @@ class BATTLEGROUNDCLONE_API ALobbyGameMode : public AGameModeBase
 public:
 	ALobbyGameMode();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Logout(AController* Exiting) override;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Match") float CountdownSeconds = 5.f;
 	UPROPERTY(EditDefaultsOnly, Category="Match") TSoftObjectPtr<UWorld> TargetLevel;
 	void TravelToMatch();
 private:
+	class USessionApiSubsystem* GetSessionApi() const;
 	FTimerHandle CountdownHandle;
 };
