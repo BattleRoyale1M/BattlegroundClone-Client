@@ -7,6 +7,7 @@
 #include "Weapon/WeaponBase.h"
 #include "Weapon/WeaponInventoryComponent.h"
 #include "Combat/HealthComponent.h"
+#include "Combat/ArmorComponent.h"
 #include "Interaction/Interactable/InteractableInterface.h"
 #include "Interaction/Item/ItemPickupActor.h"
 #include "Interaction/Item/ItemTypes.h"
@@ -272,6 +273,15 @@ void UInteractionComponent::ServerUseItem_Implementation(FName RowName)
 		return;
 	}
 	const FItemRow* Row = BagComp->FindItemRow(RowName);
+	if (Row && Row->ItemType == EBGItemType::Equipment)
+	{
+		if (Character->ArmorComp && BagComp->RemoveItem(RowName, 1))
+		{
+			const FName Previous = Character->ArmorComp->Equip(RowName, *Row);
+			if (!Previous.IsNone()) BagComp->AddItem(Previous, 1);
+		}
+		return;
+	}
 	if (!Row || (Row->ItemType != EBGItemType::Heal && Row->ItemType != EBGItemType::Boost))
 	{
 		return;

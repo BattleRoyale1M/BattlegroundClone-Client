@@ -11,6 +11,7 @@
 #include "Animation/AnimMontage.h"
 
 #include "Combat/ProjectileBullet.h"
+#include "Combat/ArmorComponent.h"
 #include "Core/DropPlayerController.h"
 #include "Core/DropPlayerState.h"
 
@@ -115,6 +116,8 @@ ADropCharacter::ADropCharacter()
 	BagComp = CreateDefaultSubobject<UBagComponent>(TEXT("BagComp"));
 	InteractionComp = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComp"));
 	InputBindingComp = CreateDefaultSubobject<UInputBindingComponent>(TEXT("InputBindingComp"));
+	
+	ArmorComp = CreateDefaultSubobject<UArmorComponent>(TEXT("ArmorComp"));
 }
 
 /*
@@ -209,14 +212,17 @@ float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 {
 	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	FVector ShotDirection = GetActorForwardVector();
+	bool bHeadHit = false;
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		const FPointDamageEvent& PointDamageEvent = static_cast<const FPointDamageEvent&>(DamageEvent);
 		ShotDirection = PointDamageEvent.ShotDirection;
+		bHeadHit = PointDamageEvent.HitInfo.BoneName == TEXT("head");
 	}
+	const float FinalDamage = ArmorComp ? ArmorComp->AbsorbDamage(DamageAmount, bHeadHit) : DamageAmount;
 	if (HealthComp)
 	{
-		HealthComp -> ApplyDamage(DamageAmount, EventInstigator, DamageCauser, ShotDirection);
+		HealthComp -> ApplyDamage(FinalDamage, EventInstigator, DamageCauser, ShotDirection);
 	}
 	return Applied;
 }

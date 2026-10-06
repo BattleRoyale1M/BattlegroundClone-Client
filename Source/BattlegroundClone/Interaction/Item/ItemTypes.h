@@ -16,6 +16,14 @@ enum class EBGItemType : uint8
 	Ammo,
 	Equipment,
 };
+
+UENUM(BlueprintType)
+enum class EBGEquipSlot : uint8
+{
+	Vest,
+	Helmet,
+};
+
 USTRUCT(BlueprintType)
 struct FItemRow : public FTableRowBase
 {
@@ -56,4 +64,14 @@ struct FItemRow : public FTableRowBase
 	// --- 부스터 아이템 전용 (진통제, 에너지 드링크) ---
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Boost", meta = (EditCondition = "ItemType == EBGItemType::Boost"))
 	float BoostGainAmount = 40.f;
+	
+	// --- 갑옷 ---
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Equipment", meta = (EditCondition = "ItemType == EBGItemType::Equipment"))
+	EBGEquipSlot EquipSlot = EBGEquipSlot::Vest;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Equipment", meta = (EditCondition = "ItemType == EBGItemType::Equipment", ClampMin = "0", ClampMax = "1"))
+	float DamageReduction = 0.3f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Equipment", meta = (EditCondition = "ItemType == EBGItemType::Equipment", ClampMin = "1"))
+	float MaxDurability = 200.f;
 };

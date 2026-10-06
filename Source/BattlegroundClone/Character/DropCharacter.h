@@ -205,6 +205,9 @@ public:
 	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputBindingComponent> InputBindingComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<class UArmorComponent> ArmorComp;
 
 protected:
 	/*
