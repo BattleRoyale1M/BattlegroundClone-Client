@@ -273,7 +273,7 @@ void UInteractionComponent::ServerUseItem_Implementation(FName RowName)
 		return;
 	}
 	const FItemRow* Row = BagComp->FindItemRow(RowName);
-	if (Row && Row->ItemType == EBGItemType::Equipment)
+	if (Row && Row->ItemType == EBGItemType::Equipment && Row->EquipSlot != EBGEquipSlot::Backpack)
 	{
 		if (Character->ArmorComp && BagComp->RemoveItem(RowName, 1))
 		{

@@ -22,6 +22,7 @@ enum class EBGEquipSlot : uint8
 {
 	Vest,
 	Helmet,
+	Backpack,
 };
 
 USTRUCT(BlueprintType)
