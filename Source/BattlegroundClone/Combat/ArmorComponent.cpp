@@ -1,6 +1,11 @@
 ﻿#include "Combat/ArmorComponent.h"
 #include "Net/UnrealNetwork.h"
 
+#include "GameFramework/Character.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+
 UArmorComponent::UArmorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -12,6 +17,35 @@ void UArmorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UArmorComponent, Vest);
 	DOREPLIFETIME(UArmorComponent, Helmet);
+}
+
+void UArmorComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	VestMeshComp = CreateArmorMesh(VestSocket, VestOffset);
+	HelmetMeshComp = CreateArmorMesh(HelmetSocket, HelmetOffset);
+	RefreshVisuals();
+}
+
+UStaticMeshComponent* UArmorComponent::CreateArmorMesh(FName Socket, const FTransform& Offset)
+{
+	ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+	if (!OwnerChar || !OwnerChar->GetMesh())
+	{
+		return nullptr;
+	}
+	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(OwnerChar);
+	Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Comp->RegisterComponent();
+	Comp->AttachToComponent(OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+	Comp->SetRelativeTransform(Offset);
+	return Comp;
+}
+
+void UArmorComponent::RefreshVisuals()
+{
+	if (VestMeshComp) VestMeshComp->SetStaticMesh(Vest.IsEquipped() ? Vest.Mesh.Get() : nullptr);
+	if (HelmetMeshComp) HelmetMeshComp->SetStaticMesh(Helmet.IsEquipped() ? Helmet.Mesh.Get() : nullptr);
 }
 
 FName UArmorComponent::Equip(FName RowName, const FItemRow& Row)
@@ -26,6 +60,8 @@ FName UArmorComponent::Equip(FName RowName, const FItemRow& Row)
 	Target.DamageReduction = Row.DamageReduction;
 	Target.MaxDurability = Row.MaxDurability;
 	Target.Durability = Row.MaxDurability;
+	Target.Mesh = Row.PickupMesh;
+	RefreshVisuals();
 	OnArmorChanged.Broadcast();
 	return Previous;
 }
@@ -43,11 +79,13 @@ float UArmorComponent::AbsorbDamage(float Damage, bool bHead)
 	{
 		Target = FEquippedArmor();
 	}
+	RefreshVisuals();
 	OnArmorChanged.Broadcast();
 	return Reduced;
 }
 
 void UArmorComponent::OnRep_Armor()
 {
+	RefreshVisuals();
 	OnArmorChanged.Broadcast();
 }

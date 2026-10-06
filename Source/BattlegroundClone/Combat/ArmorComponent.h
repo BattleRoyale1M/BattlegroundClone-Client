@@ -4,6 +4,9 @@
 #include "Interaction/Item/ItemTypes.h"
 #include "ArmorComponent.generated.h"
 
+class UStaticMesh;
+class UStaticMeshComponent;
+
 USTRUCT(BlueprintType)
 struct FEquippedArmor
 {
@@ -20,6 +23,9 @@ struct FEquippedArmor
 
 	UPROPERTY(BlueprintReadOnly, Category = "Armor")
 	float MaxDurability = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Armor")
+	TObjectPtr<UStaticMesh> Mesh;
 
 	bool IsEquipped() const
 	{
@@ -48,6 +54,29 @@ public:
 	FOnArmorChanged OnArmorChanged;
 
 protected:
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Armor|Visual")
+	FName VestSocket = TEXT("spine_03");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Armor|Visual")
+	FName HelmetSocket = TEXT("head");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Armor|Visual")
+	FTransform VestOffset;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Armor|Visual")
+	FTransform HelmetOffset;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> VestMeshComp;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> HelmetMeshComp;
+
+	UStaticMeshComponent* CreateArmorMesh(FName Socket, const FTransform& Offset);
+	void RefreshVisuals();
+
 	UPROPERTY(ReplicatedUsing = OnRep_Armor)
 	FEquippedArmor Vest;
 
