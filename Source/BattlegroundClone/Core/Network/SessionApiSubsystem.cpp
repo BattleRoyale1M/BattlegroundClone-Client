@@ -99,15 +99,20 @@ void USessionApiSubsystem::SendRequest(const FString& Verb, const FString& Path,
 	Request->ProcessRequest();
 }
 
-FString USessionApiSubsystem::GetLocalIp()
+FString USessionApiSubsystem::GetLocalIp() const
 {
+	if (!AdvertiseIp.IsEmpty())
+	{
+		return AdvertiseIp;
+	}
 	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	TArray<TSharedPtr<FInternetAddr>> Addrs;
 	if (Sockets->GetLocalAdapterAddresses(Addrs))
 	{
 		for (const TSharedPtr<FInternetAddr>& A : Addrs)
 		{
-			const FString Ip = A->ToString(false);
+			FString Ip = A->ToString(false);
+			Ip.RemoveFromStart(TEXT("::ffff:"));
 			if (Ip.StartsWith(TEXT("100.")))
 			{
 				return Ip;

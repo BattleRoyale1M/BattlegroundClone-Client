@@ -76,10 +76,12 @@ private:
 	void SendRequest(const FString& Verb, const FString& Path, const FString& Body,
 		TFunction<void(bool, const FString&)> OnDone);
 
-	static FString GetLocalIp();
+	FString GetLocalIp() const;
 
 	UPROPERTY(Config)
 	FString BaseUrl;
 
+	UPROPERTY(Config)
+	FString AdvertiseIp;
 	FString CurrentSessionId;
 };
