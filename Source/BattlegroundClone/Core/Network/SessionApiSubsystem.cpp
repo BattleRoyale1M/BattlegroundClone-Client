@@ -101,7 +101,20 @@ void USessionApiSubsystem::SendRequest(const FString& Verb, const FString& Path,
 
 FString USessionApiSubsystem::GetLocalIp()
 {
+	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	TArray<TSharedPtr<FInternetAddr>> Addrs;
+	if (Sockets->GetLocalAdapterAddresses(Addrs))
+	{
+		for (const TSharedPtr<FInternetAddr>& A : Addrs)
+		{
+			const FString Ip = A->ToString(false);
+			if (Ip.StartsWith(TEXT("100.")))
+			{
+				return Ip;
+			}
+		}
+	}
 	bool bCanBindAll = false;
-	TSharedPtr<FInternetAddr> Addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, bCanBindAll);
+	TSharedPtr<FInternetAddr> Addr = Sockets->GetLocalHostAddr(*GLog, bCanBindAll);
 	return Addr.IsValid() ? Addr->ToString(false) : TEXT("127.0.0.1");
 }
