@@ -50,6 +50,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	bool bWaitForPlayerLanding = true;
 
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float BotEngageRange = 1200.f;
+
 private:
 	TWeakObjectPtr<ADropCharacter> Target;
 	FVector AimOffset = FVector::ZeroVector;

@@ -17,8 +17,8 @@ ABGAIController::ABGAIController()
 	Perception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception"));
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 
-	SightConfig->SightRadius = 5000.f;
-	SightConfig->LoseSightRadius = 6000.f;
+	SightConfig->SightRadius = 3000.f;
+	SightConfig->LoseSightRadius = 3500.f;
 	SightConfig->PeripheralVisionAngleDegrees = 70.f;
 	SightConfig->SetMaxAge(5.f);
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -55,7 +55,9 @@ bool ABGAIController::IsValidTarget(const ADropCharacter* Candidate) const
 		&& Candidate != GetPawn()
 		&& Candidate->GetHealthComp()
 		&& !Candidate->GetHealthComp()->IsDead()
-		&& Candidate->DropState == EDropState::Ground;
+		&& Candidate->DropState == EDropState::Ground
+		&& (Candidate->IsPlayerControlled()
+			|| FVector::Dist(Candidate->GetActorLocation(), GetPawn()->GetActorLocation()) <= BotEngageRange);
 }
 
 void ABGAIController::SetTarget(ADropCharacter* NewTarget)
@@ -142,7 +144,8 @@ void ABGAIController::OnBotHit(AController* InstigatorController, AActor* Damage
 	}
 
 	ADropCharacter* Attacker = Cast<ADropCharacter>(InstigatorController->GetPawn());
-	if (Attacker != Target.Get() && IsValidTarget(Attacker)) // 나를 때린 녀석이 내가 주시하고 있던 타겟이 아니고 && 적절한 타겟인지
+	if (Attacker && Attacker != Target.Get() && Attacker != GetPawn()
+		&& Attacker->GetHealthComp() && !Attacker->GetHealthComp()->IsDead()) // 나를 때린 녀석이 내가 주시하고 있던 타겟이 아니고 && 살아있는지
 	{
 		SetTarget(Attacker); // 타겟대상으로 삼음
 	}
@@ -181,7 +184,12 @@ void ABGAIController::Tick(float DeltaTime)
 		PickNewTarget();
 	}
 
-	if (Target.IsValid() && !IsValidTarget(Target.Get()))
+	if (Target.IsValid() && (!Target->GetHealthComp() || Target->GetHealthComp()->IsDead() || Target->DropState != EDropState::Ground))
+	{
+		PickNewTarget();
+	}
+
+	if (!Target.IsValid())
 	{
 		PickNewTarget();
 	}
