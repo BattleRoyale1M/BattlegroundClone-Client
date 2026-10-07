@@ -1217,6 +1217,11 @@ void ADropCharacter::Multicast_HitReact_Implementation(FVector ShotDirection)
 	{
 		return;
 	}
+	const AWeaponBase* Weapon = GetEquippedWeapon();
+	if (!Weapon || Weapon->GetWeaponType() != EWeaponType::Gun || IsProne())
+	{
+		return;
+	}
 	// 총알이 날아온 방향(ShotDirection)을 계산해서 몇 번 피격 모션을 틀지 인덱스를 구함 (예: 0번=전방, 1번=후방, 2번=좌측, 3번=우측 피격 몽타주)
 	const int32 Index = GetHitDirectionIndex(ShotDirection);
 	if (!HitReactMontages.IsValidIndex(Index) || !HitReactMontages[Index])
