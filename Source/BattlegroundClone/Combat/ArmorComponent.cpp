@@ -35,6 +35,7 @@ UStaticMeshComponent* UArmorComponent::CreateArmorMesh(FName Socket, const FTran
 		return nullptr;
 	}
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(OwnerChar);
+	OwnerChar->AddInstanceComponent(Comp);
 	Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Comp->RegisterComponent();
 	Comp->AttachToComponent(OwnerChar->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
