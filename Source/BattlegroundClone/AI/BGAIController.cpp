@@ -105,6 +105,11 @@ void ABGAIController::PickNewTarget()
 
 void ABGAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
+	if (!bActivated)
+	{
+		return;
+	}
+
 	ADropCharacter* Seen = Cast<ADropCharacter>(Actor);
 	if (!Seen)
 	{
@@ -126,6 +131,11 @@ void ABGAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimu
 
 void ABGAIController::OnBotHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection)
 {
+	if (!bActivated)
+	{
+		return;
+	}
+
 	if (!InstigatorController)
 	{
 		return;
@@ -159,6 +169,16 @@ void ABGAIController::Tick(float DeltaTime)
 		SetTarget(nullptr);
 		SetActorTickEnabled(false);
 		return;
+	}
+	
+	if (!bActivated)
+	{
+		if (bWaitForPlayerLanding && !HasAnyPlayerLanded())
+		{
+			return;
+		}
+		bActivated = true;
+		PickNewTarget();
 	}
 
 	if (Target.IsValid() && !IsValidTarget(Target.Get()))
@@ -229,3 +249,18 @@ void ABGAIController::Wander(float DeltaTime)
 
 	WanderCooldown = FMath::FRandRange(2.f, 5.f);
 }
+
+bool ABGAIController::HasAnyPlayerLanded() const
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APlayerController* PC = It->Get();
+		const ADropCharacter* Player = PC ? Cast<ADropCharacter>(PC->GetPawn()) : nullptr;
+		if (Player && Player->bHasLanded)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+

@@ -46,6 +46,9 @@ protected:
 
 	UFUNCTION()
 	void OnBotHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	bool bWaitForPlayerLanding = true;
 
 private:
 	TWeakObjectPtr<ADropCharacter> Target;
@@ -59,4 +62,7 @@ private:
 	void PickNewTarget();
 	void Wander(float DeltaTime);
 	void ShootTick(float DeltaTime);
+	
+	bool bActivated = false;
+	bool HasAnyPlayerLanded() const;
 };

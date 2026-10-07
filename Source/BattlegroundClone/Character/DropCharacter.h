@@ -77,7 +77,7 @@ public:
 	void EnterPlane(AAirPlane* Plane, USceneComponent* Seat);
 
 	/*
-	낙하산
+	낙하
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Drop")
 	void BeginFreefall();
@@ -91,6 +91,8 @@ public:
 	float GroundDistance() const;
 	void  UpdateFreefall(float Dt);
 	void  UpdateParachute(float Dt);
+	
+	bool bHasLanded = false;
 
 	/*
 	포복

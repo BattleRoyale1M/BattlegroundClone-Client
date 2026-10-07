@@ -370,6 +370,10 @@ void ADropCharacter::SetDropState(EDropState NewState)
 		return;
 	}
 	const EDropState Old = DropState;
+	if (Old == EDropState::Parachuting && NewState == EDropState::Ground)
+	{
+		bHasLanded = true;
+	}
 	DropState = NewState; // ★ 서버에서만 호출됨 → 복제 → 클라 OnRep_DropState
 
 	if (NewState != EDropState::Ground && AimMode != EDropAimMode::Hip)
