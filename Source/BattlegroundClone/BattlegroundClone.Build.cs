@@ -15,7 +15,10 @@ public class BattlegroundClone : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"UMG",
-			"Niagara"
+			"Niagara",
+			"AIModule",
+			"NavigationSystem",
+			"GameplayTasks"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "HTTP", "Json", "JsonUtilities", "Sockets" });
