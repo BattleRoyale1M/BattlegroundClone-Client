@@ -593,12 +593,25 @@ void ADropCharacter::OnFastFallPressed()
 	if (DropState == EDropState::Freefall)
 	{
 		bIsFastFalling = true;
+		if (!HasAuthority())
+		{
+			ServerSetFastFalling(true);
+		}
 	}
 }
 
 void ADropCharacter::OnFastFallReleased()
 {
 	bIsFastFalling = false;
+	if (!HasAuthority())
+	{
+		ServerSetFastFalling(false);
+	}
+}
+
+void ADropCharacter::ServerSetFastFalling_Implementation(bool bNewFastFalling)
+{
+	bIsFastFalling = bNewFastFalling && DropState == EDropState::Freefall;
 }
 
 void ADropCharacter::OnParachutePressed()

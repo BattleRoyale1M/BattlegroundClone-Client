@@ -67,6 +67,7 @@ public:
 
 	UFUNCTION(Server, Reliable) void ServerBeginFreefall();
 	UFUNCTION(Server, Reliable) void ServerDeployParachute();
+	UFUNCTION(Server, Reliable) void ServerSetFastFalling(bool bNewFastFalling);
 
 	UFUNCTION(BlueprintCallable, Category = "Drop")
 	void SetDropState(EDropState NewState);

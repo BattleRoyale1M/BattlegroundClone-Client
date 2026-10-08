@@ -122,7 +122,16 @@ void AAirPlane::Tick(float DeltaSeconds)
 	}
 
 	const AGameStateBase* GS = GetWorld()->GetGameState();
-	const float Now = GS ? GS->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+	const float TargetTime = GS ? GS->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+	if (HasAuthority() || SmoothedServerTime < 0.f || FMath::Abs(TargetTime - SmoothedServerTime) > 1.f)
+	{
+		SmoothedServerTime = TargetTime;
+	}
+	else
+	{
+		SmoothedServerTime = FMath::FInterpTo(SmoothedServerTime + DeltaSeconds, TargetTime, DeltaSeconds, 1.f);
+	}
+	const float Now = SmoothedServerTime;
 	const float Alpha = FlightStartServerTime < 0.f ? 0.f
 		: FMath::Clamp((Now - FlightStartServerTime) / FlightDuration, 0.f, 1.f);
 	SetActorLocation(FMath::Lerp(StartPoint, EndPoint, Alpha));
