@@ -55,6 +55,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flight")
 	void SetRoute(FVector InStart, FVector InEnd);
 	
+	USceneComponent* GetSeatPoint() const
+	{
+		return SeatPoint;
+	}
+	
 protected:
 	virtual void BeginPlay() override;
 	

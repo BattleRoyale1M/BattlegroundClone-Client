@@ -253,7 +253,7 @@ protected:
 	/*
 	현재 탑승 중인 비행기
 	*/
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	TObjectPtr<AAirPlane> BoardedPlane;
 
 	/*

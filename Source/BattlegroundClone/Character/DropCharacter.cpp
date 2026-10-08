@@ -167,6 +167,11 @@ void ADropCharacter::Tick(float DeltaTime)
 
 	switch (DropState)
 	{
+	case EDropState::InPlane:
+		if (!HasAuthority() && BoardedPlane && GetAttachParentActor() != BoardedPlane)
+		{
+			AttachToComponent(BoardedPlane->GetSeatPoint(),  FAttachmentTransformRules::SnapToTargetIncludingScale);
+		}
 	case EDropState::Freefall:
 		if (HasAuthority() || IsLocallyControlled()) UpdateFreefall(DeltaTime);
 		if (HasAuthority() && GroundDistance() <= AutoDeployHeight) DeployParachute();
@@ -206,6 +211,7 @@ void ADropCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ADropCharacter, AimMode, COND_SkipOwner);
 	DOREPLIFETIME(ADropCharacter, DropState);
+	DOREPLIFETIME(ADropCharacter, BoardedPlane);
 }
 
 float ADropCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
