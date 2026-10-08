@@ -1021,7 +1021,7 @@ void ADropCharacter::BeginScopedWeapon(AWeaponBase* Weapon)
 	ScopeFromOffset = CameraBoom->SocketOffset;
 	ScopeFromFOV = FollowCamera->FieldOfView;
 	Weapon->AttachToComponent(FollowCamera, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	Weapon->SetScopeCaptureActive(true);
+	Weapon->SetScopeCaptureActive(true, FollowCamera);
 	if (GetMesh())
 	{
 		GetMesh()->HideBoneByName(TEXT("head"), PBO_None);

@@ -138,7 +138,7 @@ void AWeaponBase::SetFireMode(EFireMode NewFireMode)
 	CurrentFireMode = NewFireMode;
 }
 
-void AWeaponBase::SetScopeCaptureActive(bool bActive)
+void AWeaponBase::SetScopeCaptureActive(bool bActive, USceneComponent* AimView)
 {
 	USceneCaptureComponent2D* Capture = FindComponentByClass<USceneCaptureComponent2D>();
 	if (!Capture)
@@ -153,6 +153,23 @@ void AWeaponBase::SetScopeCaptureActive(bool bActive)
 		{
 			Capture->HiddenActors.Add(OwnerActor);
 		}
+		if (AimView && !bScopeCaptureOnAimView)
+		{
+			ScopeCaptureHomeParent = Capture->GetAttachParent();
+			ScopeCaptureHomeSocket = Capture->GetAttachSocketName();
+			ScopeCaptureHomeRelative = Capture->GetRelativeTransform();
+			Capture->AttachToComponent(AimView, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			bScopeCaptureOnAimView = true;
+		}
+	}
+	else if (bScopeCaptureOnAimView)
+	{
+		if (USceneComponent* HomeParent = ScopeCaptureHomeParent.Get())
+		{
+			Capture->AttachToComponent(HomeParent, FAttachmentTransformRules::KeepRelativeTransform, ScopeCaptureHomeSocket);
+			Capture->SetRelativeTransform(ScopeCaptureHomeRelative);
+		}
+		bScopeCaptureOnAimView = false;
 	}
 	Capture->bCaptureEveryFrame = bActive;
 	Capture->SetActive(bActive);

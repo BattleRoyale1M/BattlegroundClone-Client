@@ -48,8 +48,8 @@ public:
 	void StopFire();
 	void StartReload();
 	void SetFireMode(EFireMode NewFireMode);
-	void SetScopeCaptureActive(bool bActive);
-	
+	void SetScopeCaptureActive(bool bActive, USceneComponent* AimView = nullptr);
+
 	// 무기 타입 반환 함수
 	UFUNCTION(BlueprintPure, Category="Weapon")
 	EWeaponType GetWeaponType() const
@@ -229,8 +229,11 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	FRotator AimCameraRotationOffset = FRotator::ZeroRotator;
-	
-	
+
+	TWeakObjectPtr<USceneComponent> ScopeCaptureHomeParent;
+	FName ScopeCaptureHomeSocket = NAME_None;
+	FTransform ScopeCaptureHomeRelative = FTransform::Identity;
+	bool bScopeCaptureOnAimView = false;
 };
 
 /*
