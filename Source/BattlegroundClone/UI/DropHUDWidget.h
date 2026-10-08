@@ -40,4 +40,17 @@ public:
 	// 나침반/미니맵은 Ground/InPlane 여부와 무관하게 항상 보여야 함 (사망 시에만 숨김)
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void SetNavigationHUDVisible(bool bVisible);
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* AliveCountText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* KillCountText;
+
+protected:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+private:
+	int32 CachedAliveCount = -1;
+	int32 CachedKillCount = -1;
 };

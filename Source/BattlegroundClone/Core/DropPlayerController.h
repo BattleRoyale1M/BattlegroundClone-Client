@@ -109,6 +109,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ShowDeathUI();
 
+	UFUNCTION(Client, Reliable)
+	void ClientShowMatchResult(bool bVictory, int32 Placement, int32 TotalPlayers, int32 Kills);
+
+	UFUNCTION(BlueprintCallable, Category = "Match")
+	void GoToMainMenu();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -137,6 +143,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby|UI")
 	TSubclassOf<UUserWidget> LobbyWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Match|UI")
+	TSubclassOf<class UMatchResultWidget> GameOverWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Match|UI")
+	TSubclassOf<class UMatchResultWidget> VictoryWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Match")
+	TSoftObjectPtr<UWorld> MainMenuLevel;
+
 private:
 	AAirPlane* FindPlane() const;
 
@@ -163,6 +178,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UUserWidget> LobbyWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UMatchResultWidget> MatchResultWidget;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float DeathFadeDuration = 2.f;

@@ -7,13 +7,92 @@
 #include "Character/DropCharacter.h"
 #include "Core/DropPlayerController.h"
 #include "Core/DropPlayerState.h"
+#include "Core/DropGameState.h"
+#include "TimerManager.h"
 
 ADropGameMode::ADropGameMode()
 {
 	DefaultPawnClass = ADropCharacter::StaticClass();
 	PlayerControllerClass = ADropPlayerController::StaticClass();
 	PlayerStateClass = ADropPlayerState::StaticClass();
+	GameStateClass = ADropGameState::StaticClass();
+}
 
+void ADropGameMode::RegisterCombatant(ADropCharacter* Character)
+{
+	if (!Character || bMatchOver || AliveCombatants.Contains(Character))
+	{
+		return;
+	}
+	AliveCombatants.Add(Character);
+	if (ADropGameState* GS = GetGameState<ADropGameState>())
+	{
+		GS->TotalCount++;
+	}
+	SyncAliveCount();
+}
+
+void ADropGameMode::NotifyCombatantDied(ADropCharacter* Victim)
+{
+	if (!Victim || !AliveCombatants.Contains(Victim))
+	{
+		return;
+	}
+	const int32 Placement = AliveCombatants.Num();
+	AliveCombatants.Remove(Victim);
+	SyncAliveCount();
+
+	if (ADropPlayerController* PC = Cast<ADropPlayerController>(Victim->GetController()))
+	{
+		const ADropGameState* GS = GetGameState<ADropGameState>();
+		const ADropPlayerState* PS = PC->GetPlayerState<ADropPlayerState>();
+		PC->ClientShowMatchResult(false, Placement, GS ? GS->TotalCount : Placement, PS ? PS->KillCount : 0);
+	}
+	CheckForWinner();
+}
+
+void ADropGameMode::RemoveCombatant(ADropCharacter* Character)
+{
+	if (AliveCombatants.Remove(Character) > 0)
+	{
+		SyncAliveCount();
+		CheckForWinner();
+	}
+}
+
+void ADropGameMode::SyncAliveCount()
+{
+	AliveCombatants.RemoveAll([](const TWeakObjectPtr<ADropCharacter>& C) { return !C.IsValid(); });
+	if (ADropGameState* GS = GetGameState<ADropGameState>())
+	{
+		GS->AliveCount = AliveCombatants.Num();
+	}
+}
+
+void ADropGameMode::CheckForWinner()
+{
+	if (bMatchOver || AliveCombatants.Num() != 1)
+	{
+		return;
+	}
+	bMatchOver = true;
+	Winner = AliveCombatants[0];
+	GetWorldTimerManager().SetTimer(VictoryTimerHandle, this, &ADropGameMode::AnnounceWinner, VictoryDelay, false);
+}
+
+void ADropGameMode::AnnounceWinner()
+{
+	ADropCharacter* WinnerChar = Winner.Get();
+	if (!WinnerChar)
+	{
+		return;
+	}
+	if (ADropPlayerController* PC = Cast<ADropPlayerController>(WinnerChar->GetController()))
+	{
+		const ADropGameState* GS = GetGameState<ADropGameState>();
+		const ADropPlayerState* PS = PC->GetPlayerState<ADropPlayerState>();
+		PC->ClientShowMatchResult(true, 1, GS ? GS->TotalCount : 1, PS ? PS->KillCount : 0);
+	}
 }
 
 void ADropGameMode::GetMapBounds(FVector2D& OutWorldMin, FVector2D& OutWorldMax) const

@@ -217,6 +217,7 @@ protected:
 	엔진 오버라이드
 	*/
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PawnClientRestart() override;
 
 	/*

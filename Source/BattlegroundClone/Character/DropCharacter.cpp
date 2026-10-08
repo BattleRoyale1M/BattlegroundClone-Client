@@ -14,6 +14,7 @@
 #include "Combat/ArmorComponent.h"
 #include "Core/DropPlayerController.h"
 #include "Core/DropPlayerState.h"
+#include "Core/GameModes/DropGameMode.h"
 
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
@@ -136,6 +137,26 @@ void ADropCharacter::BeginPlay()
 	{
 		WeaponInventory->InitialEquip();
 	}
+
+	if (HasAuthority())
+	{
+		if (ADropGameMode* GM = GetWorld()->GetAuthGameMode<ADropGameMode>())
+		{
+			GM->RegisterCombatant(this);
+		}
+	}
+}
+
+void ADropCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (HasAuthority() && EndPlayReason == EEndPlayReason::Destroyed && !bIsDead)
+	{
+		if (ADropGameMode* GM = GetWorld()->GetAuthGameMode<ADropGameMode>())
+		{
+			GM->RemoveCombatant(this);
+		}
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ADropCharacter::PawnClientRestart()
@@ -1205,6 +1226,10 @@ void ADropCharacter::HandleOwnDeath(AController* Killer, AActor* DamageCauser)
 		return;
 	}
 	Multicast_Die();
+	if (ADropGameMode* GM = GetWorld()->GetAuthGameMode<ADropGameMode>())
+	{
+		GM->NotifyCombatantDied(this);
+	}
 	GetWorldTimerManager().SetTimer(DeathDestroyTimerHandle, this, &ADropCharacter::DestroySelf, DeathDestroyDelay, false);
 }
 

@@ -2,6 +2,7 @@
 
 #include "UI/DropHUDWidget.h"
 #include "UI/DropMapLabelWidget.h"
+#include "UI/MatchResultWidget.h"
 
 #include "Core/GameModes/DropGameMode.h"
 #include "Core/GameModes/LobbyGameMode.h"
@@ -27,6 +28,7 @@
 
 ADropPlayerController::ADropPlayerController()
 {
+	MainMenuLevel = TSoftObjectPtr<UWorld>(FSoftObjectPath(TEXT("/Game/Maps/L_MainMenu.L_MainMenu")));
 }
 
 void ADropPlayerController::Cheat_Damage()
@@ -93,7 +95,7 @@ void ADropPlayerController::ShowDeathUI()
 	}
 	SetGameplayHUDVisible(false);
 	SetNavigationHUDVisible(false);
-	if (DeathUIWidgetClass && !DeathUIWidget)
+	if (DeathUIWidgetClass && !DeathUIWidget && !MatchResultWidget)
 	{
 		DeathUIWidget = CreateWidget<UUserWidget>(this, DeathUIWidgetClass);
 		if (DeathUIWidget)
@@ -101,13 +103,62 @@ void ADropPlayerController::ShowDeathUI()
 			DeathUIWidget->AddToViewport(30);
 		}
 	}
-	SetInputMode(FInputModeGameOnly());
+	if (!MatchResultWidget)
+	{
+		SetInputMode(FInputModeGameOnly());
+	}
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->StartCameraFade(
 		0.f, 1.f, DeathFadeDuration, FLinearColor::Black,
 		/*bFadeAudio=*/false, /*bHoldWhenFinished=*/true);
 	}
+}
+
+void ADropPlayerController::ClientShowMatchResult_Implementation(bool bVictory, int32 Placement, int32 TotalPlayers, int32 Kills)
+{
+	const TSubclassOf<UMatchResultWidget> WidgetClass = bVictory ? VictoryWidgetClass : GameOverWidgetClass;
+	if (!WidgetClass || MatchResultWidget)
+	{
+		return;
+	}
+	if (bInventoryOpen)
+	{
+		bInventoryOpen = false;
+		CloseInventoryWidget();
+	}
+	if (DeathUIWidget)
+	{
+		DeathUIWidget->RemoveFromParent();
+		DeathUIWidget = nullptr;
+	}
+	if (bVictory)
+	{
+		SetGameplayHUDVisible(false);
+	}
+
+	MatchResultWidget = CreateWidget<UMatchResultWidget>(this, WidgetClass);
+	if (!MatchResultWidget)
+	{
+		return;
+	}
+	const APlayerState* PS = GetPlayerState<APlayerState>();
+	MatchResultWidget->Setup(PS ? PS->GetPlayerName() : FString(), Placement, TotalPlayers, Kills);
+	MatchResultWidget->AddToViewport(40);
+
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(MatchResultWidget->TakeWidget());
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+}
+
+void ADropPlayerController::GoToMainMenu()
+{
+	if (MainMenuLevel.IsNull())
+	{
+		return;
+	}
+	UGameplayStatics::OpenLevelBySoftObjectPtr(this, MainMenuLevel);
 }
 
 void ADropPlayerController::BeginPlay()

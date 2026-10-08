@@ -14,7 +14,11 @@ public:
 	
 	UFUNCTION(BluePrintPure, Category = "DropMap")
 	void GetMapBounds(FVector2D& OutWorldMin, FVector2D& OutWorldMax) const;
-	
+
+	void RegisterCombatant(class ADropCharacter* Character);
+	void NotifyCombatantDied(class ADropCharacter* Victim);
+	void RemoveCombatant(class ADropCharacter* Character);
+
 protected:
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void BeginPlay() override;
@@ -38,6 +42,18 @@ protected:
 		FLinearColor(1.f, 0.5f, 0.1f),   FLinearColor(0.7f, 0.4f, 1.f)
 	};
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Match")
+	float VictoryDelay = 2.f;
+
 private:
 	int32 NextMarkerIndex = 0;
+
+	TArray<TWeakObjectPtr<class ADropCharacter>> AliveCombatants;
+	TWeakObjectPtr<class ADropCharacter> Winner;
+	bool bMatchOver = false;
+	FTimerHandle VictoryTimerHandle;
+
+	void SyncAliveCount();
+	void CheckForWinner();
+	void AnnounceWinner();
 };
