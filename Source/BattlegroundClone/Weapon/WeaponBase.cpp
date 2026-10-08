@@ -218,8 +218,16 @@ void AWeaponBase::Fire()
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponFire), true, this);
 	Params.AddIgnoredActor(GetOwner());
 
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		Hit, Start, End, ECC_Visibility, Params);
+
+	FHitResult PawnHit;
+	if (GetWorld()->LineTraceSingleByObjectType(PawnHit, Start, End, FCollisionObjectQueryParams(ECC_Pawn), Params)
+		&& (!bHit || PawnHit.Distance < Hit.Distance))
+	{
+		Hit = PawnHit;
+		bHit = true;
+	}
 	const FVector ImpactPoint = bHit ? Hit.ImpactPoint : End;
 	
 	const FVector MuzzleLocation = WeaponMesh ? WeaponMesh->GetSocketLocation(MuzzleSocketName) : GetActorLocation();

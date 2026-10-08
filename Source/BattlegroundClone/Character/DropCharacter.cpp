@@ -140,6 +140,10 @@ void ADropCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
+		if (GetMesh())
+		{
+			GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		}
 		if (ADropGameMode* GM = GetWorld()->GetAuthGameMode<ADropGameMode>())
 		{
 			GM->RegisterCombatant(this);
