@@ -168,10 +168,12 @@ void ADropCharacter::Tick(float DeltaTime)
 	switch (DropState)
 	{
 	case EDropState::InPlane:
-		if (!HasAuthority() && BoardedPlane && GetAttachParentActor() != BoardedPlane)
+		if (!HasAuthority() && BoardedPlane &&
+			(GetAttachParentActor() != BoardedPlane || !GetRootComponent()->GetRelativeLocation().IsNearlyZero(1.f)))
 		{
-			AttachToComponent(BoardedPlane->GetSeatPoint(),  FAttachmentTransformRules::SnapToTargetIncludingScale);
+			AttachToComponent(BoardedPlane->GetSeatPoint(), FAttachmentTransformRules::SnapToTargetIncludingScale);
 		}
+		break;
 	case EDropState::Freefall:
 		if (HasAuthority() || IsLocallyControlled()) UpdateFreefall(DeltaTime);
 		if (HasAuthority() && GroundDistance() <= AutoDeployHeight) DeployParachute();
@@ -408,10 +410,13 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 		{
 		case EDropState::InPlane:
 			M->DisableMovement();
+			M->Velocity = FVector::ZeroVector;
+			M->SetComponentTickEnabled(false);
 			break;
 
 		case EDropState::Freefall:
 		case EDropState::Parachuting:
+			M->SetComponentTickEnabled(true);
 			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
 			M->GravityScale = 0.f;
 			M->AirControl = 1.f;
@@ -421,6 +426,7 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 
 		case EDropState::Ground:
 		default:
+			M->SetComponentTickEnabled(true);
 			M->GravityScale = 1.f;
 			M->AirControl = 0.35f;
 			M->bOrientRotationToMovement = true;
