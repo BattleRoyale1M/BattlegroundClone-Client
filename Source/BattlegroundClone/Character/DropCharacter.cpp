@@ -425,6 +425,11 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 		}
 	}
 
+	if (NewState != EDropState::InPlane && Cast<AAirPlane>(GetAttachParentActor()))
+	{
+		DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	}
+
 	if (UCharacterMovementComponent* M = GetCharacterMovement())
 	{
 		switch (NewState)

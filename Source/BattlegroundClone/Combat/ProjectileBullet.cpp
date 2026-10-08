@@ -101,7 +101,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 			const float DistanceTraveled = FVector::Dist(SpawnLocation, Hit.ImpactPoint);
 			if (DistanceTraveled > Range) // 이동거리
 			{
-				Destroy();
+				DeactivateBullet();
 				return;
 			}
 		}
