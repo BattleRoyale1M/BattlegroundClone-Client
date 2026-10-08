@@ -9,6 +9,8 @@
 #include "Core/DropPlayerState.h"
 #include "Core/DropGameState.h"
 #include "TimerManager.h"
+#include "AIController.h"
+#include "Weapon/WeaponBase.h"
 
 ADropGameMode::ADropGameMode()
 {
@@ -24,12 +26,45 @@ void ADropGameMode::RegisterCombatant(ADropCharacter* Character)
 	{
 		return;
 	}
+	if (Cast<AAIController>(Character->GetController()) || Character->IsNetStartupActor())
+	{
+		if (MaxBots >= 0 && RegisteredBots >= MaxBots)
+		{
+			ExtraBots.Add(Character);
+			GetWorldTimerManager().SetTimerForNextTick(this, &ADropGameMode::RemoveExtraBots);
+			return;
+		}
+		++RegisteredBots;
+	}
 	AliveCombatants.Add(Character);
 	if (ADropGameState* GS = GetGameState<ADropGameState>())
 	{
 		GS->TotalCount++;
 	}
 	SyncAliveCount();
+}
+
+void ADropGameMode::RemoveExtraBots()
+{
+	for (const TWeakObjectPtr<ADropCharacter>& Bot : ExtraBots)
+	{
+		ADropCharacter* BotChar = Bot.Get();
+		if (!BotChar)
+		{
+			continue;
+		}
+		TArray<AActor*> Attached;
+		BotChar->GetAttachedActors(Attached, true, true);
+		for (AActor* Child : Attached)
+		{
+			if (Cast<AWeaponBase>(Child))
+			{
+				Child->Destroy();
+			}
+		}
+		BotChar->Destroy();
+	}
+	ExtraBots.Reset();
 }
 
 void ADropGameMode::NotifyCombatantDied(ADropCharacter* Victim)

@@ -45,6 +45,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Match")
 	float VictoryDelay = 2.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Match")
+	int32 MaxBots = 5;
+
 private:
 	int32 NextMarkerIndex = 0;
 
@@ -52,6 +55,11 @@ private:
 	TWeakObjectPtr<class ADropCharacter> Winner;
 	bool bMatchOver = false;
 	FTimerHandle VictoryTimerHandle;
+
+	int32 RegisteredBots = 0;
+	TArray<TWeakObjectPtr<class ADropCharacter>> ExtraBots;
+	FTimerHandle ExtraBotsTimerHandle;
+	void RemoveExtraBots();
 
 	void SyncAliveCount();
 	void CheckForWinner();
