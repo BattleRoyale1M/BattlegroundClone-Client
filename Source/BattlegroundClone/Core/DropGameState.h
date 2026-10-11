@@ -10,6 +10,7 @@ class BATTLEGROUNDCLONE_API ADropGameState : public AGameStateBase
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Match")
 	int32 AliveCount = 0;

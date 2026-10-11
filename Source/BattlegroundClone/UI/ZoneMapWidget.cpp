@@ -17,7 +17,7 @@ public:
 		ForceVolatile(true); // ★ 원이 계속 줄어드니 매 프레임 다시 그림
 	}
 
-	TWeakObjectPtr<UWorld> World;
+	TWeakObjectPtr<UWidget> OwnerWidget;
 	FLinearColor CurrentColor = FLinearColor(0.15f, 0.45f, 1.f, 1.f);
 	FLinearColor NextColor = FLinearColor::White;
 	float LineThickness = 2.f;
@@ -26,7 +26,7 @@ public:
 		FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle,
 		bool bParentEnabled) const override
 	{
-		UWorld* W = World.Get();
+		UWorld* W = OwnerWidget.IsValid() ? OwnerWidget->GetWorld() : nullptr; // ★ travel 후에도 현재 월드 기준
 		const ADropGameState* GS = W ? W->GetGameState<ADropGameState>() : nullptr;
 		const ADropPlayerController* PC = W ? Cast<ADropPlayerController>(W->GetFirstPlayerController()) : nullptr;
 		FVector2D Center;
@@ -91,7 +91,7 @@ void UZoneMapWidget::SynchronizeProperties()
 	{
 		return;
 	}
-	MyZone->World = GetWorld();
+	MyZone->OwnerWidget = this;
 	MyZone->CurrentColor = CurrentColor;
 	MyZone->NextColor = NextColor;
 	MyZone->LineThickness = LineThickness;

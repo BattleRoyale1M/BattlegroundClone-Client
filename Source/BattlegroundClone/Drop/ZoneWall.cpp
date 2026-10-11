@@ -2,6 +2,8 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Core/DropGameState.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInterface.h"
 
 AZoneWall::AZoneWall()
 {
@@ -13,6 +15,19 @@ AZoneWall::AZoneWall()
 	WallMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WallMesh->SetCastShadow(false);
 	WallMesh->SetHiddenInGame(true);
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	if (CylinderMesh.Succeeded()) WallMesh->SetStaticMesh(CylinderMesh.Object);
+}
+
+void AZoneWall::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UMaterialInterface* Mat = WallMaterial.LoadSynchronous())
+	{
+		WallMesh->SetMaterial(0, Mat);
+	}
 }
 
 void AZoneWall::Tick(float DeltaSeconds)

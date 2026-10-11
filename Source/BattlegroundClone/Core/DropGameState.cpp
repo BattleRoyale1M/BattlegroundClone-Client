@@ -1,5 +1,7 @@
 #include "Core/DropGameState.h"
 #include "Net/UnrealNetwork.h"
+#include "EngineUtils.h"
+#include "Drop/ZoneWall.h"
 
 void ADropGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -27,4 +29,16 @@ bool ADropGameState::GetCurrentZone(FVector2D& OutCenter, float& OutRadius) cons
 	OutCenter = FMath::Lerp(ZoneFromCenter, ZoneToCenter, Alpha);
 	OutRadius = FMath::Lerp(ZoneFromRadius, ZoneToRadius, Alpha);
 	return true;
+}
+
+void ADropGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// ★ 맵에 배치 안 돼 있어도 서버/클라 각자 로컬로 자기장 벽 생성
+	if (GetNetMode() == NM_DedicatedServer || TActorIterator<AZoneWall>(GetWorld()))
+	{
+		return;
+	}
+	GetWorld()->SpawnActor<AZoneWall>();
 }
