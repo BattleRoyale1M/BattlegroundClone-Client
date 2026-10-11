@@ -24,6 +24,24 @@ void UDropHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		CachedKillCount = PS->KillCount;
 		KillCountText->SetText(FText::AsNumber(CachedKillCount));
 	}
+	if (ZoneTimerText)
+	{
+		FText ZoneText;
+		if (GS && GS->bZoneActive)
+		{
+			const float Now = static_cast<float>(GS->GetServerWorldTimeSeconds());
+			if (Now < GS->ZoneShrinkStartTime)
+			{
+				const int32 Sec = FMath::CeilToInt(GS->ZoneShrinkStartTime - Now);
+				ZoneText = FText::FromString(FString::Printf(TEXT("자기장 축소까지 %d:%02d"), Sec / 60, Sec % 60));
+			}
+			else if (Now < GS->ZoneShrinkEndTime)
+			{
+				ZoneText = FText::FromString(TEXT("자기장 축소 중"));
+			}
+		}
+		ZoneTimerText->SetText(ZoneText);
+	}
 }
 
 void UDropHUDWidget::SetGameplayHUDVisible(bool bVisible)

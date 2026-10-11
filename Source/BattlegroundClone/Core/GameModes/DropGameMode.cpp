@@ -174,6 +174,16 @@ void ADropGameMode::AdvanceZonePhase()
 	GS->ZoneShrinkEndTime = Now + Phase.WaitTime + Phase.ShrinkTime;
 	ZoneDamagePerSecond = Phase.DamagePerSecond;
 	GetWorldTimerManager().SetTimer(ZonePhaseTimerHandle, this, &ADropGameMode::AdvanceZonePhase, Phase.WaitTime + Phase.ShrinkTime, false);
+
+	const FText Line1 = NSLOCTEXT("Zone", "ZoneWarn", "자기장이 곧 줄어듭니다");
+	const FText Line2 = FText::FromString(FString::Printf(TEXT("%d초 후 축소 시작"), FMath::RoundToInt(Phase.WaitTime)));
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ADropPlayerController* PC = Cast<ADropPlayerController>(It->Get()))
+		{
+			PC->ClientShowCenterNotification(Line1, Line2, FLinearColor(0.2f, 0.55f, 1.f));
+		}
+	}
 }
 
 void ADropGameMode::ApplyZoneDamage()

@@ -46,6 +46,9 @@ public:
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UTextBlock* KillCountText;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* ZoneTimerText;
 
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
