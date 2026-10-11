@@ -4,6 +4,28 @@
 #include "GameFramework/GameModeBase.h"
 #include "DropGameMode.generated.h"
 
+USTRUCT(BlueprintType)
+struct FZonePhase
+{
+	GENERATED_BODY()
+
+	FZonePhase() {}
+	FZonePhase(float InWait, float InShrink, float InRadius, float InDps)
+		: WaitTime(InWait), ShrinkTime(InShrink), Radius(InRadius), DamagePerSecond(InDps) {}
+
+	UPROPERTY(EditAnywhere) 
+	float WaitTime = 60.f;
+	
+	UPROPERTY(EditAnywhere) 
+	float ShrinkTime = 60.f;
+	
+	UPROPERTY(EditAnywhere) 
+	float Radius = 30000.f;
+	
+	UPROPERTY(EditAnywhere) 
+	float DamagePerSecond = 1.f;
+};
+
 UCLASS()
 class BATTLEGROUNDCLONE_API ADropGameMode : public AGameModeBase
 {
@@ -47,6 +69,23 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Match")
 	int32 MaxBots = 5;
+	
+	UPROPERTY(EditAnywhere, Category = "Zone")
+	FVector2D ZoneFinalCenter = FVector2D(116500.0, -164500.0);
+	
+	UPROPERTY(EditAnywhere, Category = "Zone")
+	float ZoneStartDelay = 90.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Zone")
+	float ZoneDamageInterval = 1.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Zone")
+	TArray<FZonePhase> ZonePhases = {
+		FZonePhase(30.f, 60.f, 60000.f, 1.f),
+		FZonePhase(30.f, 45.f, 30000.f, 2.f),
+		FZonePhase(20.f, 40.f, 12000.f, 4.f),
+		FZonePhase(20.f, 30.f, 4000.f, 8.f)
+	};
 
 private:
 	int32 NextMarkerIndex = 0;
@@ -64,4 +103,12 @@ private:
 	void SyncAliveCount();
 	void CheckForWinner();
 	void AnnounceWinner();
+	
+	int32 ZonePhaseIndex = -1;
+	float ZoneDamagePerSecond = 0.f;
+	FTimerHandle ZonePhaseTimerHandle;
+	FTimerHandle ZoneDamageTimerHandle;
+	void StartZone();
+	void AdvanceZonePhase();
+	void ApplyZoneDamage();
 };

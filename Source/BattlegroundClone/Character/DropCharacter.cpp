@@ -1261,7 +1261,7 @@ void ADropCharacter::DestroySelf()
 
 void ADropCharacter::HandleHit(AController* InstigatorController, AActor* DamageCauser, FVector ShotDirection)
 {
-	if (!HasAuthority() || !CanAct())
+	if (!HasAuthority() || !CanAct() || ShotDirection.IsNearlyZero())
 	{
 		return;
 	}

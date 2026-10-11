@@ -130,6 +130,77 @@ void ADropGameMode::AnnounceWinner()
 	}
 }
 
+/*
+자기장
+*/
+void ADropGameMode::StartZone()
+{
+	ADropGameState* GS = GetGameState<ADropGameState>();
+	if (!GS || ZonePhases.Num() == 0)
+	{
+		return;
+	}
+	const FVector2D MapCenter = (WorldMin + WorldMax) * 0.5;
+	const float MapRadius = (WorldMax - WorldMin).Size() * 0.5f;
+	const float Now = GetWorld()->GetTimeSeconds();
+	GS->ZoneFromCenter = GS->ZoneToCenter = MapCenter;
+	GS->ZoneFromRadius = GS->ZoneToRadius = MapRadius;
+	GS->ZoneShrinkStartTime = GS->ZoneShrinkEndTime = Now;
+	GS->bZoneActive = true;
+	GetWorldTimerManager().SetTimer(ZoneDamageTimerHandle, this, &ADropGameMode::ApplyZoneDamage, ZoneDamageInterval, true);
+	AdvanceZonePhase();
+}
+
+void ADropGameMode::AdvanceZonePhase()
+{
+	ADropGameState* GS = GetGameState<ADropGameState>();
+	if (!GS || !ZonePhases.IsValidIndex(++ZonePhaseIndex))
+	{
+		return;
+	}
+	const FZonePhase& Phase = ZonePhases[ZonePhaseIndex];
+	FVector2D FromCenter;
+	float FromRadius;
+	GS->GetCurrentZone(FromCenter, FromRadius);
+	// ★
+	const float MaxOffset = FMath::Max(FromRadius - Phase.Radius, 0.f);
+	const FVector2D ToCenter = FromCenter + (ZoneFinalCenter - FromCenter).GetClampedToMaxSize(MaxOffset);
+	const float Now = GetWorld()->GetTimeSeconds();
+	GS->ZoneFromCenter = FromCenter;
+	GS->ZoneFromRadius = FromRadius;
+	GS->ZoneToCenter = ToCenter;
+	GS->ZoneToRadius = Phase.Radius;
+	GS->ZoneShrinkStartTime = Now + Phase.WaitTime;
+	GS->ZoneShrinkEndTime = Now + Phase.WaitTime + Phase.ShrinkTime;
+	ZoneDamagePerSecond = Phase.DamagePerSecond;
+	GetWorldTimerManager().SetTimer(ZonePhaseTimerHandle, this, &ADropGameMode::AdvanceZonePhase, Phase.WaitTime + Phase.ShrinkTime, false);
+}
+
+void ADropGameMode::ApplyZoneDamage()
+{
+	const ADropGameState* GS = GetGameState<ADropGameState>();
+	FVector2D Center;
+	float Radius;
+	if (bMatchOver || !GS || !GS->GetCurrentZone(Center, Radius))
+	{
+		return;
+	}
+	const TArray<TWeakObjectPtr<ADropCharacter>> Targets = AliveCombatants;
+	for (const TWeakObjectPtr<ADropCharacter>& Weak : Targets)
+	{
+		ADropCharacter* Char = Weak.Get();
+		if (!Char || Char->DropState == EDropState::InPlane || !Char->GetHealthComp())
+		{
+			continue;
+		}
+		const FVector Loc = Char->GetActorLocation();
+		if (FVector2D::Distance(FVector2D(Loc.X, Loc.Y), Center) > Radius)
+		{
+			Char->GetHealthComp()->ApplyDamage(ZoneDamagePerSecond * ZoneDamageInterval, nullptr, nullptr, FVector::ZeroVector);
+		}
+	}
+}
+
 void ADropGameMode::GetMapBounds(FVector2D& OutWorldMin, FVector2D& OutWorldMax) const
 {
 	OutWorldMin = WorldMin;
@@ -155,6 +226,7 @@ void ADropGameMode::OnPostLogin(AController* NewPlayer)
 void ADropGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	GetWorldTimerManager().SetTimer(ZonePhaseTimerHandle, this, &ADropGameMode::StartZone, ZoneStartDelay, false);
 	if (!PlaneClass)
 	{
 		return;
