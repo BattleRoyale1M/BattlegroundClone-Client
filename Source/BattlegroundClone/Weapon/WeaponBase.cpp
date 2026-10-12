@@ -89,6 +89,11 @@ void AWeaponBase::MulticastFireFX_Implementation(FVector TracerEnd, bool bHit)
 
 void AWeaponBase::MulticastReloadFX_Implementation(float Duration)
 {
+	if (ReloadSound && WeaponMesh)
+	{
+		UGameplayStatics::SpawnSoundAttached(ReloadSound, WeaponMesh);
+	}
+
 	if (AActor* OwnerActor = GetOwner(); OwnerActor && OwnerActor->Implements<UWeaponUserInterface>())
 	{
 		IWeaponUserInterface::Execute_NotifyWeaponReloadStarted(OwnerActor, Duration);

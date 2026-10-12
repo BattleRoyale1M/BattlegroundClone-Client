@@ -3,7 +3,6 @@
 #include "Combat/HealthComponent.h"
 #include "Weapon/WeaponBase.h"
 #include "Weapon/WeaponInventoryComponent.h"
-#include "Weapon/WeaponUserInterface.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
@@ -126,7 +125,17 @@ ADropCharacter::ADropCharacter()
 void ADropCharacter::PlayFootstep(const FVector& FootLocation)
 {
 	USoundBase* Sound = DefaultFootstepSound;
-	if (GetCharacterMovement()->IsInWater() && WaterFootstepSound)
+	bool bInWater = GetCharacterMovement()->IsInWater();
+	if (!bInWater)
+	{
+		TArray<UPrimitiveComponent*> Overlaps;
+		GetCapsuleComponent()->GetOverlappingComponents(Overlaps);
+		bInWater = Overlaps.ContainsByPredicate([](const UPrimitiveComponent* Comp)
+		{
+			return Comp && Comp->ComponentHasTag(TEXT("Water"));
+		});
+	}
+	if (bInWater && WaterFootstepSound)
 	{
 		Sound = WaterFootstepSound;
 	}
