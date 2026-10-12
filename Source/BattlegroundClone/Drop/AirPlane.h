@@ -10,6 +10,8 @@ class ADropCharacter;
 
 class UStaticMeshComponent;
 class USceneComponent;
+class UAudioComponent;
+class USoundBase;
 
 UCLASS()
 class BATTLEGROUNDCLONE_API AAirPlane : public AActor
@@ -80,7 +82,13 @@ protected:
 	*/
 	UPROPERTY(VisibleAnywhere, Category = "Plane")
 	TObjectPtr<UStaticMeshComponent> Propeller;
-	
+
+	UPROPERTY(VisibleAnywhere, Category = "Plane")
+	TObjectPtr<UAudioComponent> PropellerAudio;
+
+	UPROPERTY(EditAnywhere, Category = "Plane|Sound")
+	TObjectPtr<USoundBase> PropellerSound;
+
 	/*
 	비행 시작 시점(월드)
 	*/

@@ -2,6 +2,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/AudioComponent.h"
 
 #include "Character/DropCharacter.h"
 #include "Kismet/GameplayStatics.h"
@@ -28,7 +29,11 @@ AAirPlane::AAirPlane()
 	Propeller = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Propeller"));
 	Propeller->SetupAttachment(BodyMesh);
 	Propeller->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+
+	PropellerAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("PropellerAudio"));
+	PropellerAudio->SetupAttachment(BodyMesh);
+	PropellerAudio->bAutoActivate = false;
+
 	SeatPoint = CreateDefaultSubobject<USceneComponent>(TEXT("SeatPoint"));
 	SeatPoint->SetupAttachment(RootScene);
 	SeatPoint->SetRelativeLocation(FVector(-200.f, 0.f, -60.f)); // 에디터에서 위치 조정
@@ -60,7 +65,13 @@ void AAirPlane::BeginPlay()
 			PropellerComps.Add(Comp);
 		}
 	}
-	
+
+	if (PropellerAudio && PropellerSound && GetNetMode() != NM_DedicatedServer)
+	{
+		PropellerAudio->SetSound(PropellerSound);
+		PropellerAudio->Play();
+	}
+
 	if (!HasAuthority())
 	{
 		return;

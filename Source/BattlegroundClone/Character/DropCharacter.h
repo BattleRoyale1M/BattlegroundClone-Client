@@ -19,6 +19,7 @@ class UInputBindingComponent;
 class AAirPlane;
 class AWeaponBase;
 class USceneComponent;
+class UAudioComponent;
 class UserWidget;
 class UHealthComponent;
 class UWeaponInventoryComponent;
@@ -243,6 +244,19 @@ protected:
 	TObjectPtr<USpringArmComponent> CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Drop|Parachute", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> ParachuteMesh;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Drop|Sound", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAudioComponent> DropWindAudio;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound")
+	TObjectPtr<USoundBase> FallingSound;
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound")
+	TObjectPtr<USoundBase> VerticalDiveSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound", meta = (ClampMin = "0.0"))
+	float DropWindFadeTime = 0.4f;
+	void UpdateDropWindSound();
+
 
 	/** Follow camera on the end of the boom. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))

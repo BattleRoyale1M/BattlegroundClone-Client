@@ -23,6 +23,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Inventory/BagComponent.h"
+#include "Components/AudioComponent.h"
 #include "Input/InputBindingComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -108,6 +109,11 @@ ADropCharacter::ADropCharacter()
 	ParachuteMesh->SetGenerateOverlapEvents(false);
 	ParachuteMesh->SetVisibility(false);
 	ParachuteMesh->SetHiddenInGame(true);
+	
+	DropWindAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("DropWindAudio"));
+	DropWindAudio->SetupAttachment(RootComponent);
+	DropWindAudio->bAutoActivate = false;
+	DropWindAudio->bAllowSpatialization = false;
 
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnDeath.AddDynamic(this, &ADropCharacter::HandleDeath);
@@ -218,6 +224,35 @@ void ADropCharacter::PawnClientRestart()
 			InputBindingComp->AddMappingContext(PC);
 		}
 	}
+}
+
+void ADropCharacter::UpdateDropWindSound()
+{
+	if (!DropWindAudio)
+	{
+		return;
+	}
+	USoundBase* Wanted = nullptr;
+	if (IsLocallyControlled() && DropState == EDropState::Freefall)
+	{
+		Wanted = (bIsFastFalling && VerticalDiveSound) ? VerticalDiveSound.Get() : FallingSound.Get();
+	}
+	if (!Wanted)
+	{
+		if (DropWindAudio->IsPlaying())
+		{
+			DropWindAudio->FadeOut(DropWindFadeTime, 0.f);
+		}
+		return;
+	}
+	// 이미 원하는 사운드가 재생중이라면
+	if (DropWindAudio->GetSound() == Wanted && DropWindAudio->IsPlaying())
+	{
+		return;
+	}
+	DropWindAudio->Stop();
+	DropWindAudio->SetSound(Wanted);
+	DropWindAudio->FadeIn(DropWindFadeTime);
 }
 
 void ADropCharacter::Tick(float DeltaTime)
@@ -552,7 +587,7 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 	{
 		HideParachute();
 	}
-
+	UpdateDropWindSound();
 	OnDropStateChanged(NewState, OldState);
 }
 
