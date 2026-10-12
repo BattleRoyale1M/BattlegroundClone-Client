@@ -212,6 +212,10 @@ void ADropCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ADropCharacter::PawnClientRestart()
 {
 	Super::PawnClientRestart();
+	if (DropState == EDropState::InPlane)
+	{
+		ApplyDropState(DropState, DropState);
+	}
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (PC->IsLocalController())
@@ -275,10 +279,19 @@ void ADropCharacter::Tick(float DeltaTime)
 	switch (DropState)
 	{
 	case EDropState::InPlane:
-		if (!HasAuthority() && BoardedPlane &&
-			(GetAttachParentActor() != BoardedPlane || !GetRootComponent()->GetRelativeLocation().IsNearlyZero(1.f)))
+		if (!HasAuthority() && BoardedPlane)
 		{
-			AttachToComponent(BoardedPlane->GetSeatPoint(), FAttachmentTransformRules::SnapToTargetIncludingScale);
+			USceneComponent* Seat = BoardedPlane->GetSeatPoint();
+			if (Seat && (GetRootComponent()->GetAttachParent() != Seat || !GetRootComponent()->GetRelativeLocation().IsNearlyZero(1.f)))
+			{
+				AttachToComponent(Seat, FAttachmentTransformRules::SnapToTargetIncludingScale);
+			}
+			if (UCharacterMovementComponent* M = GetCharacterMovement(); M && M->IsComponentTickEnabled())
+			{
+				M->DisableMovement();
+				M->Velocity = FVector::ZeroVector;
+				M->SetComponentTickEnabled(false);
+			}
 		}
 		break;
 	case EDropState::Freefall:
