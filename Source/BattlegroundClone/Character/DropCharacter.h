@@ -252,6 +252,8 @@ protected:
 	TObjectPtr<USoundBase> FallingSound;
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound")
 	TObjectPtr<USoundBase> VerticalDiveSound;
+	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound")
+	TObjectPtr<USoundBase> ParachuteOpenSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Drop|Sound", meta = (ClampMin = "0.0"))
 	float DropWindFadeTime = 0.4f;

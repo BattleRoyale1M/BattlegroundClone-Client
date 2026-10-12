@@ -233,9 +233,16 @@ void ADropCharacter::UpdateDropWindSound()
 		return;
 	}
 	USoundBase* Wanted = nullptr;
-	if (IsLocallyControlled() && DropState == EDropState::Freefall)
+	if (IsLocallyControlled())
 	{
-		Wanted = (bIsFastFalling && VerticalDiveSound) ? VerticalDiveSound.Get() : FallingSound.Get();
+		if (DropState == EDropState::Freefall)
+		{
+			Wanted = (bIsFastFalling && VerticalDiveSound) ? VerticalDiveSound.Get() : FallingSound.Get();
+		}
+		else if (DropState == EDropState::Parachuting)
+		{
+			Wanted = ParachuteOpenSound.Get();
+		}
 	}
 	if (!Wanted)
 	{
