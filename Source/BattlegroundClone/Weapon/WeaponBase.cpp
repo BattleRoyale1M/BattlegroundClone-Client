@@ -320,10 +320,11 @@ void AWeaponBase::PlayFireFX()
 			/*bAutoDestroy=*/true, /*bAutoActivate=*/true);
 	}
 
-	if (FireSound)
+	USoundBase* SoundToPlay = (CurrentFireMode == EFireMode::Automatic && FireSoundAuto) ? FireSoundAuto : FireSound;
+	if (SoundToPlay)
 	{
 		UGameplayStatics::SpawnSoundAttached(
-			FireSound, WeaponMesh, AttachPoint,
+			SoundToPlay, WeaponMesh, AttachPoint,
 			FVector::ZeroVector, FRotator::ZeroRotator,
 			EAttachLocation::SnapToTarget, /*bStopWhenAttachedToDestroyed=*/false);
 	}

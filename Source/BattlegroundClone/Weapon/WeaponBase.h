@@ -181,7 +181,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
 	TObjectPtr<USoundBase> FireSound;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
+	TObjectPtr<USoundBase> FireSoundAuto;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX", meta = (ClampMin = "0.0"))
 	float MuzzleLightIntensity = 1500.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|FX")
