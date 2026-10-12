@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Chaos/ChaosEngineInterface.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Combat/HealthComponent.h"
@@ -211,6 +212,20 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<class UArmorComponent> ArmorComp;
+	
+	/*
+	걷기 
+	*/
+	void PlayFootstep(const FVector& FootLocation);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Footstep")
+	TMap<TEnumAsByte<EPhysicalSurface>, 
+	TObjectPtr<USoundBase>> FootstepSounds;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Footstep")
+	TObjectPtr<USoundBase> DefaultFootstepSound;
+	UPROPERTY(EditDefaultsOnly, Category = "Footstep")
+	TObjectPtr<USoundBase> WaterFootstepSound;
 
 protected:
 	/*

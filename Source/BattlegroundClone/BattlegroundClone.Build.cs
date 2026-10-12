@@ -18,7 +18,8 @@ public class BattlegroundClone : ModuleRules
 			"Niagara",
 			"AIModule",
 			"NavigationSystem",
-			"GameplayTasks"
+			"GameplayTasks",
+			"PhysicsCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "HTTP", "Json", "JsonUtilities", "Sockets" });

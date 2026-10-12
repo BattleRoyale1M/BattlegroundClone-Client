@@ -4,6 +4,7 @@
 #include "Weapon/WeaponBase.h"
 #include "Weapon/WeaponInventoryComponent.h"
 #include "Weapon/WeaponUserInterface.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Drop/AirPlane.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
@@ -37,6 +38,7 @@
 #include "Components/Image.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -119,6 +121,35 @@ ADropCharacter::ADropCharacter()
 	InputBindingComp = CreateDefaultSubobject<UInputBindingComponent>(TEXT("InputBindingComp"));
 	
 	ArmorComp = CreateDefaultSubobject<UArmorComponent>(TEXT("ArmorComp"));
+}
+
+void ADropCharacter::PlayFootstep(const FVector& FootLocation)
+{
+	USoundBase* Sound = DefaultFootstepSound;
+	if (GetCharacterMovement()->IsInWater() && WaterFootstepSound)
+	{
+		Sound = WaterFootstepSound;
+	}
+	else
+	{
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(Footstep), false, this);
+		Params.bReturnPhysicalMaterial = true;
+		FHitResult Hit;
+		const FVector Start = FootLocation + FVector(0.f, 0.f, 20.f);
+		const FVector End = FootLocation - FVector(0.f, 0.f, 50.f);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+		{
+			const EPhysicalSurface Surface = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());
+			if (const TObjectPtr<USoundBase>* Found = FootstepSounds.Find(Surface))
+			{
+				Sound = *Found;
+			}
+		}
+	}
+	if (Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Sound, FootLocation);
+	}
 }
 
 /*
