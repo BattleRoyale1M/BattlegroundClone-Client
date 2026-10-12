@@ -708,6 +708,7 @@ void ADropCharacter::OnFastFallPressed()
 		{
 			ServerSetFastFalling(true);
 		}
+		UpdateDropWindSound();
 	}
 }
 
@@ -718,6 +719,7 @@ void ADropCharacter::OnFastFallReleased()
 	{
 		ServerSetFastFalling(false);
 	}
+	UpdateDropWindSound();
 }
 
 void ADropCharacter::ServerSetFastFalling_Implementation(bool bNewFastFalling)
