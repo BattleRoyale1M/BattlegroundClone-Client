@@ -1,5 +1,6 @@
 #include "UI/MatchResultWidget.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Core/DropPlayerController.h"
@@ -7,6 +8,10 @@
 void UMatchResultWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	if (ResultSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ResultSound);
+	}
 	if (MainMenuButton)
 	{
 		MainMenuButton->OnClicked.AddUniqueDynamic(this, &UMatchResultWidget::OnMainMenuClicked);

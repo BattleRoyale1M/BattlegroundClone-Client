@@ -42,6 +42,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Match")
 	float AutoReturnSeconds = 0.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Match")
+	TObjectPtr<USoundBase> ResultSound;
 
 private:
 	UFUNCTION()
