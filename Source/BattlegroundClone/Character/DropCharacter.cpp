@@ -680,6 +680,7 @@ void ADropCharacter::BeginFreefall()
 	BoardedPlane = nullptr;
 
 	SetDropState(EDropState::Freefall);
+	GetCharacterMovement()->ResetPredictionData_Server();
 }
 
 void ADropCharacter::DeployParachute()
