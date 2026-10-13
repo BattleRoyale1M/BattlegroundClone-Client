@@ -41,8 +41,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Character/CMC/DropMovementComponent.h"
 
-ADropCharacter::ADropCharacter()
+ADropCharacter::ADropCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDropMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -295,12 +297,8 @@ void ADropCharacter::Tick(float DeltaTime)
 		}
 		break;
 	case EDropState::Freefall:
-		if (HasAuthority() || IsLocallyControlled()) UpdateFreefall(DeltaTime);
-		if (HasAuthority() && GroundDistance() <= AutoDeployHeight) DeployParachute();
-		break;
 	case EDropState::Parachuting:
-		if (HasAuthority() || IsLocallyControlled()) UpdateParachute(DeltaTime);
-		if (HasAuthority() && GroundDistance() <=LandHeight) SetDropState(EDropState::Ground);
+		if (HasAuthority() || IsLocallyControlled()) SyncDropStateFromMovement();
 		break;
 	case EDropState::Ground:
 		if (IsLocallyControlled() || HasAuthority()) UpdateAimCamera(DeltaTime);
@@ -513,6 +511,23 @@ void ADropCharacter::SetDropState(EDropState NewState)
 	PrevDropState = NewState;
 }
 
+void ADropCharacter::SyncDropStateFromMovement()
+{
+	const UDropMovementComponent* M = Cast<UDropMovementComponent>(GetCharacterMovement());
+	if (!M)
+	{
+		return;
+	}
+	if (DropState == EDropState::Freefall && M->IsInCustomMode(UDropMovementComponent::CMOVE_Parachute))
+	{
+		SetDropState(EDropState::Parachuting);
+	}
+	else if (M->MovementMode != MOVE_Custom)
+	{
+		SetDropState(EDropState::Ground);
+	}
+}
+
 void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 {
 	if (IsLocallyControlled())
@@ -541,13 +556,24 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 
 		case EDropState::Freefall:
 		case EDropState::Parachuting:
-			M->SetComponentTickEnabled(true);
-			M->SetMovementMode(MOVE_Flying);   // 속도 직접 제어, 중력/지면스냅 없음
-			M->GravityScale = 0.f;
-			M->AirControl = 1.f;
-			M->bOrientRotationToMovement = false;
-			bUseControllerRotationYaw = true;
-			break;
+			{
+				M->SetComponentTickEnabled(true);
+				M->GravityScale = 0.f;
+				M->bOrientRotationToMovement = false;
+				bUseControllerRotationYaw = true;
+				const uint8 Mode = NewState == EDropState::Freefall ? UDropMovementComponent::CMOVE_Freefall : UDropMovementComponent::CMOVE_Parachute;
+				if (M->MovementMode != MOVE_Custom || M->CustomMovementMode != Mode)
+				{
+					M->SetMovementMode(MOVE_Custom, Mode);
+				}
+				if (OldState == EDropState::InPlane)
+				{
+					FVector Dir = GetControlRotation().Vector();
+					Dir.Z = FMath::Min(Dir.Z, -0.4f);
+					M->Velocity = Dir.GetSafeNormal() * FreefallMinSpeed;
+				}
+				break;
+			}
 
 		case EDropState::Ground:
 		default:
@@ -556,7 +582,10 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 			M->AirControl = 0.35f;
 			M->bOrientRotationToMovement = true;
 			bUseControllerRotationYaw = false;
-			M->SetMovementMode(MOVE_Walking);
+			if (M->MovementMode == MOVE_Custom || M->MovementMode == MOVE_None)
+			{
+				M->SetMovementMode(MOVE_Falling);
+			}
 			break;
 		}
 	}
@@ -613,6 +642,10 @@ void ADropCharacter::ApplyDropState(EDropState OldState, EDropState NewState)
 
 void ADropCharacter::OnRep_DropState()
 {
+	if (PrevDropState == DropState)
+	{
+		return;
+	}
 	ApplyDropState(PrevDropState, DropState);
 	PrevDropState = DropState;
 }
@@ -647,25 +680,6 @@ void ADropCharacter::BeginFreefall()
 	BoardedPlane = nullptr;
 
 	SetDropState(EDropState::Freefall);
-
-	if (UCharacterMovementComponent* M = GetCharacterMovement())
-	{
-		FVector Dir = GetControlRotation().Vector();
-		Dir.Z = FMath::Min(Dir.Z, -0.4f);
-		M->Velocity = Dir.GetSafeNormal() * FreefallMinSpeed;
-	}
-}
-
-void ADropCharacter::UpdateFreefall(float Dt)
-{
-	float TargetSpeed = bIsFastFalling ? FreefallMaxSpeed : FreefallMinSpeed;
-
-	UCharacterMovementComponent* M = GetCharacterMovement();
-	if (!M) return;
-
-	FVector Desired = GetControlRotation().Vector() * 800.f; // 조작감용 약간의 활강
-	Desired.Z = -TargetSpeed;
-	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, FreefallAccel); // 바람저항
 }
 
 void ADropCharacter::DeployParachute()
@@ -679,23 +693,6 @@ void ADropCharacter::DeployParachute()
 		return;
 	}
 	SetDropState(EDropState::Parachuting);
-}
-
-void ADropCharacter::UpdateParachute(float Dt)
-{
-	UCharacterMovementComponent* M = GetCharacterMovement();
-	if (!M) return;
-
-	/*
-	낙하산 전개 상태: 일정한 하강 속도 + 바라보는 방향으로 전진
-	*/
-	const FRotator YawRot(0.f, GetControlRotation().Yaw, 0.f);
-	const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-
-	FVector Desired = Forward * ParachuteForwardSpeed;
-	Desired.Z = -ParachuteDescentSpeed;
-
-	M->Velocity = FMath::VInterpTo(M->Velocity, Desired, Dt, 2.f);
 }
 
 float ADropCharacter::GroundDistance() const
@@ -724,10 +721,7 @@ void ADropCharacter::OnFastFallPressed()
 	if (DropState == EDropState::Freefall)
 	{
 		bIsFastFalling = true;
-		if (!HasAuthority())
-		{
-			ServerSetFastFalling(true);
-		}
+		if (UDropMovementComponent* M = Cast<UDropMovementComponent>(GetCharacterMovement())) M->bWantsFastFall = true;
 		UpdateDropWindSound();
 	}
 }
@@ -735,16 +729,8 @@ void ADropCharacter::OnFastFallPressed()
 void ADropCharacter::OnFastFallReleased()
 {
 	bIsFastFalling = false;
-	if (!HasAuthority())
-	{
-		ServerSetFastFalling(false);
-	}
+	if (UDropMovementComponent* M = Cast<UDropMovementComponent>(GetCharacterMovement())) M->bWantsFastFall = false;
 	UpdateDropWindSound();
-}
-
-void ADropCharacter::ServerSetFastFalling_Implementation(bool bNewFastFalling)
-{
-	bIsFastFalling = bNewFastFalling && DropState == EDropState::Freefall;
 }
 
 void ADropCharacter::OnParachutePressed()
@@ -755,18 +741,13 @@ void ADropCharacter::OnParachutePressed()
 	}
 	else if (DropState == EDropState::Freefall)
 	{
-		ServerDeployParachute();
+		if (UDropMovementComponent* M = Cast<UDropMovementComponent>(GetCharacterMovement())) M->bWantsDeploy = true;
 	}
 }
 
 void ADropCharacter::ServerBeginFreefall_Implementation()
 {
 	BeginFreefall();
-}
-
-void ADropCharacter::ServerDeployParachute_Implementation()
-{
-	DeployParachute();
 }
 
 /*

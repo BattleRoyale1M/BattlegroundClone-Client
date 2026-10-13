@@ -37,9 +37,10 @@ class BATTLEGROUNDCLONE_API ADropCharacter : public ACharacter, public IWeaponUs
 	GENERATED_BODY()
 
 	friend class UInputBindingComponent;
+	friend class UDropMovementComponent;
 
 public:
-	ADropCharacter();
+	ADropCharacter(const FObjectInitializer& ObjectInitializer);
 
 	/*
 	엔진 오버라이드
@@ -68,11 +69,11 @@ public:
 	UFUNCTION() void OnRep_DropState();
 
 	UFUNCTION(Server, Reliable) void ServerBeginFreefall();
-	UFUNCTION(Server, Reliable) void ServerDeployParachute();
-	UFUNCTION(Server, Reliable) void ServerSetFastFalling(bool bNewFastFalling);
 
 	UFUNCTION(BlueprintCallable, Category = "Drop")
 	void SetDropState(EDropState NewState);
+	
+	void SyncDropStateFromMovement();
 
 	/*
 	비행기 좌석에 탑승
@@ -92,8 +93,6 @@ public:
 	void OnDropStateChanged(EDropState NewState, EDropState OldState);
 
 	float GroundDistance() const;
-	void  UpdateFreefall(float Dt);
-	void  UpdateParachute(float Dt);
 	
 	bool bHasLanded = false;
 
