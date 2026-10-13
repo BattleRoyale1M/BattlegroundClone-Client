@@ -106,8 +106,9 @@ void AAirPlane::TryBoardAll()
 		ADropCharacter* Player = Cast<ADropCharacter>(PC->GetPawn());
 		if (!Player) continue;
 
-		if (Player->DropState == EDropState::Ground)
+		if (Player->DropState == EDropState::Ground && !BoardedPlayers.Contains(Player))
 		{
+			BoardedPlayers.Add(Player);
 			BoardPassenger(Player);
 			bBoardedSomeone = true;
 		}

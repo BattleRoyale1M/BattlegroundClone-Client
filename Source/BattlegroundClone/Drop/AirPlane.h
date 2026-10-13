@@ -138,6 +138,8 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UStaticMeshComponent>> PropellerComps;
 
+	TSet<TWeakObjectPtr<ADropCharacter>> BoardedPlayers;
+
 	FTimerHandle BoardTimerHandle;
 	void TryBoardAll();
 };
