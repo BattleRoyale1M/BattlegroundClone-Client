@@ -496,7 +496,7 @@ void ADropCharacter::SetDropState(EDropState NewState)
 		return;
 	}
 	const EDropState Old = DropState;
-	if (Old == EDropState::Parachuting && NewState == EDropState::Ground)
+	if (NewState == EDropState::Ground && (Old == EDropState::Parachuting || Old == EDropState::Freefall))
 	{
 		bHasLanded = true;
 	}
