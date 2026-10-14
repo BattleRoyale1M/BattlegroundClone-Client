@@ -15,6 +15,14 @@
 
 ---
 
+
+## System Architecture
+
+<img width="5140" height="3302" alt="Game_Network_Architecture (1)" src="https://github.com/user-attachments/assets/53deff77-4fec-42a2-8cc0-e7291717ce03" />
+
+---
+
+
 ## 주요 게임 특징
 
 - **비행기 탑승 및 낙하 시퀀스**
@@ -34,8 +42,3 @@
 
 
 ---
-
-
-## System Architecture
-
-<img width="5140" height="3302" alt="Game_Network_Architecture (1)" src="https://github.com/user-attachments/assets/53deff77-4fec-42a2-8cc0-e7291717ce03" />
