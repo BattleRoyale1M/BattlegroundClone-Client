@@ -38,29 +38,4 @@
 
 ## 🗺️ Architecture
 
-```mermaid
-flowchart TD
-    %% 스타일 정의
-    classDef ui fill:#2A2E43,stroke:#6C7A9C,stroke-width:2px,color:#fff;
-    classDef core fill:#1E2235,stroke:#4A90E2,stroke-width:2px,color:#fff;
-    classDef domain fill:#16192B,stroke:#555,stroke-width:1px,color:#ccc;
-
-    %% 노드 배치
-    UI["UI<br/>HUD / MiniMap / Widgets"]:::ui
-    Core["⚙️Core<br/>GameMode / Controller / State"]:::core
-    
-    Drop["Drop<br/>AAirPlane"]:::domain
-    Character["👤Character<br/>ADropCharacter"]:::core
-    
-    Combat["Combat<br/>UHealthComponent"]:::domain
-    Weapon["Weapon<br/>WeaponBase / Inventory"]:::domain
-    Interaction["Interaction<br/>Interface / Pickup"]:::domain
-
-    %% 연결 관계
-    UI -->|데이터 공급 / 입력| Core
-    Core -->|GameMode가 스폰/관리| Drop
-    Core -->|Enum / Possess| Character
-    
-    Character -->|IInteractableInterface 호환| Interaction
-    Character -->|owns HealthComponent| Combat
-    Character -->|owns InventoryComponent| Weapon
+<img width="5140" height="3302" alt="Game_Network_Architecture (1)" src="https://github.com/user-attachments/assets/53deff77-4fec-42a2-8cc0-e7291717ce03" />
