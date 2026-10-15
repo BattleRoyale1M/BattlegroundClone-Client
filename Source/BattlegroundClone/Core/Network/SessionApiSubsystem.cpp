@@ -105,6 +105,16 @@ FString USessionApiSubsystem::GetLocalIp() const
 	{
 		return AdvertiseIp;
 	}
+	int32 Code = -1;
+	FString StdOut, StdErr;
+	if (FPlatformProcess::ExecProcess(TEXT("C:/Program Files/Tailscale/tailscale.exe"), TEXT("ip -4"), &Code, &StdOut, &StdErr) && Code == 0)
+	{
+		FString Ip = StdOut.TrimStartAndEnd();
+		if (Ip.StartsWith(TEXT("100.")))
+		{
+			return Ip;
+		}
+	}
 	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	TArray<TSharedPtr<FInternetAddr>> Addrs;
 	if (Sockets->GetLocalAdapterAddresses(Addrs))
