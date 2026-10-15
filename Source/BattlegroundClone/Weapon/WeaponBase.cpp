@@ -13,7 +13,6 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "NiagaraFunctionLibrary.h"

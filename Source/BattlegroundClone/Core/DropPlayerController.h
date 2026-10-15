@@ -30,9 +30,6 @@ class BATTLEGROUNDCLONE_API ADropPlayerController : public APlayerController
 
 public:
 	ADropPlayerController();
-	
-	UFUNCTION(Exec, Category = "Cheat")
-	void Cheat_Damage();
 
 	// --- 위젯이 읽을데이터 --------------------------------------------------
 	
