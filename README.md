@@ -20,6 +20,19 @@
 
 <img width="5140" height="3302" alt="Game_Network_Architecture (1)" src="https://github.com/user-attachments/assets/53deff77-4fec-42a2-8cc0-e7291717ce03" />
 
+1. 모든 PC는 **Tailscale VPN** 망 안에서 연결됩니다.
+2. 방을 만든 호스트가 **리슨 서버**가 되어, 자기 IP를 **세션 서버(Spring Boot)** 에 HTTP로 등록합니다.
+3. 클라이언트는 세션 서버에서 방 목록을 받아온 뒤, 선택한 호스트 IP로 직접 접속합니다.
+4. 이후 게임 동기화는 **언리얼 리플리케이션(UDP 7777)** 으로 처리됩니다.
+
+| 구분 | 구조 | 접속 범위 |
+|---|---|---|
+| Tailscale 이전 | LAN + 리슨 서버 | 같은 공유기 안에서만 |
+| Tailscale 이후 | 가상 LAN(Tailscale) + 리슨 서버 | 서로 다른 공유기 간에도 가능 |
+
+> Tailscale로 같은 공유기에서만 접속되던 LAN의 한계를 극복했고, 호스트 IP 자동 조회는 Spring Boot 세션 서버가 담당합니다.
+> 다만 이것도 가상 LAN이므로 참가자 전원이 Tailscale에 가입해 있어야 하며, 일반 인터넷 사용자가 바로 접속하는 구조는 아닙니다.
+
 ---
 
 
