@@ -192,12 +192,11 @@ void ABGAIController::Tick(float DeltaTime)
 	if (!Target.IsValid())
 	{
 		PickNewTarget();
-	}
-
-	if (!Target.IsValid())
-	{
-		Wander(DeltaTime);
-		return;
+		if (!Target.IsValid())
+		{
+			Wander(DeltaTime);
+			return;
+		}
 	}
 
 	const float Distance = FVector::Dist(Bot->GetActorLocation(), Target->GetActorLocation());
