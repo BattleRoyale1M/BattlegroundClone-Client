@@ -2,7 +2,10 @@
 
 <img width="1119" height="599" alt="image" src="https://github.com/user-attachments/assets/55f59346-cfb5-4445-b24a-cc269d3d9090" />
 
-[![BattlegroundClone Gameplay](https://img.youtube.com/vi/a0FPOMAMtws/maxresdefault.jpg)](https://www.youtube.com/watch?v=a0FPOMAMtws)
+
+
+
+[![Gameplay Video](https://img.youtube.com/vi/a0FPOMAMtws/hqdefault.jpg)](https://www.youtube.com/watch?v=a0FPOMAMtws)
 
 [![Watch on YouTube](https://img.shields.io/badge/YouTube-Watch%20Gameplay-FF0000?logo=youtube&logoColor=white)](https://youtu.be/a0FPOMAMtws)
 
