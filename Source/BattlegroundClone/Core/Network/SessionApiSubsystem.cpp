@@ -6,6 +6,7 @@
 #include "JsonObjectConverter.h"
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
+#include "Misc/Paths.h"
 
 void USessionApiSubsystem::CreateSession(int32 Port, const FString& MapName, int32 MaxPlayers)
 {
@@ -119,18 +120,30 @@ FString USessionApiSubsystem::GetLocalIp() const
 		return Second >= 64 && Second <= 127;
 	};
 
-	int32 Code = -1;
-	FString StdOut, StdErr;
-	if (FPlatformProcess::ExecProcess(TEXT("C:/Program Files/Tailscale/tailscale.exe"), TEXT("ip -4"), &Code, &StdOut, &StdErr) && Code == 0)
+	TArray<FString> Candidates;
+	Candidates.Add(FPaths::Combine(FPlatformMisc::GetEnvironmentVariable(TEXT("ProgramFiles")), TEXT("Tailscale/tailscale.exe")));
+	Candidates.Add(TEXT("tailscale"));
+
+	for (const FString& Candidate : Candidates)
 	{
-		FString Ip = StdOut.TrimStartAndEnd();
-		if (IsTailscaleIp(Ip))
+		// 후보가 .exe로 끝나는 경로인데 FileExists가 false
+		if (Candidate.EndsWith(TEXT(".exe")) && !FPaths::FileExists(Candidate))
 		{
-			return Ip;
+			continue;
+		}
+		int32 Code = -1;
+		FString StdOut, StdErr;
+		if (FPlatformProcess::ExecProcess(*Candidate, TEXT("ip -4"), &Code, &StdOut, &StdErr) && Code == 0)
+		{
+			FString Ip = StdOut.TrimStartAndEnd();
+			if (IsTailscaleIp(Ip))
+			{
+				return Ip;
+			}
 		}
 	}
-	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	
+	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	if (!Sockets)
 	{
 		return TEXT("127.0.0.1");
