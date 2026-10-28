@@ -29,24 +29,6 @@ AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjecti
 
 void UProjectilePoolSubsystem::WarmUpPool(TSubclassOf<AProjectileBullet> ProjectileClass, int32 PoolSize)
 {
-	/*
-	UWorld* World = GetWorld();
-	if (!World || !ProjectileClass) return;
-	
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	
-	for (int32 i = 0; i < PoolSize; ++i) 
-	{
-		AProjectileBullet* NewBullet = GetWorld()->SpawnActor<AProjectileBullet>(ProjectileClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-	
-		if (NewBullet)
-		{
-			NewBullet->DeactivateBullet();
-			ProjectilePool.Add(NewBullet);
-		}
-	}
-	*/
 	if (!GetWorld() || !ProjectileClass) return;
 
 	for (int32 i = 0; i < PoolSize; ++i)
