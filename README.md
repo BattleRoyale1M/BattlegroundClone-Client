@@ -1,6 +1,11 @@
 # 🎮 BattlegroundClone
 
-<img width="1916" height="1025" alt="ReadMe" src="https://github.com/user-attachments/assets/089046f1-45ed-4d80-8c43-cecf686312ce" />
+<img width="1119" height="599" alt="image" src="https://github.com/user-attachments/assets/55f59346-cfb5-4445-b24a-cc269d3d9090" />
+
+
+## Gameplay
+
+[![Watch on YouTube](https://img.shields.io/badge/YouTube-Watch%20Gameplay-FF0000?logo=youtube&logoColor=white)](https://youtu.be/a0FPOMAMtws)
 
 ---
 
@@ -14,7 +19,6 @@
 배틀그라운드 고유의 분위기를 담아낸 멀티플레이 슈팅게임 프로젝트입니다.
 
 ---
-
 
 ## System Architecture
 
