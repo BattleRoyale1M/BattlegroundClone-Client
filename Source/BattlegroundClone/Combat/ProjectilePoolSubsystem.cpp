@@ -11,7 +11,7 @@ AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjecti
 	// 1. 기존 풀에서 비활성화 된 총알 찾기
 	for (AProjectileBullet* Bullet : ProjectilePool)
 	{
-		if (IsValid(Bullet) && !Bullet->IsInUse())
+		if (IsValid(Bullet) && !Bullet->IsInUse() && Bullet->GetClass() == ProjectileClass)
 		{
 			Bullet->ActivateBullet(SpawnLocation, SpawnRotation, Damage, Range, Owner, Instigator, WeaponName);
 			return Bullet;
