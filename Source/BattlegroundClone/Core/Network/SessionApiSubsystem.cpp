@@ -110,25 +110,41 @@ FString USessionApiSubsystem::GetLocalIp() const
 	{
 		return AdvertiseIp;
 	}
+
+	auto IsTailscaleIp = [](const FString& Ip)
+	{
+		TArray<FString> Octets;
+		if (Ip.ParseIntoArray(Octets, TEXT(".")) != 4 || Octets[0] != TEXT("100")) return false;
+		const int32 Second = FCString::Atoi(*Octets[1]);
+		return Second >= 64 && Second <= 127;
+	};
+
 	int32 Code = -1;
 	FString StdOut, StdErr;
 	if (FPlatformProcess::ExecProcess(TEXT("C:/Program Files/Tailscale/tailscale.exe"), TEXT("ip -4"), &Code, &StdOut, &StdErr) && Code == 0)
 	{
 		FString Ip = StdOut.TrimStartAndEnd();
-		if (Ip.StartsWith(TEXT("100.")))
+		if (IsTailscaleIp(Ip))
 		{
 			return Ip;
 		}
 	}
 	ISocketSubsystem* Sockets = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	
+	if (!Sockets)
+	{
+		return TEXT("127.0.0.1");
+	}
+
 	TArray<TSharedPtr<FInternetAddr>> Addrs;
 	if (Sockets->GetLocalAdapterAddresses(Addrs))
 	{
 		for (const TSharedPtr<FInternetAddr>& A : Addrs)
 		{
+			if (!A.IsValid()) continue; // TSharedPtr = nullptr방지(다음 A->에서 크래시 방지)
 			FString Ip = A->ToString(false);
 			Ip.RemoveFromStart(TEXT("::ffff:"));
-			if (Ip.StartsWith(TEXT("100.")))
+			if (IsTailscaleIp(Ip))
 			{
 				return Ip;
 			}
@@ -136,5 +152,11 @@ FString USessionApiSubsystem::GetLocalIp() const
 	}
 	bool bCanBindAll = false;
 	TSharedPtr<FInternetAddr> Addr = Sockets->GetLocalHostAddr(*GLog, bCanBindAll);
-	return Addr.IsValid() ? Addr->ToString(false) : TEXT("127.0.0.1");
+	if (!Addr.IsValid())
+	{
+		return TEXT("127.0.0.1");
+	}
+	FString Ip = Addr->ToString(false);
+	Ip.RemoveFromStart(TEXT("::ffff:"));
+	return Ip == TEXT("0.0.0.0") ? TEXT("127.0.0.1") : Ip;
 }
