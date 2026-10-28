@@ -57,7 +57,11 @@ void UMainMenuWidget::RefreshSessions()
 	SessionApi->FetchSessions(FOnSessionList::CreateWeakLambda(this,
 		[this](bool bOk, const TArray<FSessionInfo>& Sessions)
 	{
-		if (!bOk) return;
+		if (!bOk)
+		{
+			ShowErrorPopup(TEXT("세션 서버와 통신할 수 없습니다. 네트워크 연결을 확인해주세요."));
+			return;
+		}
 		if (SessionList)
 		{
 			PopulateSessionList(Sessions);
@@ -113,4 +117,28 @@ USessionApiSubsystem* UMainMenuWidget::GetSessionApi() const
 {
 	const UGameInstance* GI = GetGameInstance();
 	return GI ? GI->GetSubsystem<USessionApiSubsystem>() : nullptr;
+}
+
+void UMainMenuWidget::ShowErrorPopup(const FString& Message)
+{
+	if (!WidgetTree)
+	{
+		return;
+	}
+	
+	UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>();
+	if (!ErrorText) return;
+
+	ErrorText->SetText(FText::FromString(Message));
+	ErrorText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
+	
+	UButton* CloseButton = WidgetTree->ConstructWidget<UButton>();
+	if (!CloseButton) return;
+
+	UTextBlock* ButtonText = WidgetTree->ConstructWidget<UTextBlock>();
+	ButtonText->SetText(FText::FromString(TEXT("확인")));
+	CloseButton->AddChild(ButtonText);
+	
+	// 레이어 최상단
+	this->AddToViewport(999);
 }

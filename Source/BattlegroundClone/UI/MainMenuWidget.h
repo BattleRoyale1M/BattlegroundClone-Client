@@ -53,6 +53,8 @@ private:
 	void RefreshSessions();
 	void PopulateSessionList(const TArray<FSessionInfo>& Sessions);
 	USessionApiSubsystem* GetSessionApi() const;
+	
+	void ShowErrorPopup(const FString& Message);
 
 	UPROPERTY()
 	TArray<TObjectPtr<USessionEntryHandler>> EntryHandlers;
