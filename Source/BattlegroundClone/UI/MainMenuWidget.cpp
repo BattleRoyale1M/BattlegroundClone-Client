@@ -10,6 +10,7 @@
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
 #include "Components/Border.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/VerticalBoxSlot.h"
 
 void USessionEntryHandler::HandleClicked()
@@ -43,18 +44,21 @@ void UMainMenuWidget::OnHostClicked()
 void UMainMenuWidget::OnJoinClicked()
 {
 	const FString IP = IPAddressInput ? IPAddressInput->GetText().ToString().TrimStartAndEnd() : FString();
-	if (!IP.IsEmpty())
+	if (IP.IsEmpty())
 	{
-		if (IP.Len() < 7) 
-		{
-			ShowErrorPopup(TEXT("올바른 IP 주소를 입력해주세요."));
-			return;
-		}
-		if (APlayerController* PC = GetOwningPlayer())
-		{
-			PC -> ClientTravel(IP, ETravelType::TRAVEL_Absolute);
-		}
+		ShowErrorPopup(TEXT("접속할 IP 주소를 입력해주세요."));
 		return;
+	}
+
+	if (IP.Len() < 7) 
+	{
+		ShowErrorPopup(TEXT("올바른 IP 주소를 입력해주세요."));
+		return;
+	}
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->ClientTravel(IP, ETravelType::TRAVEL_Absolute);
 	}
 	RefreshSessions();
 }
@@ -144,6 +148,13 @@ void UMainMenuWidget::ShowErrorPopup(const FString& Message)
 	if (!BackgroundBorder) return;
 	BackgroundBorder->SetBrushColor(FLinearColor(0.f, 0.f, 0.f, 0.7f));
 
+	UOverlaySlot* BgSlot = RootOverlay->AddChildToOverlay(BackgroundBorder);
+	if (BgSlot)
+	{
+		BgSlot->SetHorizontalAlignment(HAlign_Fill);
+		BgSlot->SetVerticalAlignment(VAlign_Fill);
+	}
+
 	UVerticalBox* DialogBox = WidgetTree->ConstructWidget<UVerticalBox>();
 
 	UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>();
@@ -160,20 +171,22 @@ void UMainMenuWidget::ShowErrorPopup(const FString& Message)
 
 	DialogBox->AddChildToVerticalBox(ErrorText);
 	DialogBox->AddChildToVerticalBox(ConfirmButton);
-    
-	BackgroundBorder->AddChild(DialogBox);
 
-	// 변수명을 OverlaidSlot 등으로 변경하여 이름 충돌(C4458) 방지
-	UOverlaySlot* OverlaidSlot = RootOverlay->AddChildToOverlay(BackgroundBorder);
-	if (OverlaidSlot)
+	UOverlaySlot* DialogSlot = RootOverlay->AddChildToOverlay(DialogBox);
+	if (DialogSlot)
 	{
-		OverlaidSlot->SetHorizontalAlignment(HAlign_Fill);
-		OverlaidSlot->SetVerticalAlignment(VAlign_Fill);
+		DialogSlot->SetHorizontalAlignment(HAlign_Center);
+		DialogSlot->SetVerticalAlignment(VAlign_Center);
 	}
 
 	UPanelWidget* RootPanel = Cast<UPanelWidget>(WidgetTree->RootWidget);
 	if (RootPanel)
 	{
-		RootPanel->AddChild(BackgroundBorder);
+		UPanelSlot* AddedSlot = RootPanel->AddChild(RootOverlay);
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(AddedSlot))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			CanvasSlot->SetOffsets(FMargin(0.f));
+		}
 	}
 }
