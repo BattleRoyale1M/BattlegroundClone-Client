@@ -41,11 +41,6 @@ AProjectileBullet::AProjectileBullet()
 
 }
 
-void AProjectileBullet::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 // ★
 void AProjectileBullet::ActivateBullet(const FVector& InSpawnLocation, const FRotator& InSpawnRotation, float InDamage, float InRange, AActor* InOwner, APawn* InInstigator, const FText& InWeaponName)
 {

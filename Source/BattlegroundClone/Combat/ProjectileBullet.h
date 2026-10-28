@@ -24,8 +24,6 @@ public:
 	bool IsInUse() const { return bInUse; }
 	
 protected:
-	virtual void BeginPlay() override;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> CollisionComp;
 
