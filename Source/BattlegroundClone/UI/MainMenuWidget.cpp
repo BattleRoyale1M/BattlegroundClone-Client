@@ -115,7 +115,11 @@ void UMainMenuWidget::JoinSession(const FSessionInfo& Info)
 	SessionApi->JoinSession(Info.SessionId, FOnSessionResult::CreateWeakLambda(this,
 		[this](bool bOk, const FSessionInfo& Joined)
 	{
-		if (!bOk) return;
+		if (!bOk)
+		{
+			ShowErrorPopup(TEXT("세션에 참가할 수 없습니다. 서버 상태를 확인해주세요."));
+			return;
+		}
 		if (APlayerController* PC = GetOwningPlayer())
 		{
 			PC -> ClientTravel(FString::Printf(TEXT("%s:%d"), *Joined.Ip, Joined.Port), ETravelType::TRAVEL_Absolute);
@@ -159,11 +163,12 @@ void UMainMenuWidget::ShowErrorPopup(const FString& Message)
     
 	BackgroundBorder->AddChild(DialogBox);
 
-	UOverlaySlot* Slot = RootOverlay->AddChildToOverlay(BackgroundBorder);
-	if (Slot)
+	// 변수명을 OverlaidSlot 등으로 변경하여 이름 충돌(C4458) 방지
+	UOverlaySlot* OverlaidSlot = RootOverlay->AddChildToOverlay(BackgroundBorder);
+	if (OverlaidSlot)
 	{
-		Slot->SetHorizontalAlignment(HAlign_Fill);
-		Slot->SetVerticalAlignment(VAlign_Fill);
+		OverlaidSlot->SetHorizontalAlignment(HAlign_Fill);
+		OverlaidSlot->SetVerticalAlignment(VAlign_Fill);
 	}
 
 	UPanelWidget* RootPanel = Cast<UPanelWidget>(WidgetTree->RootWidget);
