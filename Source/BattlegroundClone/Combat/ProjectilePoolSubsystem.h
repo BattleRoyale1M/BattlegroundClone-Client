@@ -17,11 +17,6 @@ public:
 	AProjectileBullet* GetProjectile(TSubclassOf<AProjectileBullet> ProjectileClass, const FVector& SpawnLocation, const FRotator& SpawnRotation, float Damage, float Range, AActor* Owner, APawn* Instigator, const FText& WeaponName);
 	
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
-	
-	/*
-	 초기 지정 수량만큼 총알을 미리 스폰하여 풀 생성
-	*/
-	void WarmUpPool(TSubclassOf<AProjectileBullet> ProjectileClass, int32 PoolSize = 100);
 
 protected:
 	UPROPERTY()

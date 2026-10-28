@@ -37,19 +37,6 @@ bool UProjectilePoolSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 	return World && World->GetNetMode() != NM_Client;
 }
 
-void UProjectilePoolSubsystem::WarmUpPool(TSubclassOf<AProjectileBullet> ProjectileClass, int32 PoolSize)
-{
-	if (!GetWorld() || !ProjectileClass) return;
-
-	for (int32 i = 0; i < PoolSize; ++i)
-	{
-		if (AProjectileBullet* NewBullet = SpawnPooledBullet(ProjectileClass, FVector::ZeroVector, FRotator::ZeroRotator))
-		{
-			NewBullet->DeactivateBullet();
-		}
-	}
-}
-
 /*
 풀생성시 파괴이벤트가 같이 연결
 */
