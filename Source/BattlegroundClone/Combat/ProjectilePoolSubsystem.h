@@ -24,4 +24,8 @@ public:
 protected:
 	UPROPERTY()
 	TArray<TObjectPtr<AProjectileBullet>> ProjectilePool;
+	
+	AProjectileBullet* SpawnPooledBullet(TSubclassOf<AProjectileBullet> ProjectileClass, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+	UFUNCTION()
+	void HandleBulletDestroyed(AActor* DestroyedActor);
 };
