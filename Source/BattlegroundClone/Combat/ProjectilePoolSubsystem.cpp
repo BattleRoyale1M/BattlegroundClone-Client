@@ -27,6 +27,16 @@ AProjectileBullet* UProjectilePoolSubsystem::GetProjectile(TSubclassOf<AProjecti
 	return NewBullet;
 }
 
+bool UProjectilePoolSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	if (!Super::ShouldCreateSubsystem(Outer))
+	{
+		return false;
+	}
+	const UWorld* World = Cast<UWorld>(Outer);
+	return World && World->GetNetMode() != NM_Client;
+}
+
 void UProjectilePoolSubsystem::WarmUpPool(TSubclassOf<AProjectileBullet> ProjectileClass, int32 PoolSize)
 {
 	if (!GetWorld() || !ProjectileClass) return;
