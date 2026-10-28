@@ -6,6 +6,11 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/VerticalBox.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
+#include "Components/Border.h"
+#include "Components/VerticalBoxSlot.h"
 
 void USessionEntryHandler::HandleClicked()
 {
@@ -40,6 +45,11 @@ void UMainMenuWidget::OnJoinClicked()
 	const FString IP = IPAddressInput ? IPAddressInput->GetText().ToString().TrimStartAndEnd() : FString();
 	if (!IP.IsEmpty())
 	{
+		if (IP.Len() < 7) 
+		{
+			ShowErrorPopup(TEXT("올바른 IP 주소를 입력해주세요."));
+			return;
+		}
 		if (APlayerController* PC = GetOwningPlayer())
 		{
 			PC -> ClientTravel(IP, ETravelType::TRAVEL_Absolute);
@@ -121,24 +131,44 @@ USessionApiSubsystem* UMainMenuWidget::GetSessionApi() const
 
 void UMainMenuWidget::ShowErrorPopup(const FString& Message)
 {
-	if (!WidgetTree)
-	{
-		return;
-	}
-	
-	UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>();
-	if (!ErrorText) return;
+	if (!WidgetTree) return;
 
+	UOverlay* RootOverlay = WidgetTree->ConstructWidget<UOverlay>();
+	if (!RootOverlay) return;
+
+	UBorder* BackgroundBorder = WidgetTree->ConstructWidget<UBorder>();
+	if (!BackgroundBorder) return;
+	BackgroundBorder->SetBrushColor(FLinearColor(0.f, 0.f, 0.f, 0.7f));
+
+	UVerticalBox* DialogBox = WidgetTree->ConstructWidget<UVerticalBox>();
+
+	UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>();
 	ErrorText->SetText(FText::FromString(Message));
 	ErrorText->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
-	
-	UButton* CloseButton = WidgetTree->ConstructWidget<UButton>();
-	if (!CloseButton) return;
+	ErrorText->SetJustification(ETextJustify::Center);
 
+	UButton* ConfirmButton = WidgetTree->ConstructWidget<UButton>();
 	UTextBlock* ButtonText = WidgetTree->ConstructWidget<UTextBlock>();
 	ButtonText->SetText(FText::FromString(TEXT("확인")));
-	CloseButton->AddChild(ButtonText);
-	
-	// 레이어 최상단
-	this->AddToViewport(999);
+	ConfirmButton->AddChild(ButtonText);
+
+	ConfirmButton->OnClicked.AddDynamic(RootOverlay, &UWidget::RemoveFromParent);
+
+	DialogBox->AddChildToVerticalBox(ErrorText);
+	DialogBox->AddChildToVerticalBox(ConfirmButton);
+    
+	BackgroundBorder->AddChild(DialogBox);
+
+	UOverlaySlot* Slot = RootOverlay->AddChildToOverlay(BackgroundBorder);
+	if (Slot)
+	{
+		Slot->SetHorizontalAlignment(HAlign_Fill);
+		Slot->SetVerticalAlignment(VAlign_Fill);
+	}
+
+	UPanelWidget* RootPanel = Cast<UPanelWidget>(WidgetTree->RootWidget);
+	if (RootPanel)
+	{
+		RootPanel->AddChild(BackgroundBorder);
+	}
 }

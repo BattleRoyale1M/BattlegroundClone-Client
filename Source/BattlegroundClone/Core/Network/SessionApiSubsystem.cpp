@@ -93,6 +93,11 @@ void USessionApiSubsystem::SendRequest(const FString& Verb, const FString& Path,
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[SessionApi] %s %s 실패 (%d) %s"), *Verb, *Req->GetURL(),
 				Response.IsValid() ? Response->GetResponseCode() : 0, *Content);
+			
+			if (GEngine)
+			{
+			   GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("[네트워크 오류] 세션 서버가 꺼져있거나 Tailscale 연결을 확인해주세요!"));
+			}
 		}
 		OnDone(bOk, Content);
 	});
